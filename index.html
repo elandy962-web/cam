@@ -1,75 +1,939 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Marcador Deportivo</title>
-    <style>
-        :root { --bg:#12141A; --accent:#8FA998; --text:#EDEBE6; }
-        body { margin:0; background:var(--bg); color:var(--text); font-family:sans-serif; height:100vh; overflow:hidden; }
-        .screen { position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg); }
-        .hidden { display:none; }
-        
-        /* Pantalla Deportes */
-        #sportsScreen { padding:20px; text-align:center; display:flex; align-items:center; justify-content:center; }
-        #configBtn { position:absolute; top:40px; right:20px; background:transparent; border:none; color:var(--accent); cursor:pointer; }
-        
-        /* Viewer Scroll */
-        .viewer-img-wrap { display:flex; overflow-x:auto; scroll-snap-type: x mandatory; flex:1; }
-        .viewer-img-wrap img, .viewer-img-wrap video { flex: 0 0 100%; scroll-snap-align: start; object-fit: contain; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Marcador">
+<meta name="theme-color" content="#12141A">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<title>Marcador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141A; --surface:#1B1E26; --surface-hi:#242835; --line:#2E3341;
+    --text:#EDEBE6; --muted:#8A90A0; --accent:#8FA998; --brass:#C9A227; --danger:#D46A5C;
+    --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; overscroll-behavior:none; user-select:none; -webkit-user-select:none;}
+  #app{position:fixed; inset:0; overflow:hidden;}
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column; padding-top:calc(var(--safe-t) + 12px); padding-bottom:calc(var(--safe-b) + 12px); opacity:1; transition:opacity .25s ease;}
+  .screen.hidden{opacity:0; pointer-events:none; visibility:hidden;}
+
+  #lockScreen, #setupScreen{align-items:center; justify-content:center; gap:28px; padding-left:24px; padding-right:24px;}
+  .brand{display:flex; flex-direction:column; align-items:center; gap:6px;}
+  .brand h1{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:22px; letter-spacing:.14em; margin:0; text-transform:uppercase;}
+  .brand p{margin:0; color:var(--muted); font-size:13px;}
+
+  .dial{position:relative; width:132px; height:132px;}
+  .dial svg{width:100%; height:100%; transition:transform .5s cubic-bezier(.2,.8,.2,1);}
+  .dial.spin svg{transition:transform .9s cubic-bezier(.3,1.6,.4,1);}
+
+  .dots{display:flex; gap:14px; height:14px; align-items:center;}
+  .dots .dot{width:12px; height:12px; border-radius:50%; border:1.5px solid var(--line); transition:all .15s ease;}
+  .dots .dot.filled{background:var(--accent); border-color:var(--accent);}
+  .dots.shake{animation:shake .4s ease;}
+  @keyframes shake{10%,90%{transform:translateX(-1px);}20%,80%{transform:translateX(2px);}30%,50%,70%{transform:translateX(-6px);}40%,60%{transform:translateX(6px);}}
+  .dots.shake .dot.filled{background:var(--danger); border-color:var(--danger);}
+
+  .hint{color:var(--muted); font-size:13px; min-height:16px;}
+  .keypad{display:grid; grid-template-columns:repeat(3,64px); gap:16px; justify-content:center;}
+  .key{width:64px; height:64px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:22px; display:flex; align-items:center; justify-content:center; transition:background .1s ease, transform .1s ease;}
+  .key:active{background:var(--surface-hi); transform:scale(.94);}
+  .key.ghost{background:transparent; border:none;}
+  .key.ghost:active{background:var(--surface);}
+
+  #gallery{display:flex; flex-direction:column;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:4px 18px 14px; border-bottom:1px solid var(--line);}
+  .topbar h2{font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:.1em; margin:0; text-transform:uppercase; color:var(--muted);}
+  .iconbtn{width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--text);}
+  .iconbtn:active{background:var(--surface-hi);}
+  .topbar-actions{display:flex; gap:10px;}
+
+  .chips{display:flex; gap:8px; padding:12px 14px 4px; overflow-x:auto; scrollbar-width:none;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto; padding:8px 16px; border-radius:20px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-size:13px; white-space:nowrap;}
+  .chip.active{background:var(--accent); color:#12141A; border-color:var(--accent); font-weight:600;}
+  .chip.add{color:var(--accent); border-style:dashed;}
+
+  .grid-wrap{flex:1; overflow-y:auto; padding:10px 14px 14px;}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .thumb{position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:var(--surface); border:1px solid var(--line);}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+
+  .empty{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--muted); text-align:center; padding:0 40px;}
+  .empty .dial{width:88px; height:88px; opacity:.5;}
+  .empty p{margin:0; font-size:14px; line-height:1.5;}
+
+  .fab{position:absolute; right:20px; bottom:calc(var(--safe-b) + 22px); width:58px; height:58px; border-radius:50%; background:var(--accent); color:#12141A; display:flex; align-items:center; justify-content:center; border:none; box-shadow:0 6px 18px rgba(0,0,0,.4);}
+  .fab:active{transform:scale(.95);}
+
+  #viewer{background:#000; z-index:20; justify-content:space-between;}
+  #viewer.hidden{display:none;}
+  .viewer-top{display:flex; justify-content:space-between; align-items:center; padding:0 14px;}
+  .viewer-img-wrap{flex:1; display:flex; align-items:center; justify-content:center; padding:10px; overflow:hidden; position:relative; touch-action:none;}
+  .viewer-img-wrap img, .viewer-img-wrap video{max-width:100%; max-height:100%; object-fit:contain; border-radius:4px; -webkit-user-drag:none; touch-action:none;}
+  .viewer-img-wrap video.hidden, .viewer-img-wrap img.hidden{display:none;}
+  .thumb .vid-badge{position:absolute; right:5px; bottom:5px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center;}
+  .viewer-bottom{display:flex; justify-content:center; gap:10px; padding:6px 14px;}
+  .pillbtn{display:flex; align-items:center; gap:8px; padding:12px 20px; border-radius:24px; background:var(--surface); border:1px solid var(--line); color:var(--text); font-size:13px; font-family:'Inter';}
+  .pillbtn:active{background:var(--surface-hi);}
+  .pillbtn.del{background:rgba(212,106,92,.15); border-color:var(--danger); color:var(--danger);}
+  .pillbtn.del:active{background:rgba(212,106,92,.3);}
+
+  #settings{background:var(--bg); z-index:20; padding-left:18px; padding-right:18px;}
+  #settings.hidden{display:none;}
+  .settings-top{display:flex; align-items:center; justify-content:space-between; padding-bottom:20px; border-bottom:1px solid var(--line);}
+  .settings-top h2{font-family:'IBM Plex Mono',monospace; font-size:15px; letter-spacing:.1em; text-transform:uppercase; margin:0;}
+  .settings-body{flex:1; overflow-y:auto; padding-top:20px; display:flex; flex-direction:column; gap:14px;}
+  .setting-row{display:flex; align-items:center; justify-content:space-between; padding:16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); font-size:14px;}
+  .setting-row.danger{color:var(--danger); border-color:rgba(212,106,92,.4);}
+  .setting-row .sub{color:var(--muted); font-size:12px;}
+  .note{color:var(--muted); font-size:12px; line-height:1.6; padding:4px 4px;}
+
+  .folder-list{display:flex; flex-direction:column; gap:8px;}
+  .folder-row{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-radius:10px; background:var(--surface); border:1px solid var(--line); font-size:14px;}
+  .folder-row button{background:none; border:none; color:var(--muted);}
+
+  .confirm-overlay{position:absolute; inset:0; background:rgba(0,0,0,.6); z-index:30; display:flex; align-items:flex-end; justify-content:center; padding:0;}
+  .confirm-overlay.center{align-items:center; padding:24px;}
+  .confirm-overlay.hidden{display:none;}
+  .confirm-card{background:var(--surface-hi); border:1px solid var(--line); border-radius:16px; padding:22px; width:100%; max-width:320px; display:flex; flex-direction:column; gap:14px;}
+  .confirm-card h3{margin:0; font-size:16px;}
+  .confirm-card p{margin:0; color:var(--muted); font-size:13px; line-height:1.5;}
+  .confirm-actions{display:flex; gap:10px; margin-top:6px;}
+  .confirm-actions button{flex:1; padding:12px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:14px;}
+  .confirm-actions button.danger{background:var(--danger); border-color:var(--danger); color:#12141A; font-weight:600;}
+  .confirm-actions button.primary{background:var(--accent); border-color:var(--accent); color:#12141A; font-weight:600;}
+  .text-input{padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); font-size:15px; font-family:'Inter';}
+
+  .sheet{background:var(--surface-hi); border:1px solid var(--line); border-radius:18px 18px 0 0; padding:18px; width:100%; max-width:480px; display:flex; flex-direction:column; gap:8px; padding-bottom:calc(18px + var(--safe-b));}
+  .sheet h3{margin:0 0 6px; font-size:15px; color:var(--muted); font-weight:500;}
+  .sheet-option{text-align:left; padding:14px; border-radius:10px; background:var(--surface); border:1px solid var(--line); color:var(--text); font-size:14px;}
+  .sheet-option.active{border-color:var(--accent); color:var(--accent);}
+
+  #fileInput{display:none;}
+
+  /* ---------- Sports cover screen (decoy / default) ---------- */
+  #decoyGame{background:var(--bg); z-index:40; padding-left:0; padding-right:0;}
+  #decoyGame.hidden{display:none;}
+  .sports-top{display:flex; align-items:center; justify-content:space-between; padding:4px 18px 14px; border-bottom:1px solid var(--line);}
+  .sports-top h1{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:17px; letter-spacing:.1em; margin:0; text-transform:uppercase;}
+  .sports-gear{width:34px; height:34px; border-radius:10px; border:1px solid transparent; background:transparent; display:flex; align-items:center; justify-content:center; color:var(--muted); opacity:.55;}
+  .sports-gear:active{opacity:1; background:var(--surface);}
+  .sports-tabs{display:flex; gap:8px; padding:12px 14px 4px; overflow-x:auto; scrollbar-width:none;}
+  .sports-tabs::-webkit-scrollbar{display:none;}
+  .sports-tab{flex:0 0 auto; padding:8px 16px; border-radius:20px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-size:13px; white-space:nowrap;}
+  .sports-tab.active{background:var(--accent); color:#12141A; border-color:var(--accent); font-weight:600;}
+  .sports-list{flex:1; overflow-y:auto; padding:10px 14px 14px; display:flex; flex-direction:column; gap:10px;}
+  .match-card{display:flex; flex-direction:column; gap:8px; padding:14px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line);}
+  .match-card:active{background:var(--surface-hi);}
+  .match-status{display:flex; align-items:center; gap:6px; color:var(--muted); font-size:11.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:.05em; text-transform:uppercase;}
+  .match-status.live{color:var(--danger);}
+  .match-status .dot-live{width:6px; height:6px; border-radius:50%; background:var(--danger); animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .match-teams{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .match-team{display:flex; align-items:center; gap:8px; flex:1; min-width:0;}
+  .match-team .crest{width:26px; height:26px; border-radius:50%; background:var(--surface-hi); border:1px solid var(--line); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted);}
+  .match-team .tname{font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .match-score{font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; letter-spacing:.05em; flex:0 0 auto;}
+  .sports-detail-card{padding:16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); margin-bottom:14px;}
+  .sports-stat-row{display:flex; align-items:center; gap:10px; font-size:13px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .sports-stat-row:last-child{border-bottom:none;}
+  .sports-stat-row .sv{width:44px; text-align:center; font-family:'IBM Plex Mono',monospace; color:var(--muted);}
+  .sports-stat-row .sl{flex:1; color:var(--muted); text-align:center; font-size:12px; text-transform:uppercase; letter-spacing:.05em;}
+</style>
 </head>
 <body>
 <div id="app">
-    <div id="sportsScreen" class="screen">
-        <button id="configBtn">⚙️ Configuración</button>
-        <h1>Marcador Deportivo</h1>
-        <p>Resultados en vivo...</p>
-    </div>
 
-    <div id="lockScreen" class="screen hidden">
-        <div class="brand"><h1>Acceso Seguro</h1></div>
-        <div class="keypad" id="lockKeypad"></div>
+  <!-- LOCK SCREEN -->
+  <div id="lockScreen" class="screen hidden">
+    <div class="brand"><h1>Marcador</h1><p>Código de acceso</p></div>
+    <div class="dial" id="lockDial">
+      <svg viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="46" stroke="#2E3341" stroke-width="2"/>
+        <circle cx="50" cy="50" r="34" stroke="#C9A227" stroke-width="1.2" stroke-dasharray="2 6"/>
+        <circle cx="50" cy="6" r="3" fill="#8FA998"/>
+        <rect x="47" y="38" width="6" height="24" rx="2" fill="#8FA998"/>
+      </svg>
     </div>
-    
+    <div class="dots" id="lockDots"></div>
+    <div class="hint" id="lockHint">&nbsp;</div>
+    <div class="keypad" id="lockKeypad"></div>
+  </div>
+
+  <!-- SETUP SCREEN -->
+  <div id="setupScreen" class="screen hidden">
+    <div class="brand"><h1>Marcador</h1><p id="setupPrompt">Creá un código de 4 a 6 dígitos</p></div>
+    <div class="dial" id="setupDial">
+      <svg viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="46" stroke="#2E3341" stroke-width="2"/>
+        <circle cx="50" cy="50" r="34" stroke="#C9A227" stroke-width="1.2" stroke-dasharray="2 6"/>
+        <circle cx="50" cy="6" r="3" fill="#8FA998"/>
+        <rect x="47" y="38" width="6" height="24" rx="2" fill="#8FA998"/>
+      </svg>
     </div>
+    <div class="dots" id="setupDots"></div>
+    <div class="hint" id="setupHint">&nbsp;</div>
+    <div class="keypad" id="setupKeypad"></div>
+  </div>
+
+  <!-- GALLERY -->
+  <div id="gallery" class="screen hidden">
+    <div class="topbar">
+      <h2>Marcador</h2>
+      <div class="topbar-actions">
+        <button class="iconbtn" id="settingsBtn" aria-label="Ajustes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+        <button class="iconbtn" id="lockBtn" aria-label="Bloquear"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></button>
+      </div>
+    </div>
+    <div class="chips" id="folderChips"></div>
+    <div class="grid-wrap">
+      <div class="grid" id="grid"></div>
+      <div class="empty hidden" id="emptyState">
+        <div class="dial"><svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="46" stroke="#2E3341" stroke-width="2"/><circle cx="50" cy="50" r="34" stroke="#C9A227" stroke-width="1.2" stroke-dasharray="2 6"/></svg></div>
+        <p id="emptyText">Todavía no guardaste ninguna foto o video.<br>Tocá + para agregar el primero.</p>
+      </div>
+    </div>
+    <button class="fab" id="addBtn" aria-label="Agregar foto o video"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button>
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+  </div>
+
+  <!-- VIEWER -->
+  <div id="viewer" class="screen hidden">
+    <div class="viewer-top">
+      <button class="iconbtn" id="closeViewerBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <span class="hint" id="viewerCounter"></span>
+    </div>
+    <div class="viewer-img-wrap">
+      <img id="viewerImg" src="" alt="">
+      <video id="viewerVideo" class="hidden" controls playsinline></video>
+    </div>
+    <div class="viewer-bottom">
+      <button class="pillbtn" id="moveBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-2h4l2 2h5v12H3z"/></svg>Mover</button>
+      <button class="pillbtn del" id="deletePhotoBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg>Eliminar</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="settings" class="screen hidden">
+    <div class="settings-top"><h2>Ajustes</h2><button class="iconbtn" id="closeSettingsBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="settings-body">
+      <button class="setting-row" id="changePinBtn"><span>Cambiar PIN</span><span>›</span></button>
+      <button class="setting-row" id="decoyPinBtn"><span>PIN señuelo<br><span class="sub" id="decoyStatus">No configurado</span></span><span>›</span></button>
+      <button class="setting-row" id="foldersBtn"><span>Carpetas</span><span>›</span></button>
+      <button class="setting-row danger" id="wipeBtn"><span>Borrar todo y reiniciar</span><span>›</span></button>
+      <p class="note">Las fotos y videos se guardan cifrados (AES-256) solo en este dispositivo. Los videos se guardan sin comprimir, en su resolución original, así que pueden ocupar bastante espacio. No se suben a ningún servidor. La app siempre abre mostrando una pantalla de resultados deportivos como fachada. Tocá el engranaje en la esquina de esa pantalla para ingresar tu código y acceder a la bóveda. El PIN señuelo, si lo configurás, también te deja en la pantalla de resultados: útil si alguien te obliga a desbloquear la app.</p>
+    </div>
+  </div>
+
+  <!-- FOLDERS MANAGEMENT -->
+  <div id="foldersScreen" class="screen hidden">
+    <div class="settings-top"><h2>Carpetas</h2><button class="iconbtn" id="closeFoldersBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="settings-body">
+      <div class="folder-list" id="folderManageList"></div>
+      <button class="setting-row" id="newFolderBtn2"><span>+ Nueva carpeta</span></button>
+    </div>
+  </div>
+
+  <!-- SPORTS COVER SCREEN (decoy / default landing) -->
+  <div id="decoyGame" class="screen hidden">
+    <div class="sports-top">
+      <h1>Marcador</h1>
+      <button class="sports-gear" id="sportsGearBtn" aria-label="Configuración"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+    </div>
+    <div class="sports-tabs" id="sportsTabs"></div>
+    <div class="sports-list" id="sportsList"></div>
+  </div>
+
+  <!-- SPORTS MATCH DETAIL -->
+  <div id="sportsDetail" class="screen hidden">
+    <div class="settings-top"><h2 id="sportsDetailTitle">Detalle</h2><button class="iconbtn" id="closeSportsDetailBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="settings-body" id="sportsDetailBody"></div>
+  </div>
+
+  <!-- CONFIRM WIPE -->
+  <div class="confirm-overlay center hidden" id="wipeConfirm">
+    <div class="confirm-card"><h3>¿Borrar todo?</h3><p>Se eliminarán todas las fotos, carpetas y PIN de forma permanente. Esta acción no se puede deshacer.</p>
+      <div class="confirm-actions"><button id="wipeCancel">Cancelar</button><button class="danger" id="wipeConfirmBtn">Borrar todo</button></div>
+    </div>
+  </div>
+
+  <!-- CONFIRM DELETE PHOTO -->
+  <div class="confirm-overlay center hidden" id="deleteConfirm">
+    <div class="confirm-card"><h3>¿Eliminar foto?</h3><p>Esta foto se borrará de forma permanente de la bóveda.</p>
+      <div class="confirm-actions"><button id="deleteCancel">Cancelar</button><button class="danger" id="deleteConfirmBtn">Eliminar</button></div>
+    </div>
+  </div>
+
+  <!-- NEW FOLDER MODAL -->
+  <div class="confirm-overlay center hidden" id="newFolderModal">
+    <div class="confirm-card"><h3>Nueva carpeta</h3>
+      <input class="text-input" id="newFolderInput" placeholder="Nombre de la carpeta" maxlength="30">
+      <div class="confirm-actions"><button id="newFolderCancel">Cancelar</button><button class="primary" id="newFolderCreate">Crear</button></div>
+    </div>
+  </div>
+
+  <!-- RENAME FOLDER MODAL -->
+  <div class="confirm-overlay center hidden" id="renameFolderModal">
+    <div class="confirm-card"><h3>Renombrar carpeta</h3>
+      <input class="text-input" id="renameFolderInput" placeholder="Nombre de la carpeta" maxlength="30">
+      <div class="confirm-actions"><button id="renameFolderCancel">Cancelar</button><button class="primary" id="renameFolderSave">Guardar</button></div>
+    </div>
+  </div>
+
+  <!-- DELETE FOLDER CONFIRM -->
+  <div class="confirm-overlay center hidden" id="deleteFolderConfirm">
+    <div class="confirm-card"><h3>¿Eliminar carpeta?</h3><p>Las fotos no se borran, quedan sin carpeta.</p>
+      <div class="confirm-actions"><button id="deleteFolderCancel">Cancelar</button><button class="danger" id="deleteFolderConfirmBtn">Eliminar</button></div>
+    </div>
+  </div>
+
+  <!-- MOVE TO FOLDER SHEET -->
+  <div class="confirm-overlay hidden" id="moveSheetOverlay">
+    <div class="sheet">
+      <h3>Mover a carpeta</h3>
+      <div id="moveOptions"></div>
+    </div>
+  </div>
+
+  <!-- DECOY PIN SETUP SHEET -->
+  <div class="confirm-overlay hidden" id="decoySheetOverlay">
+    <div class="sheet">
+      <h3>PIN señuelo</h3>
+      <button class="sheet-option" id="setDecoyOption">Configurar / cambiar PIN señuelo</button>
+      <button class="sheet-option" id="removeDecoyOption">Quitar PIN señuelo</button>
+      <button class="sheet-option" id="cancelDecoyOption">Cancelar</button>
+    </div>
+  </div>
+
+</div>
 
 <script>
 (function(){
-    // --- Lógica de Scroll de Imágenes ---
-    // En el visor, detectamos el touch para cambiar de foto o usar scroll nativo
-    function navigateViewer(dir) {
-        const idx = currentPhotos.findIndex(x => x.id === openPhotoId);
-        const newIdx = idx + dir;
-        if(newIdx >= 0 && newIdx < currentPhotos.length) {
-            openViewer(currentPhotos[newIdx].id);
-        }
-    }
+  'use strict';
 
-    // --- Lógica de Carpeta Vacía ---
-    async function loadPhotos() {
-        const all = await dbGetAll('photos');
-        let filtered = selectedFolder === 'all' ? all : all.filter(p => p.folderId === selectedFolder);
-        
-        // Corrección: Solo oculta si hay elementos reales
-        const emptyState = document.getElementById('emptyState');
-        if(emptyState) {
-            emptyState.classList.toggle('hidden', filtered.length > 0);
-        }
-        
-        // ... (resto de la carga)
-    }
-
-    // --- Lógica de Inicio ---
-    document.getElementById('configBtn').addEventListener('click', () => {
-        show('lock'); // Solo al dar clic en el engranaje pedimos el PIN
+  // ---------------- IndexedDB ----------------
+  const DB_NAME='boveda-db', DB_VERSION=2;
+  let dbPromise=null;
+  function openDB(){
+    if(dbPromise) return dbPromise;
+    dbPromise=new Promise((resolve,reject)=>{
+      const req=indexedDB.open(DB_NAME,DB_VERSION);
+      req.onupgradeneeded=(e)=>{
+        const db=e.target.result;
+        if(!db.objectStoreNames.contains('photos')) db.createObjectStore('photos',{keyPath:'id',autoIncrement:true});
+        if(!db.objectStoreNames.contains('folders')) db.createObjectStore('folders',{keyPath:'id',autoIncrement:true});
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error);
     });
+    return dbPromise;
+  }
+  async function dbAdd(store, rec){
+    const db=await openDB();
+    return new Promise((res,rej)=>{ const tx=db.transaction(store,'readwrite'); const r=tx.objectStore(store).add(rec); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+  }
+  async function dbPut(store, rec){
+    const db=await openDB();
+    return new Promise((res,rej)=>{ const tx=db.transaction(store,'readwrite'); const r=tx.objectStore(store).put(rec); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+  }
+  async function dbGetAll(store){
+    const db=await openDB();
+    return new Promise((res,rej)=>{ const tx=db.transaction(store,'readonly'); const r=tx.objectStore(store).getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+  }
+  async function dbDelete(store, id){
+    const db=await openDB();
+    return new Promise((res,rej)=>{ const tx=db.transaction(store,'readwrite'); tx.objectStore(store).delete(id); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); });
+  }
+  async function dbClear(store){
+    const db=await openDB();
+    return new Promise((res,rej)=>{ const tx=db.transaction(store,'readwrite'); tx.objectStore(store).clear(); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); });
+  }
 
-    // Boot inicial
-    function boot() {
-        show('sports'); // Iniciamos en la pantalla de deportes
+  // ---------------- Crypto helpers ----------------
+  function b64encode(buf){ const bytes=new Uint8Array(buf); let bin=''; for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]); return btoa(bin); }
+  function b64decode(str){ const bin=atob(str); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); return bytes.buffer; }
+  async function deriveKey(pin, saltB64){
+    const enc=new TextEncoder();
+    const salt = saltB64 ? new Uint8Array(b64decode(saltB64)) : crypto.getRandomValues(new Uint8Array(16));
+    const baseKey=await crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']);
+    const key=await crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:150000, hash:'SHA-256'}, baseKey, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+    return {key, saltB64:b64encode(salt.buffer)};
+  }
+  async function encryptBuf(key, arrayBuffer){
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, arrayBuffer);
+    return {iv:b64encode(iv.buffer), ciphertext};
+  }
+  async function decryptBuf(key, ivB64, ciphertext){
+    const iv=new Uint8Array(b64decode(ivB64));
+    return crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ciphertext);
+  }
+  async function hashPin(pin, saltB64){
+    const enc=new TextEncoder();
+    const salt = saltB64 || b64encode(crypto.getRandomValues(new Uint8Array(16)).buffer);
+    const data = enc.encode(salt+':'+pin);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return {hashB64:b64encode(digest), saltB64:salt};
+  }
+
+  // ---------------- State ----------------
+  let sessionKey=null;
+  let entered='';
+  let mode='lock';
+  let firstPin='';
+  let currentPhotos=[];
+  let openPhotoId=null;
+  let changingPin=false;
+  let settingDecoy=false;
+  let folders=[];
+  let selectedFolder='all';
+  let renamingFolderId=null;
+  const MAX_PIN=6, MIN_PIN=4;
+
+  const el=(id)=>document.getElementById(id);
+  const screens={ lock: el('lockScreen'), setup: el('setupScreen'), gallery: el('gallery'), viewer: el('viewer'), settings: el('settings'), folders: el('foldersScreen'), decoy: el('decoyGame'), sportsDetail: el('sportsDetail') };
+  function show(name){ Object.values(screens).forEach(s=>s.classList.add('hidden')); screens[name].classList.remove('hidden'); }
+
+  function buildKeypad(container, onDigit, onDelete){
+    container.innerHTML='';
+    const layout=['1','2','3','4','5','6','7','8','9','','0','del'];
+    layout.forEach(k=>{
+      const btn=document.createElement('button');
+      if(k===''){ btn.className='key ghost'; btn.disabled=true; }
+      else if(k==='del'){ btn.className='key ghost'; btn.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6H9l-6 6 6 6h11a2 2 0 002-2V8a2 2 0 00-2-2z"/><path d="M17 10l-4 4m0-4l4 4"/></svg>'; btn.addEventListener('click', onDelete); }
+      else { btn.className='key'; btn.textContent=k; btn.addEventListener('click', ()=>onDigit(k)); }
+      container.appendChild(btn);
+    });
+  }
+  function renderDots(container, count, max){
+    container.innerHTML='';
+    for(let i=0;i<max;i++){ const d=document.createElement('div'); d.className='dot'+(i<count?' filled':''); container.appendChild(d); }
+  }
+
+  // ---------------- Lock screen ----------------
+  function updateLockDots(){ renderDots(el('lockDots'), entered.length, MAX_PIN); el('lockDial').querySelector('svg').style.transform=`rotate(${entered.length*12}deg)`; }
+  let unlockDebounce=null;
+  function handleLockDigit(d){
+    if(entered.length>=MAX_PIN) return;
+    entered+=d; updateLockDots();
+    clearTimeout(unlockDebounce);
+    if(entered.length>=MIN_PIN) unlockDebounce=setTimeout(()=>{ if(entered.length>=MIN_PIN) attemptUnlock(); }, 350);
+  }
+  function handleLockDelete(){ clearTimeout(unlockDebounce); entered=entered.slice(0,-1); updateLockDots(); }
+  buildKeypad(el('lockKeypad'), (d)=>handleLockDigit(d), handleLockDelete);
+
+  async function attemptUnlock(){
+    if(entered.length<MIN_PIN) return;
+    const pin=entered;
+    const ok=await tryUnlock(pin);
+    if(ok){
+      el('lockDial').classList.add('spin'); el('lockDial').querySelector('svg').style.transform='rotate(340deg)';
+      setTimeout(async ()=>{ el('lockDial').classList.remove('spin'); entered=''; updateLockDots(); el('lockHint').textContent=''; await enterGallery(); }, 420);
+      return;
     }
-    boot();
+    const decoyOk = await tryDecoy(pin);
+    if(decoyOk){
+      entered=''; updateLockDots(); el('lockHint').textContent='';
+      showSportsScreen();
+      return;
+    }
+    el('lockHint').textContent='PIN incorrecto';
+    el('lockDots').classList.add('shake');
+    setTimeout(()=>{ el('lockDots').classList.remove('shake'); entered=''; updateLockDots(); }, 400);
+  }
+  async function tryUnlock(pin){
+    const saltB64=localStorage.getItem('boveda_salt');
+    if(!saltB64) return false;
+    const {key}=await deriveKey(pin, saltB64);
+    const ivB64=localStorage.getItem('boveda_verifier_iv');
+    const verifierB64=localStorage.getItem('boveda_verifier');
+    try{
+      const plain=await decryptBuf(key, ivB64, b64decode(verifierB64));
+      if(new TextDecoder().decode(plain)==='boveda-ok'){ sessionKey=key; return true; }
+    }catch(e){}
+    return false;
+  }
+  async function tryDecoy(pin){
+    const hashB64=localStorage.getItem('boveda_decoy_hash');
+    const saltB64=localStorage.getItem('boveda_decoy_salt');
+    if(!hashB64 || !saltB64) return false;
+    const {hashB64:h}=await hashPin(pin, saltB64);
+    return h===hashB64;
+  }
+
+  // ---------------- Setup screen ----------------
+  function updateSetupDots(){ renderDots(el('setupDots'), entered.length, MAX_PIN); el('setupDial').querySelector('svg').style.transform=`rotate(${entered.length*12}deg)`; }
+  let setupDebounce=null;
+  function handleSetupDigit(d){
+    if(entered.length>=MAX_PIN) return;
+    entered+=d; updateSetupDots();
+    clearTimeout(setupDebounce);
+    if(entered.length>=MIN_PIN) setupDebounce=setTimeout(submitSetupStep, 350);
+  }
+  function handleSetupDelete(){ clearTimeout(setupDebounce); entered=entered.slice(0,-1); updateSetupDots(); }
+  buildKeypad(el('setupKeypad'), (d)=>handleSetupDigit(d), handleSetupDelete);
+
+  async function submitSetupStep(){
+    if(mode==='setup-create'){
+      firstPin=entered; entered=''; updateSetupDots();
+      mode='setup-confirm'; el('setupPrompt').textContent='Confirmá tu PIN'; el('setupHint').textContent='';
+    } else if(mode==='setup-confirm'){
+      if(entered===firstPin){
+        if(settingDecoy){ await performSetDecoy(firstPin); settingDecoy=false; entered=''; updateSetupDots(); refreshSettings(); show('settings'); }
+        else if(changingPin){ await performChangePin(firstPin); changingPin=false; entered=''; updateSetupDots(); await enterGallery(); }
+        else { await performSetup(firstPin); entered=''; updateSetupDots(); await enterGallery(); }
+      } else {
+        el('setupHint').textContent='Los PIN no coinciden, intentá de nuevo';
+        el('setupDots').classList.add('shake');
+        setTimeout(()=>{ el('setupDots').classList.remove('shake'); entered=''; firstPin=''; updateSetupDots(); mode='setup-create'; el('setupPrompt').textContent = settingDecoy ? 'Creá tu PIN señuelo' : 'Creá un código de 4 a 6 dígitos'; }, 500);
+      }
+    }
+  }
+  async function performSetup(pin){
+    const {key, saltB64}=await deriveKey(pin, null);
+    const {iv, ciphertext}=await encryptBuf(key, new TextEncoder().encode('boveda-ok'));
+    localStorage.setItem('boveda_salt', saltB64);
+    localStorage.setItem('boveda_verifier_iv', iv);
+    localStorage.setItem('boveda_verifier', b64encode(ciphertext));
+    sessionKey=key;
+  }
+  async function performChangePin(newPin){
+    const all=await dbGetAll('photos');
+    const {key:newKey, saltB64}=await deriveKey(newPin, null);
+    for(const rec of all){
+      const plain=await decryptBuf(sessionKey, rec.iv, rec.ciphertext);
+      const enc=await encryptBuf(newKey, plain);
+      rec.iv=enc.iv; rec.ciphertext=enc.ciphertext;
+      await dbPut('photos', rec);
+    }
+    const v=await encryptBuf(newKey, new TextEncoder().encode('boveda-ok'));
+    localStorage.setItem('boveda_salt', saltB64);
+    localStorage.setItem('boveda_verifier_iv', v.iv);
+    localStorage.setItem('boveda_verifier', b64encode(v.ciphertext));
+    sessionKey=newKey;
+  }
+  async function performSetDecoy(pin){
+    const {hashB64, saltB64}=await hashPin(pin, null);
+    localStorage.setItem('boveda_decoy_hash', hashB64);
+    localStorage.setItem('boveda_decoy_salt', saltB64);
+  }
+
+  // ---------------- Gallery / Folders ----------------
+  async function enterGallery(){ show('gallery'); await loadFolders(); await loadPhotos(); }
+  function revokeCurrentUrls(){ currentPhotos.forEach(p=>URL.revokeObjectURL(p.url)); currentPhotos=[]; }
+
+  async function loadFolders(){
+    folders = await dbGetAll('folders');
+    folders.sort((a,b)=>a.createdAt-b.createdAt);
+    renderChips();
+  }
+  function renderChips(){
+    const wrap=el('folderChips'); wrap.innerHTML='';
+    const allChip=document.createElement('button'); allChip.className='chip'+(selectedFolder==='all'?' active':''); allChip.textContent='Todas';
+    allChip.addEventListener('click', ()=>{ selectedFolder='all'; renderChips(); loadPhotos(); });
+    wrap.appendChild(allChip);
+    folders.forEach(f=>{
+      const c=document.createElement('button'); c.className='chip'+(selectedFolder===f.id?' active':''); c.textContent=f.name;
+      c.addEventListener('click', ()=>{ selectedFolder=f.id; renderChips(); loadPhotos(); });
+      wrap.appendChild(c);
+    });
+    const addChip=document.createElement('button'); addChip.className='chip add'; addChip.textContent='+ Carpeta';
+    addChip.addEventListener('click', openNewFolderModal);
+    wrap.appendChild(addChip);
+  }
+
+  let loadToken=0;
+  async function loadPhotos(){
+    const token = ++loadToken;
+    const grid=el('grid');
+    grid.innerHTML='';
+    revokeCurrentUrls();
+    const all=await dbGetAll('photos');
+    if(token!==loadToken) return; // a newer call started while we were reading the DB
+    let filtered = selectedFolder==='all' ? all : all.filter(p=>p.folderId===selectedFolder);
+    filtered.sort((a,b)=>b.createdAt-a.createdAt);
+    el('emptyText').innerHTML = selectedFolder==='all'
+      ? 'Todavía no guardaste ninguna foto o video.<br>Tocá + para agregar el primero.'
+      : 'Esta carpeta está vacía.<br>Tocá + para agregar contenido acá.';
+    for(const rec of filtered){
+      if(token!==loadToken) return; // abandoned mid-loop
+      try{
+        const plain=await decryptBuf(sessionKey, rec.iv, rec.ciphertext);
+        if(token!==loadToken) return;
+        const blob=new Blob([plain], {type:rec.mime||'image/jpeg'});
+        const url=URL.createObjectURL(blob);
+        const kind = rec.kind || 'photo';
+        currentPhotos.push({id:rec.id, url, mime:rec.mime, kind, folderId:rec.folderId||null});
+        const div=document.createElement('div'); div.className='thumb';
+        if(kind==='video'){
+          const vid=document.createElement('video'); vid.src=url; vid.muted=true; vid.playsInline=true; vid.preload='metadata';
+          div.appendChild(vid);
+          const badge=document.createElement('div'); badge.className='vid-badge';
+          badge.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
+          div.appendChild(badge);
+        } else {
+          const img=document.createElement('img'); img.src=url; img.loading='lazy';
+          div.appendChild(img);
+        }
+        div.addEventListener('click', ()=>openViewer(rec.id));
+        grid.appendChild(div);
+      }catch(e){}
+    }
+    if(token!==loadToken) return;
+    el('emptyState').classList.toggle('hidden', grid.children.length!==0);
+  }
+
+  el('addBtn').addEventListener('click', ()=>el('fileInput').click());
+  el('fileInput').addEventListener('change', async (e)=>{
+    const files=Array.from(e.target.files||[]); e.target.value='';
+    const targetFolder = selectedFolder==='all' ? null : selectedFolder;
+    for(const file of files) await addMedia(file, targetFolder);
+    await loadPhotos();
+  });
+  function loadImageFromFile(file){
+    return new Promise((resolve,reject)=>{ const url=URL.createObjectURL(file); const img=new Image(); img.onload=()=>resolve(img); img.onerror=reject; img.src=url; });
+  }
+  async function addMedia(file, folderId){
+    if(file.type.startsWith('video/')){
+      await addVideo(file, folderId);
+    } else if(file.type.startsWith('image/')){
+      await addPhoto(file, folderId);
+    }
+  }
+  async function addPhoto(file, folderId){
+    const img=await loadImageFromFile(file);
+    const maxDim=1600;
+    let w=img.naturalWidth, h=img.naturalHeight;
+    if(w>h && w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; } else if(h>=w && h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; }
+    const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.85));
+    const buf=await blob.arrayBuffer();
+    const {iv, ciphertext}=await encryptBuf(sessionKey, buf);
+    await dbAdd('photos', {iv, ciphertext, mime:'image/jpeg', kind:'photo', createdAt:Date.now(), folderId: folderId||null});
+  }
+  async function addVideo(file, folderId){
+    // stored as-is: original bytes, original resolution and quality, no re-encoding
+    const buf=await file.arrayBuffer();
+    const {iv, ciphertext}=await encryptBuf(sessionKey, buf);
+    await dbAdd('photos', {iv, ciphertext, mime:file.type||'video/mp4', kind:'video', createdAt:Date.now(), folderId: folderId||null});
+  }
+
+  // Folder modals
+  function openNewFolderModal(){ el('newFolderInput').value=''; el('newFolderModal').classList.remove('hidden'); setTimeout(()=>el('newFolderInput').focus(),50); }
+  el('newFolderCancel').addEventListener('click', ()=>el('newFolderModal').classList.add('hidden'));
+  el('newFolderCreate').addEventListener('click', async ()=>{
+    const name=el('newFolderInput').value.trim();
+    if(!name) return;
+    const id=await dbAdd('folders', {name, createdAt:Date.now()});
+    el('newFolderModal').classList.add('hidden');
+    await loadFolders();
+    selectedFolder=id; renderChips(); await loadPhotos();
+    await renderFolderManageList();
+  });
+
+  el('newFolderBtn2').addEventListener('click', openNewFolderModal);
+
+  async function renderFolderManageList(){
+    const list=el('folderManageList'); list.innerHTML='';
+    if(folders.length===0){ const p=document.createElement('p'); p.className='note'; p.textContent='No creaste ninguna carpeta todavía.'; list.appendChild(p); return; }
+    folders.forEach(f=>{
+      const row=document.createElement('div'); row.className='folder-row';
+      const name=document.createElement('span'); name.textContent=f.name;
+      const actions=document.createElement('div');
+      const renameBtn=document.createElement('button'); renameBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+      renameBtn.addEventListener('click', ()=>{ renamingFolderId=f.id; el('renameFolderInput').value=f.name; el('renameFolderModal').classList.remove('hidden'); });
+      const delBtn=document.createElement('button'); delBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6h16z"/></svg>';
+      delBtn.addEventListener('click', ()=>{ renamingFolderId=f.id; el('deleteFolderConfirm').classList.remove('hidden'); });
+      actions.appendChild(renameBtn); actions.appendChild(delBtn);
+      row.appendChild(name); row.appendChild(actions);
+      list.appendChild(row);
+    });
+  }
+  el('renameFolderCancel').addEventListener('click', ()=>el('renameFolderModal').classList.add('hidden'));
+  el('renameFolderSave').addEventListener('click', async ()=>{
+    const name=el('renameFolderInput').value.trim();
+    if(!name || renamingFolderId==null) return;
+    const f=folders.find(x=>x.id===renamingFolderId);
+    if(f){ f.name=name; await dbPut('folders', f); }
+    el('renameFolderModal').classList.add('hidden');
+    await loadFolders(); await renderFolderManageList();
+  });
+  el('deleteFolderCancel').addEventListener('click', ()=>el('deleteFolderConfirm').classList.add('hidden'));
+  el('deleteFolderConfirmBtn').addEventListener('click', async ()=>{
+    if(renamingFolderId!=null){
+      const all=await dbGetAll('photos');
+      for(const rec of all){ if(rec.folderId===renamingFolderId){ rec.folderId=null; await dbPut('photos', rec); } }
+      await dbDelete('folders', renamingFolderId);
+      if(selectedFolder===renamingFolderId) selectedFolder='all';
+    }
+    el('deleteFolderConfirm').classList.add('hidden');
+    renamingFolderId=null;
+    await loadFolders(); await renderFolderManageList(); await loadPhotos();
+  });
+
+  el('foldersBtn').addEventListener('click', async ()=>{ await renderFolderManageList(); show('folders'); });
+  el('closeFoldersBtn').addEventListener('click', ()=>show('settings'));
+
+  // ---------------- Viewer ----------------
+  function openViewer(id){
+    const p=currentPhotos.find(x=>x.id===id);
+    if(!p) return;
+    openPhotoId=id;
+    const imgEl=el('viewerImg'), vidEl=el('viewerVideo');
+    if(p.kind==='video'){
+      imgEl.classList.add('hidden'); imgEl.src='';
+      vidEl.classList.remove('hidden'); vidEl.src=p.url;
+    } else {
+      vidEl.classList.add('hidden'); vidEl.pause(); vidEl.src='';
+      imgEl.classList.remove('hidden'); imgEl.src=p.url;
+    }
+    updateViewerCounter();
+    show('viewer');
+  }
+  function updateViewerCounter(){
+    const idx=currentPhotos.findIndex(x=>x.id===openPhotoId);
+    if(idx===-1){ el('viewerCounter').textContent=''; return; }
+    el('viewerCounter').textContent=(idx+1)+' / '+currentPhotos.length;
+  }
+  function navigateViewer(dir){
+    const idx=currentPhotos.findIndex(x=>x.id===openPhotoId);
+    if(idx===-1) return;
+    const newIdx=idx+dir;
+    if(newIdx<0 || newIdx>=currentPhotos.length) return;
+    openViewer(currentPhotos[newIdx].id);
+  }
+  (function setupViewerSwipe(){
+    const wrap=document.querySelector('.viewer-img-wrap');
+    const activeMedia=()=> el('viewerVideo').classList.contains('hidden') ? el('viewerImg') : el('viewerVideo');
+    const isVideoActive=()=> !el('viewerVideo').classList.contains('hidden');
+    let startX=0, startY=0, dx=0, dragging=false, axisLocked=null;
+
+    wrap.addEventListener('pointerdown', (e)=>{
+      if(isVideoActive()) return; // let native video controls handle their own gestures
+      startX=e.clientX; startY=e.clientY; dx=0; dragging=true; axisLocked=null;
+      const m=activeMedia(); m.style.transition='none';
+    });
+    wrap.addEventListener('pointermove', (e)=>{
+      if(!dragging) return;
+      const ddx=e.clientX-startX, ddy=e.clientY-startY;
+      if(axisLocked===null && (Math.abs(ddx)>6 || Math.abs(ddy)>6)) axisLocked = Math.abs(ddx)>Math.abs(ddy) ? 'x' : 'y';
+      if(axisLocked!=='x') return;
+      dx=ddx;
+      activeMedia().style.transform='translateX('+dx+'px)';
+    });
+    function endDrag(){
+      if(!dragging) return;
+      dragging=false;
+      const threshold=60;
+      const m=activeMedia();
+      const idx=currentPhotos.findIndex(x=>x.id===openPhotoId);
+      const dir = dx<0 ? 1 : -1;
+      const targetIdx = idx+dir;
+      const canMove = axisLocked==='x' && Math.abs(dx)>threshold && targetIdx>=0 && targetIdx<currentPhotos.length;
+      m.style.transition='transform .25s ease';
+      if(canMove){
+        const w=wrap.clientWidth;
+        m.style.transform='translateX('+(dir*-w)+'px)';
+        setTimeout(()=>{ m.style.transition='none'; m.style.transform=''; navigateViewer(dir); }, 250);
+      } else {
+        m.style.transform='translateX(0px)';
+      }
+      dx=0; axisLocked=null;
+    }
+    wrap.addEventListener('pointerup', endDrag);
+    wrap.addEventListener('pointercancel', endDrag);
+    wrap.addEventListener('pointerleave', (e)=>{ if(dragging && e.buttons===0) endDrag(); });
+  })();
+  function closeViewer(){
+    const vidEl=el('viewerVideo'); vidEl.pause();
+    show('gallery');
+  }
+  el('closeViewerBtn').addEventListener('click', closeViewer);
+  el('deletePhotoBtn').addEventListener('click', ()=>el('deleteConfirm').classList.remove('hidden'));
+  el('deleteCancel').addEventListener('click', ()=>el('deleteConfirm').classList.add('hidden'));
+  el('deleteConfirmBtn').addEventListener('click', async ()=>{
+    el('deleteConfirm').classList.add('hidden');
+    if(openPhotoId!=null){ await dbDelete('photos', openPhotoId); openPhotoId=null; show('gallery'); await loadPhotos(); }
+  });
+  el('moveBtn').addEventListener('click', ()=>{
+    const opts=el('moveOptions'); opts.innerHTML='';
+    const p=currentPhotos.find(x=>x.id===openPhotoId);
+    const noneBtn=document.createElement('button'); noneBtn.className='sheet-option'+(!p.folderId?' active':''); noneBtn.textContent='Sin carpeta';
+    noneBtn.addEventListener('click', ()=>moveTo(null));
+    opts.appendChild(noneBtn);
+    folders.forEach(f=>{
+      const b=document.createElement('button'); b.className='sheet-option'+(p.folderId===f.id?' active':''); b.textContent=f.name;
+      b.addEventListener('click', ()=>moveTo(f.id));
+      opts.appendChild(b);
+    });
+    el('moveSheetOverlay').classList.remove('hidden');
+  });
+  el('moveSheetOverlay').addEventListener('click', (e)=>{ if(e.target.id==='moveSheetOverlay') el('moveSheetOverlay').classList.add('hidden'); });
+  async function moveTo(folderId){
+    const all=await dbGetAll('photos');
+    const rec=all.find(r=>r.id===openPhotoId);
+    if(rec){ rec.folderId=folderId; await dbPut('photos', rec); }
+    el('moveSheetOverlay').classList.add('hidden');
+    show('gallery'); await loadPhotos();
+  }
+
+  // ---------------- Settings ----------------
+  function refreshSettings(){
+    const hasDecoy = !!localStorage.getItem('boveda_decoy_hash');
+    el('decoyStatus').textContent = hasDecoy ? 'Configurado' : 'No configurado';
+  }
+  el('settingsBtn').addEventListener('click', ()=>{ refreshSettings(); show('settings'); });
+  el('closeSettingsBtn').addEventListener('click', ()=>show('gallery'));
+  el('lockBtn').addEventListener('click', ()=>lock());
+  el('changePinBtn').addEventListener('click', ()=>{
+    changingPin=true; mode='setup-create'; entered=''; firstPin='';
+    el('setupPrompt').textContent='Creá tu nuevo PIN'; updateSetupDots(); show('setup');
+  });
+  el('decoyPinBtn').addEventListener('click', ()=>el('decoySheetOverlay').classList.remove('hidden'));
+  el('decoySheetOverlay').addEventListener('click', (e)=>{ if(e.target.id==='decoySheetOverlay') el('decoySheetOverlay').classList.add('hidden'); });
+  el('setDecoyOption').addEventListener('click', ()=>{
+    el('decoySheetOverlay').classList.add('hidden');
+    settingDecoy=true; mode='setup-create'; entered=''; firstPin='';
+    el('setupPrompt').textContent='Creá tu PIN señuelo'; updateSetupDots(); show('setup');
+  });
+  el('removeDecoyOption').addEventListener('click', ()=>{
+    localStorage.removeItem('boveda_decoy_hash'); localStorage.removeItem('boveda_decoy_salt');
+    el('decoySheetOverlay').classList.add('hidden'); refreshSettings();
+  });
+  el('cancelDecoyOption').addEventListener('click', ()=>el('decoySheetOverlay').classList.add('hidden'));
+
+  el('wipeBtn').addEventListener('click', ()=>el('wipeConfirm').classList.remove('hidden'));
+  el('wipeCancel').addEventListener('click', ()=>el('wipeConfirm').classList.add('hidden'));
+  el('wipeConfirmBtn').addEventListener('click', async ()=>{
+    el('wipeConfirm').classList.add('hidden');
+    await dbClear('photos'); await dbClear('folders');
+    localStorage.removeItem('boveda_salt'); localStorage.removeItem('boveda_verifier'); localStorage.removeItem('boveda_verifier_iv');
+    localStorage.removeItem('boveda_decoy_hash'); localStorage.removeItem('boveda_decoy_salt');
+    sessionKey=null; revokeCurrentUrls(); folders=[]; selectedFolder='all';
+    entered=''; firstPin=''; mode='setup-create'; changingPin=false; settingDecoy=false;
+    el('setupPrompt').textContent='Creá un código de 4 a 6 dígitos'; updateSetupDots(); show('setup');
+  });
+
+  // ---------------- Lock / autolock ----------------
+  function lock(){
+    sessionKey=null; revokeCurrentUrls(); entered=''; updateLockDots(); el('lockHint').textContent='';
+    showSportsScreen();
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden && sessionKey){ lock(); } });
+  window.addEventListener('pagehide', ()=>{ sessionKey=null; });
+
+  // ---------------- Sports cover screen (decoy / default landing) ----------------
+  const SPORTS_TABS=['Fútbol','Básquet','Vóley'];
+  let sportsTab='Fútbol';
+  let sportsMatches=null; // generated once per app load, kept stable while open
+
+  function rnd(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+  function crestLetters(name){ return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+  function buildSportsMatches(){
+    const pool=[
+      {sport:'Fútbol', home:'Atlético Sur', away:'Deportivo Norte', status:'live', label:'2do Tiempo', clock:"67'"},
+      {sport:'Fútbol', home:'Real Central', away:'Unión Este', status:'live', label:'Entretiempo', clock:"45+2'"},
+      {sport:'Fútbol', home:'Estrella FC', away:'Cóndor SC', status:'ft', label:'Finalizado', clock:'FT'},
+      {sport:'Fútbol', home:'Portuario', away:'Sporting Valle', status:'upcoming', label:'Hoy', clock:'21:00'},
+      {sport:'Básquet', home:'Halcones', away:'Tigres', status:'live', label:'3er Cuarto', clock:'5:12'},
+      {sport:'Básquet', home:'Rayos', away:'Toros', status:'upcoming', label:'Hoy', clock:'20:30'},
+      {sport:'Básquet', home:'Marinos BC', away:'Cometas', status:'ft', label:'Finalizado', clock:'Final'},
+      {sport:'Vóley', home:'Marinos', away:'Águilas', status:'live', label:'Set 3', clock:'—'},
+      {sport:'Vóley', home:'Olas', away:'Cimas', status:'ft', label:'Finalizado', clock:'3-1'},
+    ];
+    return pool.map((m,i)=>{
+      const homeScore = m.sport==='Vóley' ? rnd(0,3) : (m.status==='upcoming'? null : rnd(0,4));
+      const awayScore = m.sport==='Vóley' ? rnd(0,3) : (m.status==='upcoming'? null : rnd(0,4));
+      return {...m, id:i, homeScore, awayScore};
+    });
+  }
+
+  function renderSportsTabs(){
+    const wrap=el('sportsTabs'); wrap.innerHTML='';
+    SPORTS_TABS.forEach(t=>{
+      const c=document.createElement('button'); c.className='sports-tab'+(sportsTab===t?' active':''); c.textContent=t;
+      c.addEventListener('click', ()=>{ sportsTab=t; renderSportsTabs(); renderSportsList(); });
+      wrap.appendChild(c);
+    });
+  }
+
+  function scoreText(m){
+    if(m.status==='upcoming') return m.clock;
+    return m.homeScore+' - '+m.awayScore;
+  }
+
+  function renderSportsList(){
+    const wrap=el('sportsList'); wrap.innerHTML='';
+    const items=sportsMatches.filter(m=>m.sport===sportsTab);
+    items.forEach(m=>{
+      const card=document.createElement('div'); card.className='match-card';
+      const status=document.createElement('div'); status.className='match-status'+(m.status==='live'?' live':'');
+      status.innerHTML = m.status==='live' ? '<span class="dot-live"></span>'+m.label+' · '+m.clock : m.label;
+      const teams=document.createElement('div'); teams.className='match-teams';
+      const home=document.createElement('div'); home.className='match-team';
+      home.innerHTML='<span class="crest">'+crestLetters(m.home)+'</span><span class="tname">'+m.home+'</span>';
+      const away=document.createElement('div'); away.className='match-team';
+      away.innerHTML='<span class="crest">'+crestLetters(m.away)+'</span><span class="tname">'+m.away+'</span>';
+      const score=document.createElement('div'); score.className='match-score'; score.textContent=scoreText(m);
+      teams.appendChild(home); teams.appendChild(score); teams.appendChild(away);
+      card.appendChild(status); card.appendChild(teams);
+      card.addEventListener('click', ()=>openSportsDetail(m));
+      wrap.appendChild(card);
+    });
+  }
+
+  function openSportsDetail(m){
+    el('sportsDetailTitle').textContent = m.home+' vs '+m.away;
+    const body=el('sportsDetailBody'); body.innerHTML='';
+    const summary=document.createElement('div'); summary.className='sports-detail-card';
+    summary.innerHTML =
+      '<div class="match-teams">'+
+        '<div class="match-team"><span class="crest">'+crestLetters(m.home)+'</span><span class="tname">'+m.home+'</span></div>'+
+        '<div class="match-score">'+scoreText(m)+'</div>'+
+        '<div class="match-team"><span class="crest">'+crestLetters(m.away)+'</span><span class="tname">'+m.away+'</span></div>'+
+      '</div>';
+    body.appendChild(summary);
+    const stats = m.sport==='Fútbol'
+      ? [['Posesión', rnd(38,62)+'%', (100-rnd(38,62))+'%'],['Remates', rnd(3,14), rnd(3,14)],['Al arco', rnd(1,7), rnd(1,7)],['Corners', rnd(1,9), rnd(1,9)],['Tarjetas amarillas', rnd(0,4), rnd(0,4)]]
+      : m.sport==='Básquet'
+      ? [['Rebotes', rnd(20,40), rnd(20,40)],['Asistencias', rnd(10,25), rnd(10,25)],['Robos', rnd(3,12), rnd(3,12)],['Triples', rnd(4,14), rnd(4,14)],['Faltas', rnd(8,18), rnd(8,18)]]
+      : [['Ataques', rnd(20,40), rnd(20,40)],['Bloqueos', rnd(3,12), rnd(3,12)],['Saques directos', rnd(1,8), rnd(1,8)],['Errores no forzados', rnd(3,10), rnd(3,10)]];
+    const statsCard=document.createElement('div'); statsCard.className='sports-detail-card';
+    stats.forEach(([label,a,b])=>{
+      const row=document.createElement('div'); row.className='sports-stat-row';
+      row.innerHTML='<span class="sv">'+a+'</span><span class="sl">'+label+'</span><span class="sv">'+b+'</span>';
+      statsCard.appendChild(row);
+    });
+    body.appendChild(statsCard);
+    show('sportsDetail');
+  }
+  el('closeSportsDetailBtn').addEventListener('click', ()=>show('decoy'));
+
+  function showSportsScreen(){
+    if(!sportsMatches) sportsMatches=buildSportsMatches();
+    renderSportsTabs(); renderSportsList();
+    show('decoy');
+  }
+  el('sportsGearBtn').addEventListener('click', ()=>{ entered=''; updateLockDots(); el('lockHint').textContent=''; show('lock'); });
+
+  // ---------------- Boot ----------------
+  (function boot(){
+    const hasVault=!!localStorage.getItem('boveda_salt');
+    updateLockDots(); updateSetupDots();
+    if(hasVault){ showSportsScreen(); } else { mode='setup-create'; show('setup'); }
+  })();
+
 })();
 </script>
 </body>
