@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Marcador Deportivo</title>
+    <style>
+        :root { --bg:#12141A; --accent:#8FA998; --text:#EDEBE6; }
+        body { margin:0; background:var(--bg); color:var(--text); font-family:sans-serif; height:100vh; overflow:hidden; }
+        .screen { position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg); }
+        .hidden { display:none; }
+        
+        /* Pantalla Deportes */
+        #sportsScreen { padding:20px; text-align:center; display:flex; align-items:center; justify-content:center; }
+        #configBtn { position:absolute; top:40px; right:20px; background:transparent; border:none; color:var(--accent); cursor:pointer; }
+        
+        /* Viewer Scroll */
+        .viewer-img-wrap { display:flex; overflow-x:auto; scroll-snap-type: x mandatory; flex:1; }
+        .viewer-img-wrap img, .viewer-img-wrap video { flex: 0 0 100%; scroll-snap-align: start; object-fit: contain; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="sportsScreen" class="screen">
+        <button id="configBtn">⚙️ Configuración</button>
+        <h1>Marcador Deportivo</h1>
+        <p>Resultados en vivo...</p>
+    </div>
+
+    <div id="lockScreen" class="screen hidden">
+        <div class="brand"><h1>Acceso Seguro</h1></div>
+        <div class="keypad" id="lockKeypad"></div>
+    </div>
+    
+    </div>
+
+<script>
+(function(){
+    // --- Lógica de Scroll de Imágenes ---
+    // En el visor, detectamos el touch para cambiar de foto o usar scroll nativo
+    function navigateViewer(dir) {
+        const idx = currentPhotos.findIndex(x => x.id === openPhotoId);
+        const newIdx = idx + dir;
+        if(newIdx >= 0 && newIdx < currentPhotos.length) {
+            openViewer(currentPhotos[newIdx].id);
+        }
+    }
+
+    // --- Lógica de Carpeta Vacía ---
+    async function loadPhotos() {
+        const all = await dbGetAll('photos');
+        let filtered = selectedFolder === 'all' ? all : all.filter(p => p.folderId === selectedFolder);
+        
+        // Corrección: Solo oculta si hay elementos reales
+        const emptyState = document.getElementById('emptyState');
+        if(emptyState) {
+            emptyState.classList.toggle('hidden', filtered.length > 0);
+        }
+        
+        // ... (resto de la carga)
+    }
+
+    // --- Lógica de Inicio ---
+    document.getElementById('configBtn').addEventListener('click', () => {
+        show('lock'); // Solo al dar clic en el engranaje pedimos el PIN
+    });
+
+    // Boot inicial
+    function boot() {
+        show('sports'); // Iniciamos en la pantalla de deportes
+    }
+    boot();
+})();
+</script>
+</body>
+</html>
