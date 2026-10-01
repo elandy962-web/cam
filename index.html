@@ -50,10 +50,15 @@ tr+tr td{border-top:1px solid var(--bd)}
 .sheet>div{background:var(--card);width:100%;max-width:520px;margin:0 auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));border-radius:16px 16px 0 0;border:1px solid var(--bd);border-bottom:0;box-shadow:0 -10px 35px rgba(0,0,0,.25)}
 .sheet h3{margin:0 0 10px}.sheet .btn{margin-bottom:8px;width:100%;display:block}
 .share-stats{width:100%;margin:12px 0;background:linear-gradient(135deg,var(--ac),#d93f00);color:#fff!important;border-color:var(--ac)!important;font-weight:900;box-shadow:0 6px 18px rgba(255,90,0,.25)}
+.cloudbtn{margin-left:auto;border:1px solid var(--bd);background:var(--card);color:var(--mu);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:800}.cloudbtn.ok{color:var(--ac2);border-color:var(--ac2)}
+.sheet input{width:100%;margin-bottom:8px}
 </style></head><body>
-<div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name">TEAM <span>PERVERSOS</span></div></div></div>
+<div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name">TEAM <span>PERVERSOS</span></div></div><button id="cloud" class="cloudbtn" onclick="cloudSheet()">☁ Local</button></div>
 <div class="tabs"><button id="t0" onclick="tab(0)">Juego</button><button id="t1" onclick="tab(1)">Estadísticas</button><button id="t2" onclick="tab(2)">Equipo</button><button id="t3" onclick="tab(3)">Historial</button></div>
 <div id="app"></div><div id="sheet"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
@@ -62,7 +67,7 @@ try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 S.games=S.games||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 const P=id=>S.players.find(p=>p.id===id);
 const cur=()=>S.players[S.idx%S.players.length];
 const nxt=()=>{S.idx=(S.idx+1)%S.players.length};
@@ -240,4 +245,63 @@ a.innerHTML=`<div class="card"><b>Mi equipo</b><div class="row" style="margin-to
 <button class="btn" style="width:100%;color:var(--rd)" onclick="newGame()">Nuevo juego (reiniciar)</button>`;
 }}
 render();
-</script></body></html>
+</script><script>
+/* ===================== FIREBASE =====================
+   Pega aquí la configuración de tu app web (Consola de Firebase > Configuración del proyecto > Tus apps).
+   Mientras tenga "PEGA_" la app funciona igual, pero guarda solo en este teléfono. */
+const FIREBASE_CONFIG={apiKey:"PEGA_TU_API_KEY",authDomain:"TU_PROYECTO.firebaseapp.com",databaseURL:"https://TU_PROYECTO-default-rtdb.firebaseio.com",projectId:"TU_PROYECTO",appId:"TU_APP_ID"};
+/* ==================================================== */
+const DKEY='softball_dirty_v1',LKEY='softball_linked_v1';
+const cloud={user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',synced:{live:false,meta:false}};
+const cfgOk=()=>typeof firebase!=='undefined'&&FIREBASE_CONFIG.apiKey&&!/^PEGA/.test(FIREBASE_CONFIG.apiKey);
+const isDirty=()=>{try{return localStorage.getItem(DKEY)==='1'}catch(e){return false}};
+const setDirty=v=>{try{v?localStorage.setItem(DKEY,'1'):localStorage.removeItem(DKEY)}catch(e){}};
+const liveOf=()=>({players:S.players,idx:S.idx,inning:S.inning,outs:S.outs,bases:S.bases,us:S.us,them:S.them,rival:S.rival,date:S.date,msg:S.msg});
+const metaOf=()=>({team:S.team,roster:S.roster,games:S.games});
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='☁ Local',ok=false;
+ if(cfgOk()){if(!cloud.user)t='☁ Entrar';else if(!cloud.online)t='☁ Sin red';else if(cloud.pending||cloud.timer)t='☁ …';else{t='☁ ✓';ok=true}}
+ b.textContent=t;b.className='cloudbtn'+(ok?' ok':'')}
+function cloudPush(){if(!cfgOk())return;setDirty(true);if(!cloud.ref)return;clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>{cloud.timer=null;flush()},350);updBtn()}
+function flush(force){
+ if(!cloud.ref||!cloud.synced.live||!cloud.synced.meta)return;
+ const L=JSON.stringify(liveOf()),M=JSON.stringify(metaOf()),jobs=[];
+ if(force||L!==cloud.lastLive){cloud.lastLive=L;jobs.push(cloud.ref.child('live').set(L))}
+ if(force||M!==cloud.lastMeta){cloud.lastMeta=M;jobs.push(cloud.ref.child('meta').set(M))}
+ if(!jobs.length){if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn();return}
+ cloud.pending+=jobs.length;
+ jobs.forEach(j=>j.then(()=>{cloud.pending--;if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn()}).catch(e=>{cloud.pending--;updBtn();console.error(e)}));
+ updBtn()}
+function applyLive(v){try{const o=JSON.parse(v);['players','idx','inning','outs','bases','us','them','rival','date','msg'].forEach(k=>{if(o[k]!==undefined)S[k]=o[k]});cloud.lastLive=v;hist=[];persist();render()}catch(e){console.error(e)}}
+function applyMeta(v){try{const o=JSON.parse(v);S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
+function mergeMeta(v){try{const o=JSON.parse(v),dirty=isDirty(),first=localStorage.getItem(LKEY)!==cloud.user.uid;
+ const uni=(a,b)=>{const ids=new Set((a||[]).map(x=>x.id));return [...(a||[]),...(b||[]).filter(x=>!ids.has(x.id))]};
+ if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||''}
+ else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||''}
+ localStorage.setItem(LKEY,cloud.user.uid);cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
+function cloudStart(u){cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false};cloud.lastLive='';cloud.lastMeta='';
+ cloud.ref.child('live').on('value',snap=>{const v=snap.val();
+  if(!cloud.synced.live){cloud.synced.live=true;if(v!=null&&!isDirty())applyLive(v);flush();return}
+  if(v==null||v===cloud.lastLive)return;applyLive(v)},e=>{console.error(e);updBtn()});
+ cloud.ref.child('meta').on('value',snap=>{const v=snap.val();
+  if(!cloud.synced.meta){cloud.synced.meta=true;if(v!=null)mergeMeta(v);else{try{localStorage.setItem(LKEY,u.uid)}catch(e){}}flush();return}
+  if(v==null||v===cloud.lastMeta)return;applyMeta(v)},e=>console.error(e));
+ updBtn()}
+function cloudStop(){if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off()}cloud.ref=null;cloud.user=null;updBtn()}
+const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
+function cloudLogin(create){const e=document.getElementById('cl_e').value.trim(),p=document.getElementById('cl_p').value,m=document.getElementById('cl_m');m.textContent='';
+ if(!e||!p){m.textContent='Escribe correo y contraseña';return}
+ const a=firebase.auth();(create?a.createUserWithEmailAndPassword(e,p):a.signInWithEmailAndPassword(e,p)).then(()=>closeS()).catch(er=>{m.textContent=AERR[er.code]||('Error: '+(er.code||er.message))})}
+function cloudLogout(){firebase.auth().signOut();closeS()}
+function cloudSync(){flush(true);closeS()}
+function cloudSheet(){let body;
+ if(!cfgOk())body=`<h3>Nube (Firebase)</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">Aún no está conectada. Pega tu configuración de Firebase en FIREBASE_CONFIG (dentro del archivo, cerca del final) y sube el archivo a tu hosting. Mientras tanto, la app guarda solo en este teléfono.</div><button class="btn" onclick="closeS()">Cerrar</button>`;
+ else if(!cloud.user)body=`<h3>Iniciar sesión</h3><input id="cl_e" type="email" placeholder="Correo" autocomplete="username"><input id="cl_p" type="password" placeholder="Contraseña" autocomplete="current-password"><div id="cl_m" style="color:var(--rd);font-size:13px;min-height:18px;margin-bottom:6px"></div><button class="btn" onclick="cloudLogin(false)">Entrar</button><button class="btn" onclick="cloudLogin(true)">Crear cuenta</button><button class="btn" onclick="closeS()">Cerrar</button>`;
+ else body=`<h3>Nube conectada</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">${esc(cloud.user.email||'')}<br>${cloud.online?'Sincronizando en tiempo real':'Sin conexión: se enviará al reconectar'}</div><button class="btn" onclick="cloudSync()">Sincronizar ahora</button><button class="btn" style="color:var(--rd)" onclick="cloudLogout()">Cerrar sesión</button><button class="btn" onclick="closeS()">Cerrar</button>`;
+ document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div>${body}</div></div>`}
+function cloudInit(){updBtn();if(!cfgOk())return;try{firebase.initializeApp(FIREBASE_CONFIG);cloud.db=firebase.database();
+ cloud.db.ref('.info/connected').on('value',s=>{cloud.online=!!s.val();updBtn()});
+ firebase.auth().onAuthStateChanged(u=>{if(u)cloudStart(u);else cloudStop()})}catch(e){console.error(e)}}
+cloudInit();
+</script>
+</body></html>
