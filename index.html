@@ -249,7 +249,13 @@ render();
 /* ===================== FIREBASE =====================
    Pega aquí la configuración de tu app web (Consola de Firebase > Configuración del proyecto > Tus apps).
    Mientras tenga "PEGA_" la app funciona igual, pero guarda solo en este teléfono. */
-const FIREBASE_CONFIG={apiKey:"PEGA_TU_API_KEY",authDomain:"TU_PROYECTO.firebaseapp.com",databaseURL:"https://TU_PROYECTO-default-rtdb.firebaseio.com",projectId:"TU_PROYECTO",appId:"TU_APP_ID"};
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyCN0x4MpIssHWsxoLfEUIeEv5HDF9Xvyes",
+  authDomain:"softball-110a8.firebaseapp.com",
+  databaseURL:"https://softball-110a8-default-rtdb.firebaseio.com", // revisa que sea igual al que muestra Realtime Database > Datos
+  projectId:"softball-110a8",
+  appId:"1:223305263586:web:295eec26091c97954371bb"
+};
 /* ==================================================== */
 const DKEY='softball_dirty_v1',LKEY='softball_linked_v1';
 const cloud={user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',synced:{live:false,meta:false}};
