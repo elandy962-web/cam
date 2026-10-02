@@ -62,7 +62,7 @@ tr+tr td{border-top:1px solid var(--bd)}
 .sheet input{width:100%;margin-bottom:8px}
 /* ===== Modo app ===== */
 html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
-body{-webkit-user-select:none;user-select:none;touch-action:manipulation;min-height:100vh;min-height:100dvh}
+body{-webkit-user-select:none;user-select:none;touch-action:manipulation;min-height:0}
 input{-webkit-user-select:text;user-select:text}
 .grid .g,.grid .e{font-size:13px}
 .sg{display:flex;gap:5px;flex-wrap:wrap;margin:4px 0 10px}.sg button{flex:1;min-width:50px;padding:9px 4px;border-radius:9px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-weight:700;font-size:13px}.sg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
@@ -85,42 +85,25 @@ body{padding:6px 10px 24px}
 .base span{font-size:11px}
 .sc .msg{min-height:30px;font-size:12.5px;line-height:1.2;padding:2px 0 0;display:flex;align-items:center;justify-content:center}
 .bat .nm{font-size:18px;line-height:1.2}.bat .sm{font-size:11px}
-.grid{gap:6px;margin-top:8px}.grid button{padding:0;height:clamp(38px,5.6vh,48px);font-size:15px}
+.grid{gap:6px;margin-top:8px}.grid button{padding:0;height:var(--bh,42px);font-size:15px}
 .grid .e{background:transparent;color:var(--rd);border:1px solid var(--rd);box-shadow:none;font-size:13px}
-@media (max-height:640px){
-.brand-mark{width:30px;height:30px;font-size:17px}.brand{padding-bottom:5px}
-.tabs{margin-bottom:5px}.tabs button{padding:6px 2px}.card{padding:8px;margin-bottom:5px}
-.rv{padding:4px 6px}.rv input{padding:5px 9px}
-.diaw{width:109px;height:96px;margin-top:6px}.diaw .dia{transform:scale(.64)}
-.sc .s{font-size:30px}.sc .msg{min-height:26px}
-.grid{gap:5px;margin-top:6px}.grid button{height:36px;font-size:14px}
-}
-/* ===== Tablet ===== */
-@media (min-width:700px){
-body{max-width:780px;padding:12px 18px 28px}
-.brand{padding:4px 2px 12px}.brand-mark{width:46px;height:46px;font-size:26px;border-radius:13px}.brand-name{font-size:26px}
-.cloudbtn{font-size:15px;padding:8px 16px}
-.tabs button{padding:13px 4px;font-size:17px}
-.card{padding:16px;margin-bottom:12px}
-.rv{padding:10px 14px}.rv input{padding:12px 14px;font-size:18px}
-.sc .n{font-size:15px}.sc .s{font-size:60px}.sc .pm button{width:48px;height:38px;font-size:22px}
-.sc .inn{font-size:19px}.outs i{width:15px;height:15px}
-.diaw{width:187px;height:165px;margin-top:12px}.diaw .dia{transform:scale(1.1)}
-.base span{font-size:12px}
-.sc .msg{font-size:17px;min-height:44px}
-.bat .nm{font-size:28px}.bat .sm{font-size:15px}.subb{font-size:14px;padding:7px 14px}
-.grid{gap:10px;margin-top:12px}.grid button{height:60px;font-size:22px}.grid .g,.grid .e{font-size:17px}
-table{font-size:16px}th,td{padding:10px 8px}
-.grid button[onclick="fcb()"]{font-size:16px!important}
-}
-@media (min-width:820px) and (min-height:600px) and (orientation:landscape){
-body{max-width:1180px}
-.g0{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
-.g0>.rv{grid-column:1/-1}.g0>.card{margin-bottom:0}
-.diaw{width:255px;height:225px}.diaw .dia{transform:scale(1.5)}
-.sc .s{font-size:76px}.sc .msg{font-size:19px}
-.grid button{height:clamp(60px,11.5vh,96px);font-size:26px}.grid .g,.grid .e{font-size:19px}.bat .nm{font-size:32px}
-}
+.cmp .brand-mark{width:30px;height:30px;font-size:17px}.cmp .brand{padding-bottom:5px}
+.cmp .tabs{margin-bottom:5px}.cmp .tabs button{padding:6px 2px}.cmp .card{padding:8px;margin-bottom:5px}
+.cmp .rv{padding:4px 6px}.cmp .rv input{padding:5px 9px}
+.cmp .diaw{margin-top:6px!important}
+.cmp .sc .s{font-size:30px}.cmp .sc .msg{min-height:26px}
+.cmp .grid{gap:5px;margin-top:6px}.cmp .grid button{font-size:14px}
+/* ===== Escala automática (celular, tablet, vertical y horizontal) ===== */
+.diaw{width:calc(var(--dh,120px)*1.1333)!important;height:var(--dh,120px)!important;margin:10px auto 0;position:relative}
+.diaw .dia{position:absolute!important;left:0;top:0;width:100%!important;height:100%!important;margin:0!important;transform:none!important}
+.diaw .dia .sq{left:20.6%;top:13.3%;width:58.8%;height:66.7%}
+.diaw .dia .base{width:25.9%;height:29.3%}
+.diaw .dia .b1{left:80%;top:46.7%}.diaw .dia .b2{left:50%;top:13.3%}.diaw .dia .b3{left:20%;top:46.7%}
+.diaw .dia .home{left:50%;top:81.3%;width:12.9%;height:14.7%}
+.diaw .base span{font-size:max(9px,calc(var(--dh,120px)*.085));max-width:calc(var(--dh,120px)*.4);overflow:visible;white-space:nowrap}
+.land body{max-width:none;padding:6px 14px 8px}
+.land .g0{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+.land .g0>.rv{grid-column:1/-1}.land .g0>.card{margin-bottom:0}
 </style></head><body>
 <div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name" id="bn"><span>SOFTBALL</span></div></div><button id="cloud" class="cloudbtn" onclick="cloudSheet()">☁ Local</button></div>
 <div class="tabs"><button id="t0" onclick="tab(0)">Juego</button><button id="t1" onclick="tab(1)">Estadísticas</button><button id="t2" onclick="tab(2)">Equipo</button><button id="t3" onclick="tab(3)">Historial</button></div>
@@ -248,7 +231,7 @@ x.fillStyle='rgba(255,255,255,.6)';x.font='400 24px system-ui,sans-serif';x.fill
 else{x.fillText('SIN DATOS',240,y+346)}});
 x.textAlign='center';x.fillStyle='rgba(255,255,255,.45)';x.font='italic 900 24px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,30),W/2,H-45);
 IBLOB_NAME='resultados.png';IBLOB=null;c.toBlob(b=>{IBLOB=b});const url=c.toDataURL('image/png');
-document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:92vh;overflow:auto"><img src="${url}" style="width:100%;border-radius:10px"><div style="color:var(--mu);font-size:13px;margin:8px 0">Mantén presionada la imagen para guardarla.</div><button class="btn" onclick="shareImg()">Compartir</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`}
+document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><img src="${url}" style="width:100%;border-radius:10px"><div style="color:var(--mu);font-size:13px;margin:8px 0">Mantén presionada la imagen para guardarla.</div><button class="btn" onclick="shareImg()">Compartir</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`}
 function mkStatsImg(season){
  const ps=season?seasonStats():gamePlayers();
  if(!ps.length){alert('No hay estadísticas para crear la imagen.');return}
@@ -284,7 +267,7 @@ function mkStatsImg(season){
  x.textAlign='left';x.fillStyle=MUTED;x.font='italic 800 22px '+F;x.fillText('Los líderes de cada estadística están resaltados en dorado.',x0,y0+78+ps.length*rowH+40);
  x.textAlign='center';x.fillStyle=MUTED;x.font='italic 800 23px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,26)+' · ESTADÍSTICAS',W/2,H-24);
  IBLOB_NAME=season?'estadisticas_temporada.png':'estadisticas_juego.png';IBLOB=null;c.toBlob(b=>{IBLOB=b});const url=c.toDataURL('image/png');
- document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:92vh;overflow:auto"><img src="${url}" style="display:block;width:100%;max-width:100%;height:auto;border-radius:10px;object-fit:contain"><div style="color:var(--mu);font-size:13px;margin:8px 0">Los líderes de cada estadística están resaltados en dorado. Puedes compartirla directamente.</div><button class="btn" onclick="shareImg()">Compartir</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`
+ document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><img src="${url}" style="display:block;width:100%;max-width:100%;height:auto;border-radius:10px;object-fit:contain"><div style="color:var(--mu);font-size:13px;margin:8px 0">Los líderes de cada estadística están resaltados en dorado. Puedes compartirla directamente.</div><button class="btn" onclick="shareImg()">Compartir</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`
 }
 async function shareImg(){try{const f=new File([IBLOB],IBLOB_NAME,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});else alert('Mantén presionada la imagen para guardarla.')}catch(e){if(e.name!=='AbortError')alert('Mantén presionada la imagen para guardarla.')}}
 function fcb(){if(!S.players.length){tab(2);return}const bs=S.bases;let ch=0;while(ch<3&&bs[ch]!=null)ch++;
@@ -299,7 +282,7 @@ function drawSub(){let h;
  if(SUBOUT==null){h='<h3>Sustitución · ¿quién sale?</h3>'+S.players.map((p,i)=>{const bi=S.bases.indexOf(p.id),tag=(i===S.idx%S.players.length?' · al bate':'')+(bi>=0?' · en '+(bi+1)+'ª':'');return `<button class="btn" onclick="SUBOUT=${p.id};drawSub()">${i+1}. ${esc(nm(p))}<small style="color:var(--mu)">${tag}</small></button>`}).join('')+'<button class="btn" onclick="closeS()">Cancelar</button>'}
  else{const o=P(SUBOUT),used=new Set((S.subs||[]).map(s=>s.id)),bench=S.roster.filter(r=>!P(r.id)&&!used.has(r.id));
   h=`<h3>Entra por ${esc(nm(o))}</h3>`+(bench.map(r=>`<button class="btn" onclick="doSub(${r.id})">${esc(nm(r))}</button>`).join('')||'<div style="color:var(--mu);font-size:13px;margin-bottom:8px">No hay jugadores en la banca. Agrega uno nuevo:</div>')+'<div class="row" style="margin:6px 0 8px"><input id="sn" placeholder="Nuevo jugador"><input id="sm" placeholder="#" inputmode="numeric" style="flex:0 0 60px;text-align:center"><button class="btn" style="flex:0 0 auto" onclick="subNew()">Entra</button></div><button class="btn" onclick="SUBOUT=null;drawSub()">← Atrás</button>'}
- document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90vh;overflow:auto">${h}</div></div>`}
+ document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto">${h}</div></div>`}
 function subNew(){const n=document.getElementById('sn').value.trim(),m=document.getElementById('sm').value.trim();if(!n)return;const r={id:Date.now()+Math.random(),name:n,num:m};S.roster.push(r);doSub(r.id)}
 function doSub(newId){const old=P(SUBOUT),r=S.roster.find(x=>x.id===newId);if(!old||!r)return;closeS();hist.push(JSON.stringify(S));const i=S.players.indexOf(old);S.subs=S.subs||[];S.subs.push({...old,sub:true});S.players[i]={...mk(r.name,r.num),id:newId};S.bases=S.bases.map(b=>b===old.id?newId:b);S.msg='Sustitución: entra '+nm(r)+' por '+nm(old);SUBOUT=null;save();render()}
 function tab(n){T=n;V=null;render()}
@@ -405,6 +388,17 @@ function startFb(){try{firebase.initializeApp(FIREBASE_CONFIG);cloud.db=firebase
 function cloudInit(){updBtn();if(!cfgSet())return;if(typeof firebase==='undefined'){loadSdk(er=>{if(!er&&typeof firebase!=='undefined')startFb();else updBtn()});return}startFb()}
 addEventListener('online',()=>{if(cfgSet()&&!cloud.db)cloudInit()});
 cloudInit();
+</script>
+<script>
+function fit(){const w=innerWidth,h=innerHeight,land=w>h*1.15,r=document.documentElement;
+ let k=land?Math.min(w/780,h/400):Math.min(w/400,h/580);k=Math.max(1,Math.min(k,3));
+ const W=w/k,H=h/k,two=land&&W>=740,cmp=!land&&H<640;
+ document.body.style.zoom=k;document.body.style.minHeight=H+'px';
+ r.classList.toggle('land',two);r.classList.toggle('cmp',cmp);
+ let dh=cmp?96:120,bh=cmp?36:42;
+ if(two){const R=H-156,colW=(W-40)/2;dh=Math.max(110,Math.min(R-85,(colW-170)/1.1333,260));bh=Math.max(38,Math.min(80,(R-108)/3))}
+ r.style.setProperty('--dh',dh+'px');r.style.setProperty('--bh',bh+'px')}
+addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,250));fit();
 </script>
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
 </body></html>
