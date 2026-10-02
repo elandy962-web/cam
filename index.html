@@ -53,7 +53,13 @@ input:focus{border-color:var(--ac);box-shadow:0 0 0 2px var(--glow)}
 th,td{padding:7px 6px;text-align:center;white-space:nowrap}th{color:var(--ac2);font-size:11px;text-transform:uppercase}td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:var(--card);font-weight:800}
 tr+tr td{border-top:1px solid var(--bd)}
 .leader-stat{font-weight:900;color:var(--ac2)!important;background:rgba(255,176,0,.10)}
-.ev{display:inline-block;margin:1px;padding:2px 5px;border-radius:5px;font-size:12px;font-weight:800}.ev.h{background:var(--ac);color:#fff}.ev.o{background:var(--rd);color:#fff}.ev.w{background:var(--ac2);color:#111}.ev.r{color:var(--ac2);font-size:15px;padding:0 2px}.ev small{font-weight:600;opacity:.9}
+.ev{display:inline-block;margin:1px;padding:2px 5px;border-radius:5px;font-size:12px;font-weight:800}
+.ev.h{background:#16a34a;color:#fff}
+.ev.o{background:var(--rd);color:#fff}
+.ev.w{background:var(--ac2);color:#111}
+.ev.r{color:var(--ac2);font-size:15px;padding:0 2px}
+.ev.ast{color:var(--rd);font-size:16px;font-weight:900;background:transparent;padding:0 2px;line-height:1}
+.ev small{font-weight:600;opacity:.9}
 .sheet{position:fixed;inset:0;background:rgba(2,8,14,.72);display:flex;align-items:flex-end;z-index:9;backdrop-filter:blur(3px)}
 .sheet>div{background:var(--card);width:100%;max-width:520px;margin:0 auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));border-radius:16px 16px 0 0;border:1px solid var(--bd);border-bottom:0;box-shadow:0 -10px 35px rgba(0,0,0,.25)}
 .sheet h3{margin:0 0 10px}.sheet .btn{margin-bottom:8px;width:100%;display:block}
@@ -134,7 +140,8 @@ let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
+">":"&gt;",'"':"&quot;"}[c]));
 S.games=S.games||[];S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 const P=id=>S.players.find(p=>p.id===id);
@@ -161,7 +168,7 @@ const closeS=()=>{document.getElementById('sheet').innerHTML=''};
 function rn(i,a){closeS();hist.push(JSON.stringify(S));ev=[];const id=S.bases[i],n=nm(P(id));let d;
 if(a=='adv'){if(i==2){S.bases[2]=null;run(id,null);d=n+' avanza'}else if(S.bases[i+1]==null){S.bases[i+1]=id;S.bases[i]=null;d=n+' avanza a '+(i+2)+'ª'}else{hist.pop();return}}
 else if(a=='run'){S.bases[i]=null;run(id,null);d=n+' anotó'}
-else{S.bases[i]=null;(P(id).log=P(id).log||[]).push({i:S.inning,a:'OUT*'});out();d=n+' out en las bases'}
+else{S.bases[i]=null;(P(id).log=P(id).log||[]).push({i:S.inning,a:'*'});out();d=n+' out en las bases'}
 S.msg=d+(a=='adv'||a=='run'?'':(ev.length?' · '+ev.join(', '):''));save();render()}
 function addP(){const el=document.getElementById('np'),v=el.value.trim();if(!v)return;S.players.push(mk(v));save();render()}
 function delP(id){if(!confirm('¿Quitar jugador?'))return;S.players=S.players.filter(p=>p.id!==id);S.bases=S.bases.map(b=>b===id?null:b);S.idx=0;save();render()}
@@ -190,7 +197,7 @@ function leaderMap(ps,gp){
   const nums=vals.map(v=>c===12?parseFloat(v[c])||0:Number(v[c])||0);
   if(!nums.length) continue;
   const max=Math.max(...nums);
-  if(c===11){ // SF: only mark an actual positive leader
+  if(c===11){
    if(max<=0) continue;
   }
   out[c]=new Set(nums.map((v,i)=>v===max&&max>0?i:null).filter(i=>i!==null));
@@ -203,7 +210,7 @@ function histHTML(){const g=S.games.find(x=>x.id===V);
 if(g)return `<button class="btn" style="width:100%;margin-bottom:10px" onclick="V=null;render()">← Volver</button><div class="card"><b>${fd(g.date)} · vs ${esc(g.rival)}</b><div style="font-size:30px;font-weight:800;margin:4px 0">${g.us} - ${g.them} ${res(g)}</div><div style="color:var(--mu);font-size:13px">${g.reason} · ${g.inning} entradas</div></div>${mvpCard(g)}<button class="btn" style="width:100%;margin-bottom:10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="mkImg(${g.id})">🖼 Crear imagen del día</button>${tbl(g.players)}${sumCard(g.players)}<button class="btn" style="width:100%;color:var(--rd)" onclick="delG(${g.id})">Borrar juego</button>`;
 if(!S.games.length)return '<div class="card" style="color:var(--mu)">Aún no hay juegos guardados. Usa "Terminar juego" para guardar uno.</div>';
 const dates=[...new Set(S.games.map(g=>g.date))];
-return dates.map(date=>{const games=S.games.filter(g=>g.date===date);const first=games[0];return `<div class="card" style="padding-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>${fd(date)}</b><button class="btn" style="flex:0 0 auto;padding:8px 10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="event.stopPropagation();mkImg(${first.id})">🖼 Juegos del día</button></div>${games.map(g=>`<div onclick="V=${g.id};render()" style="cursor:pointer;border-top:1px solid var(--bd);padding:10px 0 2px"><div style="display:flex;justify-content:space-between;align-items:center"><b>vs ${esc(g.rival)}</b>${res(g)}</div><div style="font-size:24px;font-weight:800">${g.us} - ${g.them}</div><div style="color:var(--mu);font-size:13px">${g.reason} · ${g.inning} entradas</div></div>`).join('')}</div>`}).join('')}
+return dates.map(date=>{const games=S.games.filter(g=>g.date===date);const first=games[0];return `<div class="card" style="padding-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>${fd(date)}</b><button class="btn" style="flex:0 0 auto;padding:8px 10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="event.stopPropagation();mkImg(${first.id})">🖼 Juegos del día</button></div>${games.map(g=>`<div onclick="V=${g.id};render()" style="cursor:pointer;border-top:1px solid var(--bd);padding:10px 0 2px"><div style="display:flex;justify-content:space-between;align-items:center"><b>vs ${esc(g.rival)}</b>${res(g)}</div><div style="font-size:24px;font-weight:800">${g.us} -${g.them}</div><div style="color:var(--mu);font-size:13px">${g.reason} ·${g.inning} entradas</div></div>`).join('')}</div>`}).join('')}
 function addR(){const el=document.getElementById('np'),v=el.value.trim();if(!v)return;S.roster.push({id:Date.now()+Math.random(),name:v,num:(document.getElementById('nn').value||'').trim()});save();render()}
 function toLine(id){const r=S.roster.find(x=>x.id===id);if(!r||P(id))return;S.players.push({...mk(r.name,r.num),id});save();render()}
 function fromLine(id,force){const p=P(id);if(!p)return;if(!force&&p.AB+p.BB+p.R+p.SAC>0){ask('Este jugador ya tiene estadísticas en este juego. ¿Quitarlo del lineup?',()=>fromLine(id,true),'Quitar');return}const c=cur().id;S.players=S.players.filter(x=>x.id!==id);S.bases=S.bases.map(b=>b===id?null:b);const k=S.players.findIndex(x=>x.id===c);S.idx=k>=0?k:(S.players.length?S.idx%S.players.length:0);save();render()}
@@ -211,14 +218,21 @@ function mv(id,d){const i=S.players.findIndex(p=>p.id===id),j=i+d;if(j<0||j>=S.p
 function delR(id){ask('¿Quitar del plantel?',()=>{if(P(id))fromLine(id,true);S.roster=S.roster.filter(x=>x.id!==id);save();render()},'Quitar')}
 function seasonStats(){const m={};S.games.forEach(g=>g.players.forEach(p=>{const k=p.id!=null?p.id:p.name,t=m[k]||(m[k]={name:p.name,num:p.num||'',GP:0,AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});if(p.AB+p.BB+p.SAC+p.R>0)t.GP++;['AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'].forEach(k=>t[k]+=p[k]||0)}));return Object.values(m).sort((a,b)=>b.H-a.H||b.AB-a.AB)}
 function rec(){let w=0,l=0,e=0;S.games.forEach(g=>g.us>g.them?w++:g.us<g.them?l++:e++);return 'Récord '+w+'G - '+l+'P'+(e?' - '+e+'E':'')}
-const AB_={'doble play':'DP','triple play':'TP','jugada de selección':'FC',sencillo:'1B',doble:'2B',triple:'3B','jonrón':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SAC'};
+const AB_={'doble play':'DP','triple play':'TP','jugada de selección':'FC',sencillo:'H1',doble:'H2',triple:'H3','jonrón':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SF'};
 const sc=p=>p.s1+2*p.s2+3*p.s3+4*p.hr+p.R+p.RBI+0.5*p.BB+0.5*p.SAC-0.25*p.K;
 function mvp(ps){let b=null,v=0;ps.forEach(p=>{const x=sc(p);if(x>v||(b&&x===v&&x>0&&p.H>b.H)){b=p;v=x}});return b}
 function ex(p){return [[p.s1,'H1'],[p.s2,'H2'],[p.s3,'H3'],[p.hr,'HR'],[p.BB,'BB'],[p.K,'K'],[p.SAC,'SF'],[p.R,'CA'],[p.RBI,'CE']].filter(x=>x[0]>0).map(x=>(x[0]>1?x[0]+' ':'')+x[1])}
 function line(p){const it=ex(p);return (p.AB?p.H+' de '+p.AB:'0 turnos')+(it.length?' · '+it.join(' · '):'')}
-function cls(a){return /^(H1|H2|H3|HR)$/.test(a)?'h':/^(K|OUT|DP|TP)/.test(a)?'o':a=='◇'?'r':'w'}
+function cls(a){
+  if(/^(H1|H2|H3|HR|1B|2B|3B)$/.test(a)) return 'h';
+  if(/^(K|OUT|DP|TP)$/.test(a)) return 'o';
+  if(/^(BB|E|SAC|SF|FC)$/.test(a)) return 'w';
+  if(a=='◇') return 'r';
+  if(a=='*' || a=='OUT*') return 'ast';
+  return 'w';
+}
 function sumCard(ps,gi){const m=mvp(ps);let N=Math.max(1,gi||0);ps.forEach(p=>(p.log||[]).forEach(e=>{if(e.i>N)N=e.i}));const cols=[...Array(N).keys()].map(k=>k+1);
-return `<div class="card tw"><b>Resumen por jugador y entrada</b><table style="margin-top:6px"><tr><th>Jugador</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${ps.map((p,i)=>`<tr><td>${p.sub?'↳':(i+1)+'.'} ${esc(nm(p))}${m&&m.id===p.id?' ⭐':''}<div style="font-weight:400;color:var(--mu);font-size:11px">${p.AB?p.H+' de '+p.AB:'0 turnos'}</div></td>${cols.map(c=>`<td style="vertical-align:top;white-space:normal;min-width:58px">${(p.log||[]).filter(e=>e.i==c).map(e=>`<span class="ev ${cls(e.a)}">${e.a}${e.rbi?`<small> ${e.rbi}CI</small>`:''}</span>`).join('')}</td>`).join('')}</tr>`).join('')}</table><div style="color:var(--mu);font-size:11px;margin-top:8px">Columnas = entradas · ◇ anotó · CI impulsadas · OUT* out en las bases · ⭐ MVP</div></div>`}
+return `<div class="card tw"><b>Resumen por jugador y entrada</b><table style="margin-top:6px"><tr><th>Jugador</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${ps.map((p,i)=>`<tr><td>${p.sub?'↳':(i+1)+'.'} ${esc(nm(p))}${m&&m.id===p.id?' ⭐':''}<div style="font-weight:400;color:var(--mu);font-size:11px">${p.AB?p.H+' de '+p.AB:'0 turnos'}</div></td>${cols.map(c=>`<td style="vertical-align:top;white-space:normal;min-width:58px">${(p.log||[]).filter(e=>e.i==c).map(e=>{const txt=(e.a==='OUT*'||e.a==='*')?'*':e.a;return `<span class="ev ${cls(e.a)}">${txt}${e.rbi?`<small> ${e.rbi}CI</small>`:''}</span>`}).join('')}</td>`).join('')}</tr>`).join('')}</table><div style="color:var(--mu);font-size:11px;margin-top:8px">Columnas = entradas · ◇ anotó · CI impulsadas · <span style="color:var(--rd);font-weight:900">*</span> out en las bases / force out · ⭐ MVP</div></div>`}
 function mvpCard(g){const m=mvp(g.players);return `<div class="card" style="text-align:center"><div style="color:var(--mu);font-size:12px">JUGADOR MÁS VALIOSO</div>${m?`<div style="font-size:24px;font-weight:800">⭐ ${esc(nm(m))}</div><div style="color:var(--mu);font-size:13px">${line(m)}</div>`:'<div style="color:var(--mu)">Sin datos</div>'}<div style="color:var(--mu);font-size:11px;margin-top:6px">Puntos: bases totales + carreras + impulsadas + ½ BB − ¼ K</div></div>`}
 function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();x.fill()}
 function fit(x,t,w){if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
@@ -240,9 +254,9 @@ x.fillStyle=NAVY;x.textAlign='center';x.font='italic 900 36px '+F;x.fillText(fit
 x.fillStyle=GOLD;rr(x,95,y+308,120,46,10);x.fillStyle=NAVY;x.textAlign='center';x.font='italic 900 28px '+F;x.fillText('MVP',155,y+342);
 x.textAlign='left';x.fillStyle=GOLD;x.font='italic 900 40px '+F;
 if(m){x.fillText(fit(x,nm(m).toUpperCase(),W-95-240-40),240,y+346);
-const e=ex(m).filter(t=>!/ (1B|K|BB|SAC)$|^(1B|K|BB|SAC)$/.test(t)||true);
+const e=ex(m).filter(t=>!/ (H1|K|BB|SF)$\vert{}^(H1\vert{}K\vert{}BB\vert{}SF)$/.test(t)||true);
 x.fillStyle='#fff';x.font='700 30px system-ui,sans-serif';x.fillText(fit(x,m.H+(m.H==1?' hit':' hits')+' en '+m.AB+(m.AB==1?' turno':' turnos')+(e.length?' · '+e.join(' · '):''),W-190),95,y+400);
-x.fillStyle='rgba(255,255,255,.6)';x.font='400 24px system-ui,sans-serif';x.fillText(fit(x,(m.log||[]).filter(t=>!t.run).map(t=>'E'+t.i+' '+t.a).join(' · '),W-190),95,y+432)}
+x.fillStyle='rgba(255,255,255,.6)';x.font='400 24px system-ui,sans-serif';x.fillText(fit(x,(m.log||[]).filter(t=>!t.run).map(t=>'E'+t.i+' '+(t.a==='OUT*'||t.a==='*'?'*':t.a)).join(' · '),W-190),95,y+432)}
 else{x.fillText('SIN DATOS',240,y+346)}});
 x.textAlign='center';x.fillStyle='rgba(255,255,255,.45)';x.font='italic 900 24px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,30),W/2,H-45);
 IBLOB_NAME='resultados.png';IBLOB=null;c.toBlob(b=>{IBLOB=b});const url=c.toDataURL('image/png');
@@ -268,7 +282,6 @@ function mkStatsImg(season){
    x.fillStyle=i%2?'rgba(255,255,255,.035)':'rgba(255,255,255,.075)';x.fillRect(x0,y,tableW,rowH);
    x.fillStyle='rgba(255,90,0,.7)';x.fillRect(x0,y,6,rowH);
    const v=statVals(p,season);
-   // Nombre del jugador: siempre se dibuja desde p.name, independiente de statVals.
    x.textAlign='left';x.fillStyle=WHITE;x.font='800 30px system-ui,sans-serif';
    x.fillText(fit(x,String(nm(p)||'Jugador'),nameW-55),x0+28,y+52);
    v.forEach((z,j)=>{
@@ -287,7 +300,7 @@ function mkStatsImg(season){
 async function shareImg(){try{const f=new File([IBLOB],IBLOB_NAME,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});else alert('Mantén presionada la imagen para guardarla.')}catch(e){if(e.name!=='AbortError')alert('Mantén presionada la imagen para guardarla.')}}
 function fcb(){if(!S.players.length){tab(2);return}const bs=S.bases;let ch=0;while(ch<3&&bs[ch]!=null)ch++;
  if(ch<1){S.msg='Necesitas un corredor en 1ª para este botón (si fue error usa Error)';save();render();return}
- act(b=>{b.AB++;const nb=[null,null,null];for(let i=0;i<3;i++){const id=bs[i];if(id==null)continue;if(i<ch-1)nb[i+1]=id;else if(i===ch-1){(P(id).log=P(id).log||[]).push({i:S.inning,a:'OUT*'});ev.push(nm(P(id))+' out')}else nb[i]=id}
+ act(b=>{b.AB++;const nb=[null,null,null];for(let i=0;i<3;i++){const id=bs[i];if(id==null)continue;if(i<ch-1)nb[i+1]=id;else if(i===ch-1){(P(id).log=P(id).log||[]).push({i:S.inning,a:'*'});ev.push(nm(P(id))+' out')}else nb[i]=id}
   nb[0]=b.id;S.bases=nb;out();nxt();return nm(b)+': jugada de selección'})}
 function editP(id){const r=S.roster.find(x=>x.id===id);if(!r)return;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Editar jugador</h3><input id="en" value="${esc(r.name)}" placeholder="Nombre"><input id="em" value="${esc(r.num||'')}" placeholder="Número" inputmode="numeric"><button class="btn" style="background:var(--ac);color:#fff" onclick="saveP(${id})">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
 function saveP(id){const n=document.getElementById('en').value.trim(),m=document.getElementById('em').value.trim();if(!n)return;closeS();const up=p=>{if(p&&p.id===id){p.name=n;p.num=m}};S.roster.forEach(up);S.players.forEach(up);(S.subs||[]).forEach(up);S.games.forEach(g=>g.players.forEach(up));save();render()}
@@ -313,7 +326,7 @@ a.innerHTML=`<div class="card row rv"><input placeholder="Equipo rival" value="$
 <div class="cen"><div class="inn"><span>Entrada ${S.inning}</span><span class="outs">${[0,1,2].map(i=>`<i class="${i<S.outs?'f':''}"></i>`).join('')}</span></div><div class="diaw"><div class="dia"><div class="sq"></div>${bs}<div class="home"></div></div></div></div>
 <div class="t"><div class="n">RIVAL</div><div class="s">${S.them}</div><div class="pm"><button onclick="opp(-1)">−</button><button onclick="opp(1)">+</button></div></div></div>
 <div class="msg">${S.msg||'Toca un corredor para avanzarlo, anotarlo o sacarlo out'}</div></div>
-<div class="card"><div class="bat"><div><div class="sm">AL BATE</div><div class="nm">${has?esc(nm(b)):'—'}</div><div class="sm">${has?`${b.H}-${b.AB} · ${avg(b)} · ${b.RBI} CI · ${b.R} C`:''}</div></div>
+<div class="card"><div class="bat"><div><div class="sm">AL BATE</div><div class="nm">${has?esc(nm(b)):'—'}</div><div class="sm">${has?`${b.H}-${b.AB} ·${avg(b)} · ${b.RBI} CI · ${b.R} C`:''}</div></div>
 <div class="sm" style="text-align:right">EN DECK<br><b style="font-size:15px;color:var(--tx)">${has?esc(nm(nx)):'—'}</b><br><button class="subb" onclick="subSheet()">⇄ Sustituir</button></div></div>
 <div class="grid"><button onclick="hit(1)">1B</button><button onclick="hit(2)">2B</button><button onclick="hit(3)">3B</button><button onclick="hit(4)">HR</button>
 <button class="w" onclick="walk(false)">BB</button><button class="w" onclick="walk(true)">Error</button><button class="o" onclick="ko()">K</button><button class="o" onclick="fo()">Out</button>
@@ -323,80 +336,14 @@ const sea=ST==1,ps=sea?seasonStats():gamePlayers();
 a.innerHTML=`<div class="tabs"><button class="${!sea?'on':''}" onclick="ST=0;render()">Este juego</button><button class="${sea?'on':''}" onclick="ST=1;render()">Temporada</button></div>${sea?`<div class="card" style="text-align:center"><b>${rec()}</b><div style="color:var(--mu);font-size:12px">Suma de los juegos guardados</div></div>`:''}${ps.length?tbl(ps,sea):'<div class="card" style="color:var(--mu)">Sin datos todavía.</div>'}${!sea&&ps.length?sumCard(ps,S.inning):''}${ps.length?`<button class="btn share-stats" onclick="mkStatsImg(${sea})">🖼 Crear imagen de estadísticas</button>`:''}<div style="color:var(--mu);font-size:12px;text-align:center">JJ juegos · AB turnos · CA carreras anotadas · CE carreras empujadas · H total de hits · H1 sencillo · H2 doble · H3 triple · SF sacrificio · AVE promedio</div>`;
 }else if(T==3){a.innerHTML=histHTML()}else{
 const inL=id=>S.players.some(p=>p.id===id);
-a.innerHTML=`<div class="card"><b>Mi equipo</b><div class="row" style="margin-top:8px"><input placeholder="Nombre de tu equipo" value="${esc(S.team)}" onchange="S.team=this.value;save();brandUpdate()"></div></div><div class="card"><div class="row"><input id="np" placeholder="Nombre del jugador" onkeydown="if(event.key=='Enter')addR()"><input id="nn" placeholder="#" inputmode="numeric" style="flex:0 0 60px;text-align:center"><button class="btn" style="flex:0 0 auto" onclick="addR()">Al plantel</button></div></div>
-<div class="card"><b>Lineup de hoy (${S.players.length})</b>${S.players.map((p,i)=>`<div class="pl"><span>${p.sub?'↳':(i+1)+'.'} ${esc(nm(p))}</span><span><button style="color:var(--tx)" onclick="mv(${p.id},-1)">▲</button><button style="color:var(--tx)" onclick="mv(${p.id},1)">▼</button><button onclick="fromLine(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Toca "+ Lineup" en los jugadores del plantel, en el orden en que batean.</div>'}</div>
-<div class="card"><b>Plantel (${S.roster.length})</b>${S.roster.map(p=>`<div class="pl"><span>${esc(nm(p))}</span><span>${inL(p.id)?'<span style="color:var(--ac);font-size:13px">✓ en lineup</span>':`<button style="color:var(--ac);font-size:14px;font-weight:700" onclick="toLine(${p.id})">+ Lineup</button>`}<button style="color:var(--tx)" onclick="editP(${p.id})">✎</button><button onclick="delR(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Agrega aquí a todo tu equipo.</div>'}</div>
-<button class="btn" style="width:100%;color:var(--rd)" onclick="newGame()">Nuevo juego (reiniciar)</button>`;
+a.innerHTML=`<div class="card"><div style="font-weight:800;margin-bottom:8px">Nombre del Equipo</div><div class="row"><input id="tn" value="${esc(S.team)}" placeholder="Nombre de tu equipo" onchange="S.team=this.value;save();render()"></div></div>
+<div class="card"><div style="font-weight:800;margin-bottom:8px">Lineup actual (${S.players.length})</div>
+${S.players.map((p,i)=>`<div class="pl"><div><b>${i+1}.${esc(nm(p))}</b></div><div><button onclick="mv(${p.id},-1)">▲</button><button onclick="mv(${p.id},1)">▼</button><button onclick="fromLine(${p.id})">✕</button></div></div>`).join('')||'<div style="color:var(--mu);font-size:13px">Lineup vacío. Agrega jugadores del plantel abajo.</div>'}
+<button class="btn" style="margin-top:10px;width:100%" onclick="newGame()">Reiniciar Juego / Vaciar Lineup</button></div>
+<div class="card"><div style="font-weight:800;margin-bottom:8px">Plantel general</div>
+<div class="row" style="margin-bottom:10px"><input id="np" placeholder="Nombre jugador"><input id="nn" placeholder="#" inputmode="numeric" style="flex:0 0 60px;text-align:center"><button class="btn" style="flex:0 0 auto" onclick="addR()">+ Agregar</button></div>
+${S.roster.map(r=>`<div class="pl"><div><b>${esc(nm(r))}</b></div><div>${inL(r.id)?'<span style="color:var(--mu);font-size:12px;margin-right:6px">En lineup</span>':`<button style="color:var(--ac2);font-size:13px;font-weight:800" onclick="toLine(${r.id})">+ Al lineup</button>`}<button onclick="editP(${r.id})">✏️</button><button onclick="delR(${r.id})">✕</button></div></div>`).join('')||'<div style="color:var(--mu);font-size:13px">No hay jugadores en el plantel.</div>'}
+</div>`;
 }}
 render();
-</script><script>
-/* ===================== FIREBASE =====================
-   Pega aquí la configuración de tu app web (Consola de Firebase > Configuración del proyecto > Tus apps).
-   Mientras tenga "PEGA_" la app funciona igual, pero guarda solo en este teléfono. */
-const FIREBASE_CONFIG={
-  apiKey:"AIzaSyCN0x4MpIssHWsxoLfEUIeEv5HDF9Xvyes",
-  authDomain:"softball-110a8.firebaseapp.com",
-  databaseURL:"https://softball-110a8-default-rtdb.firebaseio.com", // revisa que sea igual al que muestra Realtime Database > Datos
-  projectId:"softball-110a8",
-  appId:"1:223305263586:web:295eec26091c97954371bb"
-};
-/* ==================================================== */
-const DKEY='softball_dirty_v1',LKEY='softball_linked_v1';
-const cloud={denied:false,user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',synced:{live:false,meta:false}};
-const cfgSet=()=>!!FIREBASE_CONFIG.apiKey&&!/^PEGA/.test(FIREBASE_CONFIG.apiKey);
-const cfgOk=()=>typeof firebase!=='undefined'&&cfgSet();
-const isDirty=()=>{try{return localStorage.getItem(DKEY)==='1'}catch(e){return false}};
-const setDirty=v=>{try{v?localStorage.setItem(DKEY,'1'):localStorage.removeItem(DKEY)}catch(e){}};
-const liveOf=()=>({players:S.players,subs:S.subs,idx:S.idx,inning:S.inning,outs:S.outs,bases:S.bases,us:S.us,them:S.them,rival:S.rival,date:S.date,msg:S.msg});
-const metaOf=()=>({team:S.team,roster:S.roster,games:S.games});
-const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='☁ Local',ok=false;
- if(cfgOk()){if(!cloud.user)t='☁ Entrar';else if(cloud.denied)t='☁ Sin acceso';else if(!cloud.online)t='☁ Sin red';else if(cloud.pending||cloud.timer)t='☁ …';else{t='☁ ✓';ok=true}}
- b.textContent=t;b.className='cloudbtn'+(ok?' ok':'')}
-function cloudPush(){if(!cfgSet())return;setDirty(true);if(!cloud.ref)return;clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>{cloud.timer=null;flush()},350);updBtn()}
-function flush(force){
- if(!cloud.ref||!cloud.synced.live||!cloud.synced.meta)return;
- const L=JSON.stringify(liveOf()),M=JSON.stringify(metaOf()),jobs=[];
- if(force||L!==cloud.lastLive){cloud.lastLive=L;jobs.push(cloud.ref.child('live').set(L))}
- if(force||M!==cloud.lastMeta){cloud.lastMeta=M;jobs.push(cloud.ref.child('meta').set(M))}
- if(!jobs.length){if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn();return}
- cloud.pending+=jobs.length;
- jobs.forEach(j=>j.then(()=>{cloud.pending--;if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn()}).catch(e=>{cloud.pending--;updBtn();console.error(e)}));
- updBtn()}
-function applyLive(v){try{const o=JSON.parse(v);['players','subs','idx','inning','outs','bases','us','them','rival','date','msg'].forEach(k=>{if(o[k]!==undefined)S[k]=o[k]});cloud.lastLive=v;hist=[];persist();render()}catch(e){console.error(e)}}
-function applyMeta(v){try{const o=JSON.parse(v);S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
-function mergeMeta(v){try{const o=JSON.parse(v),dirty=isDirty(),first=localStorage.getItem(LKEY)!==cloud.user.uid;
- const uni=(a,b)=>{const ids=new Set((a||[]).map(x=>x.id));return [...(a||[]),...(b||[]).filter(x=>!ids.has(x.id))]};
- if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||''}
- else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||''}
- localStorage.setItem(LKEY,cloud.user.uid);cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
-function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false};cloud.lastLive='';cloud.lastMeta='';
- cloud.ref.child('live').on('value',snap=>{const v=snap.val();
-  if(!cloud.synced.live){cloud.synced.live=true;if(v!=null&&!isDirty())applyLive(v);flush();return}
-  if(v==null||v===cloud.lastLive)return;applyLive(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
- cloud.ref.child('meta').on('value',snap=>{const v=snap.val();
-  if(!cloud.synced.meta){cloud.synced.meta=true;if(v!=null)mergeMeta(v);else{try{localStorage.setItem(LKEY,u.uid)}catch(e){}}flush();return}
-  if(v==null||v===cloud.lastMeta)return;applyMeta(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
- updBtn()}
-function wipeLocal(){S={subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(DKEY);localStorage.removeItem(LKEY)}catch(e){}}
-function cloudStop(){clearTimeout(cloud.timer);cloud.timer=null;if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off()}cloud.ref=null;cloud.user=null;updBtn()}
-const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
-function cloudLogin(create){const e=document.getElementById('cl_e').value.trim(),p=document.getElementById('cl_p').value,m=document.getElementById('cl_m');m.textContent='';
- if(!e||!p){m.textContent='Escribe correo y contraseña';return}
- const a=firebase.auth();a.signInWithEmailAndPassword(e,p).then(()=>closeS()).catch(er=>{m.textContent=AERR[er.code]||('Error: '+(er.code||er.message))})}
-function cloudLogout(){const go=()=>{cloudStop();wipeLocal();firebase.auth().signOut();render()};
- if(cloud.pending||cloud.timer||isDirty()){ask('Hay cambios que aún no se envían a la nube. Si cierras sesión se perderán. ¿Cerrar sesión?',go,'Cerrar sesión');return}
- closeS();go()}
-function cloudSync(){flush(true);closeS()}
-function cloudSheet(){let body;
- if(!cfgOk())body=`<h3>Nube (Firebase)</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">Aún no está conectada. Pega tu configuración de Firebase en FIREBASE_CONFIG (dentro del archivo, cerca del final) y sube el archivo a tu hosting. Mientras tanto, la app guarda solo en este teléfono.</div><button class="btn" onclick="closeS()">Cerrar</button>`;
- else if(!cloud.user)body=`<h3>Iniciar sesión</h3><div style="font-size:13px;color:var(--mu);margin-bottom:10px">Las cuentas las crea el administrador.</div><input id="cl_e" type="email" placeholder="Correo" autocomplete="username"><input id="cl_p" type="password" placeholder="Contraseña" autocomplete="current-password"><div id="cl_m" style="color:var(--rd);font-size:13px;min-height:18px;margin-bottom:6px"></div><button class="btn" onclick="cloudLogin(false)">Entrar</button><button class="btn" onclick="closeS()">Cerrar</button>`;
- else body=`<h3>Nube conectada</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">${esc(cloud.user.email||'')}<br>${cloud.denied?'Esta cuenta no tiene permiso para guardar datos. Pide acceso al administrador.':cloud.online?'Sincronizando en tiempo real':'Sin conexión: se enviará al reconectar'}</div><button class="btn" onclick="cloudSync()">Sincronizar ahora</button><button class="btn" style="color:var(--rd)" onclick="cloudLogout()">Cerrar sesión</button><button class="btn" onclick="closeS()">Cerrar</button>`;
- document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div>${body}</div></div>`}
-function cloudInit(){updBtn();if(!cfgOk())return;try{firebase.initializeApp(FIREBASE_CONFIG);cloud.db=firebase.database();
- cloud.db.ref('.info/connected').on('value',s=>{cloud.online=!!s.val();updBtn()});
- firebase.auth().onAuthStateChanged(u=>{if(u)cloudStart(u);else cloudStop()})}catch(e){console.error(e)}}
-cloudInit();
-</script>
-<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
-</body></html>
+</script></body></html>
