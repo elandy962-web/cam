@@ -353,7 +353,8 @@ const liveOf=()=>({players:S.players,subs:S.subs,idx:S.idx,inning:S.inning,outs:
 const metaOf=()=>({team:S.team,roster:S.roster,games:S.games});
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='☁ Local',ok=false;
- if(cfgOk()){if(!cloud.user)t='☁ Entrar';else if(cloud.denied)t='☁ Sin acceso';else if(!cloud.online)t='☁ Sin red';else if(cloud.pending||cloud.timer)t='☁ …';else{t='☁ ✓';ok=true}}
+ if(cfgSet()&&typeof firebase==='undefined')t='☁ Reparar';
+ else if(cfgOk()){if(!cloud.user)t='☁ Entrar';else if(cloud.denied)t='☁ Sin acceso';else if(!cloud.online)t='☁ Sin red';else if(cloud.pending||cloud.timer)t='☁ …';else{t='☁ ✓';ok=true}}
  b.textContent=t;b.className='cloudbtn'+(ok?' ok':'')}
 function cloudPush(){if(!cfgSet())return;setDirty(true);if(!cloud.ref)return;clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>{cloud.timer=null;flush()},350);updBtn()}
 function flush(force){
@@ -391,13 +392,18 @@ function cloudLogout(){const go=()=>{cloudStop();wipeLocal();firebase.auth().sig
  closeS();go()}
 function cloudSync(){flush(true);closeS()}
 function cloudSheet(){let body;
- if(!cfgOk())body=`<h3>Nube (Firebase)</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">Aún no está conectada. Pega tu configuración de Firebase en FIREBASE_CONFIG (dentro del archivo, cerca del final) y sube el archivo a tu hosting. Mientras tanto, la app guarda solo en este teléfono.</div><button class="btn" onclick="closeS()">Cerrar</button>`;
+ if(cfgSet()&&typeof firebase==='undefined')body=`<h3>No se pudo cargar Firebase</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">El teléfono no pudo descargar las librerías de Firebase (internet, bloqueador de contenido, VPN o una copia vieja guardada). Toca Reparar y la app se recargará. Tus datos del juego no se borran.</div><button class="btn" style="background:var(--ac);color:#fff" onclick="cloudRepair()">Reparar</button><button class="btn" onclick="closeS()">Cerrar</button>`;
+ else if(!cfgSet())body=`<h3>Nube (Firebase)</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">Aún no está conectada. Pega tu configuración de Firebase en FIREBASE_CONFIG (dentro del archivo, cerca del final) y sube el archivo a tu hosting. Mientras tanto, la app guarda solo en este teléfono.</div><button class="btn" onclick="closeS()">Cerrar</button>`;
  else if(!cloud.user)body=`<h3>Iniciar sesión</h3><div style="font-size:13px;color:var(--mu);margin-bottom:10px">Las cuentas las crea el administrador.</div><input id="cl_e" type="email" placeholder="Correo" autocomplete="username"><input id="cl_p" type="password" placeholder="Contraseña" autocomplete="current-password"><div id="cl_m" style="color:var(--rd);font-size:13px;min-height:18px;margin-bottom:6px"></div><button class="btn" onclick="cloudLogin(false)">Entrar</button><button class="btn" onclick="closeS()">Cerrar</button>`;
  else body=`<h3>Nube conectada</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">${esc(cloud.user.email||'')}<br>${cloud.denied?'Esta cuenta no tiene permiso para guardar datos. Pide acceso al administrador.':cloud.online?'Sincronizando en tiempo real':'Sin conexión: se enviará al reconectar'}</div><button class="btn" onclick="cloudSync()">Sincronizar ahora</button><button class="btn" style="color:var(--rd)" onclick="cloudLogout()">Cerrar sesión</button><button class="btn" onclick="closeS()">Cerrar</button>`;
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div>${body}</div></div>`}
-function cloudInit(){updBtn();if(!cfgOk())return;try{firebase.initializeApp(FIREBASE_CONFIG);cloud.db=firebase.database();
+function cloudRepair(){const go=()=>location.reload();try{(window.caches?caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))):Promise.resolve()).then(()=>navigator.serviceWorker?navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister()))):0).then(go,go)}catch(e){go()}}
+function loadSdk(cb){const urls=['app','auth','database'].map(n=>'https://www.gstatic.com/firebasejs/10.12.2/firebase-'+n+'-compat.js?r='+Date.now());let i=0;const nx=()=>{if(i>=urls.length)return cb();const sc=document.createElement('script');sc.src=urls[i++];sc.onload=nx;sc.onerror=()=>cb(new Error('sdk'));document.head.appendChild(sc)};nx()}
+function startFb(){try{firebase.initializeApp(FIREBASE_CONFIG);cloud.db=firebase.database();
  cloud.db.ref('.info/connected').on('value',s=>{cloud.online=!!s.val();updBtn()});
- firebase.auth().onAuthStateChanged(u=>{if(u)cloudStart(u);else cloudStop()})}catch(e){console.error(e)}}
+ firebase.auth().onAuthStateChanged(u=>{if(u)cloudStart(u);else cloudStop()})}catch(e){console.error(e)}updBtn()}
+function cloudInit(){updBtn();if(!cfgSet())return;if(typeof firebase==='undefined'){loadSdk(er=>{if(!er&&typeof firebase!=='undefined')startFb();else updBtn()});return}startFb()}
+addEventListener('online',()=>{if(cfgSet()&&!cloud.db)cloudInit()});
 cloudInit();
 </script>
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
