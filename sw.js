@@ -1,5 +1,5 @@
 /* Service worker: la app abre sin internet. Sube el número de V cuando cambies archivos. */
-const V = 'softball-v2';
+const V = 'softball-v3';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 const SDK = [
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
