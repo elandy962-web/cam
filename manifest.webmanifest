@@ -1,6 +1,6 @@
 {
-  "name": "Team Perversos Softball",
-  "short_name": "Perversos",
+  "name": "Softball",
+  "short_name": "Softball",
   "description": "Marcador y estadísticas de softball en tiempo real",
   "start_url": "./",
   "scope": "./",

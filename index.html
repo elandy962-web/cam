@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Perversos</title>
+<title>Softball</title>
 <meta name="theme-color" content="#071523">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Perversos">
+<meta name="apple-mobile-web-app-title" content="Softball">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -64,6 +64,10 @@ tr+tr td{border-top:1px solid var(--bd)}
 html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 body{-webkit-user-select:none;user-select:none;touch-action:manipulation;min-height:100vh;min-height:100dvh}
 input{-webkit-user-select:text;user-select:text}
+.grid .g,.grid .e{font-size:13px}
+.sg{display:flex;gap:5px;flex-wrap:wrap;margin:4px 0 10px}.sg button{flex:1;min-width:50px;padding:9px 4px;border-radius:9px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-weight:700;font-size:13px}.sg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.pre button{flex:1;padding:10px 4px;border-radius:9px;border:1px solid var(--ac2);background:transparent;color:var(--ac2);font-weight:800;font-size:12px}
+.brand>div:nth-child(2){min-width:0;flex:1}.brand-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* ===== Pantalla compacta ===== */
 body{padding:6px 10px 24px}
 .brand{padding:2px 2px 8px;gap:8px}.brand-mark{width:34px;height:34px;font-size:19px;border-radius:10px}.brand-name{font-size:18px}
@@ -91,7 +95,7 @@ body{padding:6px 10px 24px}
 .grid{gap:5px;margin-top:6px}.grid button{height:36px;font-size:14px}
 }
 </style></head><body>
-<div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name">TEAM <span>PERVERSOS</span></div></div><button id="cloud" class="cloudbtn" onclick="cloudSheet()">☁ Local</button></div>
+<div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name" id="bn"><span>SOFTBALL</span></div></div><button id="cloud" class="cloudbtn" onclick="cloudSheet()">☁ Local</button></div>
 <div class="tabs"><button id="t0" onclick="tab(0)">Juego</button><button id="t1" onclick="tab(1)">Estadísticas</button><button id="t2" onclick="tab(2)">Equipo</button><button id="t3" onclick="tab(3)">Historial</button></div>
 <div id="app"></div><div id="sheet"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -178,12 +182,12 @@ function mv(id,d){const i=S.players.findIndex(p=>p.id===id),j=i+d;if(j<0||j>=S.p
 function delR(id){ask('¿Quitar del plantel?',()=>{if(P(id))fromLine(id,true);S.roster=S.roster.filter(x=>x.id!==id);save();render()},'Quitar')}
 function seasonStats(){const m={};S.games.forEach(g=>g.players.forEach(p=>{const t=m[p.name]||(m[p.name]={name:p.name,GP:0,AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});if(p.AB+p.BB+p.SAC+p.R>0)t.GP++;['AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'].forEach(k=>t[k]+=p[k]||0)}));return Object.values(m).sort((a,b)=>b.H-a.H||b.AB-a.AB)}
 function rec(){let w=0,l=0,e=0;S.games.forEach(g=>g.us>g.them?w++:g.us<g.them?l++:e++);return 'Récord '+w+'G - '+l+'P'+(e?' - '+e+'E':'')}
-const AB_={sencillo:'1B',doble:'2B',triple:'3B','jonrón':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SAC'};
+const AB_={'doble play':'DP','triple play':'TP','jugada de selección':'FC',sencillo:'1B',doble:'2B',triple:'3B','jonrón':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SAC'};
 const sc=p=>p.s1+2*p.s2+3*p.s3+4*p.hr+p.R+p.RBI+0.5*p.BB+0.5*p.SAC-0.25*p.K;
 function mvp(ps){let b=null,v=0;ps.forEach(p=>{const x=sc(p);if(x>v||(b&&x===v&&x>0&&p.H>b.H)){b=p;v=x}});return b}
 function ex(p){return [[p.s1,'H1'],[p.s2,'H2'],[p.s3,'H3'],[p.hr,'HR'],[p.BB,'BB'],[p.K,'K'],[p.SAC,'SF'],[p.R,'CA'],[p.RBI,'CE']].filter(x=>x[0]>0).map(x=>(x[0]>1?x[0]+' ':'')+x[1])}
 function line(p){const it=ex(p);return (p.AB?p.H+' de '+p.AB:'0 turnos')+(it.length?' · '+it.join(' · '):'')}
-function cls(a){return /^(H1|H2|H3|HR)$/.test(a)?'h':/^(K|OUT)/.test(a)?'o':a=='◇'?'r':'w'}
+function cls(a){return /^(H1|H2|H3|HR)$/.test(a)?'h':/^(K|OUT|DP|TP)/.test(a)?'o':a=='◇'?'r':'w'}
 function sumCard(ps,gi){const m=mvp(ps);let N=Math.max(1,gi||0);ps.forEach(p=>(p.log||[]).forEach(e=>{if(e.i>N)N=e.i}));const cols=[...Array(N).keys()].map(k=>k+1);
 return `<div class="card tw"><b>Resumen por jugador y entrada</b><table style="margin-top:6px"><tr><th>Jugador</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${ps.map((p,i)=>`<tr><td>${i+1}. ${esc(p.name)}${m&&m.id===p.id?' ⭐':''}<div style="font-weight:400;color:var(--mu);font-size:11px">${p.AB?p.H+' de '+p.AB:'0 turnos'}</div></td>${cols.map(c=>`<td style="vertical-align:top;white-space:normal;min-width:58px">${(p.log||[]).filter(e=>e.i==c).map(e=>`<span class="ev ${cls(e.a)}">${e.a}${e.rbi?`<small> ${e.rbi}CI</small>`:''}</span>`).join('')}</td>`).join('')}</tr>`).join('')}</table><div style="color:var(--mu);font-size:11px;margin-top:8px">Columnas = entradas · ◇ anotó · CI impulsadas · OUT* out en las bases · ⭐ MVP</div></div>`}
 function mvpCard(g){const m=mvp(g.players);return `<div class="card" style="text-align:center"><div style="color:var(--mu);font-size:12px">JUGADOR MÁS VALIOSO</div>${m?`<div style="font-size:24px;font-weight:800">⭐ ${esc(m.name)}</div><div style="color:var(--mu);font-size:13px">${line(m)}</div>`:'<div style="color:var(--mu)">Sin datos</div>'}<div style="color:var(--mu);font-size:11px;margin-top:6px">Puntos: bases totales + carreras + impulsadas + ½ BB − ¼ K</div></div>`}
@@ -211,7 +215,7 @@ const e=ex(m).filter(t=>!/ (1B|K|BB|SAC)$|^(1B|K|BB|SAC)$/.test(t)||true);
 x.fillStyle='#fff';x.font='700 30px system-ui,sans-serif';x.fillText(fit(x,m.H+(m.H==1?' hit':' hits')+' en '+m.AB+(m.AB==1?' turno':' turnos')+(e.length?' · '+e.join(' · '):''),W-190),95,y+400);
 x.fillStyle='rgba(255,255,255,.6)';x.font='400 24px system-ui,sans-serif';x.fillText(fit(x,(m.log||[]).filter(t=>!t.run).map(t=>'E'+t.i+' '+t.a).join(' · '),W-190),95,y+432)}
 else{x.fillText('SIN DATOS',240,y+346)}});
-x.textAlign='center';x.fillStyle='rgba(255,255,255,.45)';x.font='italic 900 24px '+F;x.fillText('TEAM PERVERSOS',W/2,H-45);
+x.textAlign='center';x.fillStyle='rgba(255,255,255,.45)';x.font='italic 900 24px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,30),W/2,H-45);
 IBLOB_NAME='resultados.png';IBLOB=null;c.toBlob(b=>{IBLOB=b});const url=c.toDataURL('image/png');
 document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:92vh;overflow:auto"><img src="${url}" style="width:100%;border-radius:10px"><div style="color:var(--mu);font-size:13px;margin:8px 0">Mantén presionada la imagen para guardarla.</div><button class="btn" onclick="shareImg()">Compartir</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`}
 function mkStatsImg(season){
@@ -224,7 +228,7 @@ function mkStatsImg(season){
  const gr=x.createLinearGradient(0,0,W,H);gr.addColorStop(0,NAVY);gr.addColorStop(1,'#03070c');x.fillStyle=gr;x.fillRect(0,0,W,H);
  x.fillStyle='rgba(255,90,0,.08)';for(let k=-2;k<16;k++){x.beginPath();x.moveTo(k*230,0);x.lineTo(k*230+95,0);x.lineTo(k*230-420,H);x.lineTo(k*230-520,H);x.closePath();x.fill()}
  x.fillStyle=ORANGE;x.beginPath();x.moveTo(0,0);x.lineTo(W,0);x.lineTo(W,170);x.lineTo(0,215);x.closePath();x.fill();
- x.fillStyle=NAVY;x.textAlign='left';x.font='italic 900 76px '+F;x.fillText(fit(x,(S.team||'TEAM PERVERSOS').toUpperCase(),W-120),55,92);
+ x.fillStyle=NAVY;x.textAlign='left';x.font='italic 900 76px '+F;x.fillText(fit(x,(S.team||'MI EQUIPO').toUpperCase(),W-120),55,92);
  x.font='italic 900 46px '+F;x.fillText(season?'ESTADÍSTICAS DE TEMPORADA':'ESTADÍSTICAS DEL JUEGO',55,155);
  x.font='700 27px system-ui,sans-serif';x.fillStyle=NAVY;x.fillText(season?rec():`${fd(S.date)} · vs ${(S.rival||'Rival').toUpperCase()}`,55,198);
  const x0=40,y0=260,tableW=W-80,nameW=430,cellW=(tableW-nameW)/(cols.length-1);
@@ -248,14 +252,19 @@ function mkStatsImg(season){
    x.strokeStyle='rgba(255,255,255,.08)';x.beginPath();x.moveTo(x0,y+rowH);x.lineTo(x0+tableW,y+rowH);x.stroke();
  });
  x.textAlign='left';x.fillStyle=MUTED;x.font='italic 800 22px '+F;x.fillText('Los líderes de cada estadística están resaltados en dorado.',x0,y0+78+ps.length*rowH+40);
- x.textAlign='center';x.fillStyle=MUTED;x.font='italic 800 23px '+F;x.fillText('TEAM PERVERSOS · ESTADÍSTICAS',W/2,H-24);
+ x.textAlign='center';x.fillStyle=MUTED;x.font='italic 800 23px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,26)+' · ESTADÍSTICAS',W/2,H-24);
  IBLOB_NAME=season?'estadisticas_temporada.png':'estadisticas_juego.png';IBLOB=null;c.toBlob(b=>{IBLOB=b});const url=c.toDataURL('image/png');
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:92vh;overflow:auto"><img src="${url}" style="display:block;width:100%;max-width:100%;height:auto;border-radius:10px;object-fit:contain"><div style="color:var(--mu);font-size:13px;margin:8px 0">Los líderes de cada estadística están resaltados en dorado. Puedes compartirla directamente.</div><button class="btn" onclick="shareImg()">Compartir</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`
 }
 async function shareImg(){try{const f=new File([IBLOB],IBLOB_NAME,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});else alert('Mantén presionada la imagen para guardarla.')}catch(e){if(e.name!=='AbortError')alert('Mantén presionada la imagen para guardarla.')}}
+function fcb(){if(!S.players.length){tab(2);return}const bs=S.bases;let ch=0;while(ch<3&&bs[ch]!=null)ch++;
+ if(ch<1){S.msg='Necesitas un corredor en 1ª para este botón (si fue error usa Error)';save();render();return}
+ act(b=>{b.AB++;const nb=[null,null,null];for(let i=0;i<3;i++){const id=bs[i];if(id==null)continue;if(i<ch-1)nb[i+1]=id;else if(i===ch-1){(P(id).log=P(id).log||[]).push({i:S.inning,a:'OUT*'});ev.push(P(id).name+' out')}else nb[i]=id}
+  nb[0]=b.id;S.bases=nb;out();nxt();return b.name+': jugada de selección'})}
 function tab(n){T=n;V=null;render()}
 const avg=p=>p.AB?(p.H/p.AB).toFixed(3).replace(/^0/,''):'.000';
-function render(){
+function brandUpdate(){const el=document.getElementById('bn');const n=(S.team||'').trim()||'Softball';if(el){const w=n.toUpperCase().split(/\s+/);el.innerHTML=w.length>1?esc(w[0])+' <span>'+esc(w.slice(1).join(' '))+'</span>':'<span>'+esc(w[0])+'</span>'}document.title=n}
+function render(){brandUpdate();
 for(let i=0;i<4;i++)document.getElementById('t'+i).className=T==i?'on':'';
 const a=document.getElementById('app');
 if(T==0){
@@ -269,13 +278,13 @@ a.innerHTML=`<div class="card row rv"><input placeholder="Equipo rival" value="$
 <div class="sm" style="text-align:right">EN DECK<br><b style="font-size:15px;color:var(--tx)">${has?nx.name:'—'}</b></div></div>
 <div class="grid"><button onclick="hit(1)">1B</button><button onclick="hit(2)">2B</button><button onclick="hit(3)">3B</button><button onclick="hit(4)">HR</button>
 <button class="w" onclick="walk(false)">BB</button><button class="w" onclick="walk(true)">Error</button><button class="o" onclick="ko()">K</button><button class="o" onclick="fo()">Out</button>
-<button class="g" onclick="sac()">SF</button><button class="g" style="grid-column:span 2" onclick="undo()">↶ Deshacer</button><button class="e" onclick="endGame()">Terminar</button></div></div>`;
+<button class="g" style="font-size:12px;line-height:1.1" onclick="fcb()">Out, se<br>embasó</button><button class="g" onclick="sac()">SF</button><button class="g" onclick="undo()">↶ Deshacer</button><button class="e" onclick="endGame()">Terminar</button></div></div>`;
 }else if(T==1){
 const sea=ST==1,ps=sea?seasonStats():S.players;
 a.innerHTML=`<div class="tabs"><button class="${!sea?'on':''}" onclick="ST=0;render()">Este juego</button><button class="${sea?'on':''}" onclick="ST=1;render()">Temporada</button></div>${sea?`<div class="card" style="text-align:center"><b>${rec()}</b><div style="color:var(--mu);font-size:12px">Suma de los juegos guardados</div></div>`:''}${ps.length?tbl(ps,sea):'<div class="card" style="color:var(--mu)">Sin datos todavía.</div>'}${!sea&&ps.length?sumCard(ps,S.inning):''}${ps.length?`<button class="btn share-stats" onclick="mkStatsImg(${sea})">🖼 Crear imagen de estadísticas</button>`:''}<div style="color:var(--mu);font-size:12px;text-align:center">JJ juegos · AB turnos · CA carreras anotadas · CE carreras empujadas · H total de hits · H1 sencillo · H2 doble · H3 triple · SF sacrificio · AVE promedio</div>`;
 }else if(T==3){a.innerHTML=histHTML()}else{
 const inL=id=>S.players.some(p=>p.id===id);
-a.innerHTML=`<div class="card"><b>Mi equipo</b><div class="row" style="margin-top:8px"><input placeholder="Nombre de tu equipo" value="${esc(S.team)}" onchange="S.team=this.value;save()"></div></div><div class="card"><div class="row"><input id="np" placeholder="Nombre del jugador" onkeydown="if(event.key=='Enter')addR()"><button class="btn" onclick="addR()">Al plantel</button></div></div>
+a.innerHTML=`<div class="card"><b>Mi equipo</b><div class="row" style="margin-top:8px"><input placeholder="Nombre de tu equipo" value="${esc(S.team)}" onchange="S.team=this.value;save();brandUpdate()"></div></div><div class="card"><div class="row"><input id="np" placeholder="Nombre del jugador" onkeydown="if(event.key=='Enter')addR()"><button class="btn" onclick="addR()">Al plantel</button></div></div>
 <div class="card"><b>Lineup de hoy (${S.players.length})</b>${S.players.map((p,i)=>`<div class="pl"><span>${i+1}. ${esc(p.name)}</span><span><button style="color:var(--tx)" onclick="mv(${p.id},-1)">▲</button><button style="color:var(--tx)" onclick="mv(${p.id},1)">▼</button><button onclick="fromLine(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Toca "+ Lineup" en los jugadores del plantel, en el orden en que batean.</div>'}</div>
 <div class="card"><b>Plantel (${S.roster.length})</b>${S.roster.map(p=>`<div class="pl"><span>${esc(p.name)}</span><span>${inL(p.id)?'<span style="color:var(--ac);font-size:13px">✓ en lineup</span>':`<button style="color:var(--ac);font-size:14px;font-weight:700" onclick="toLine(${p.id})">+ Lineup</button>`}<button onclick="delR(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Agrega aquí a todo tu equipo.</div>'}</div>
 <button class="btn" style="width:100%;color:var(--rd)" onclick="newGame()">Nuevo juego (reiniciar)</button>`;
@@ -322,7 +331,7 @@ function mergeMeta(v){try{const o=JSON.parse(v),dirty=isDirty(),first=localStora
  if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||''}
  else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||''}
  localStorage.setItem(LKEY,cloud.user.uid);cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
-function cloudStart(u){cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false};cloud.lastLive='';cloud.lastMeta='';
+function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false};cloud.lastLive='';cloud.lastMeta='';
  cloud.ref.child('live').on('value',snap=>{const v=snap.val();
   if(!cloud.synced.live){cloud.synced.live=true;if(v!=null&&!isDirty())applyLive(v);flush();return}
   if(v==null||v===cloud.lastLive)return;applyLive(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
@@ -330,12 +339,15 @@ function cloudStart(u){cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('s
   if(!cloud.synced.meta){cloud.synced.meta=true;if(v!=null)mergeMeta(v);else{try{localStorage.setItem(LKEY,u.uid)}catch(e){}}flush();return}
   if(v==null||v===cloud.lastMeta)return;applyMeta(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
  updBtn()}
-function cloudStop(){if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off()}cloud.ref=null;cloud.user=null;updBtn()}
+function wipeLocal(){S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(DKEY);localStorage.removeItem(LKEY)}catch(e){}}
+function cloudStop(){clearTimeout(cloud.timer);cloud.timer=null;if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off()}cloud.ref=null;cloud.user=null;updBtn()}
 const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
 function cloudLogin(create){const e=document.getElementById('cl_e').value.trim(),p=document.getElementById('cl_p').value,m=document.getElementById('cl_m');m.textContent='';
  if(!e||!p){m.textContent='Escribe correo y contraseña';return}
  const a=firebase.auth();a.signInWithEmailAndPassword(e,p).then(()=>closeS()).catch(er=>{m.textContent=AERR[er.code]||('Error: '+(er.code||er.message))})}
-function cloudLogout(){firebase.auth().signOut();closeS()}
+function cloudLogout(){const go=()=>{cloudStop();wipeLocal();firebase.auth().signOut();render()};
+ if(cloud.pending||cloud.timer||isDirty()){ask('Hay cambios que aún no se envían a la nube. Si cierras sesión se perderán. ¿Cerrar sesión?',go,'Cerrar sesión');return}
+ closeS();go()}
 function cloudSync(){flush(true);closeS()}
 function cloudSheet(){let body;
  if(!cfgOk())body=`<h3>Nube (Firebase)</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">Aún no está conectada. Pega tu configuración de Firebase en FIREBASE_CONFIG (dentro del archivo, cerca del final) y sube el archivo a tu hosting. Mientras tanto, la app guarda solo en este teléfono.</div><button class="btn" onclick="closeS()">Cerrar</button>`;
