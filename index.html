@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Softball en vivo</title>
+<title>Perversos</title>
+<meta name="theme-color" content="#071523">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Perversos">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
 :root{--bg:#071523;--card:#101f2d;--card2:#0c1925;--tx:#f7f8fa;--mu:#aeb8c2;--ac:#ff5a00;--ac2:#ffb000;--rd:#e43d30;--bd:#294052;--glow:rgba(255,90,0,.22);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 :root[data-theme="light"]{--bg:#eef1f4;--card:#fff;--card2:#f7f8fa;--tx:#101820;--mu:#687580;--ac:#f05200;--ac2:#e6a000;--rd:#c9352b;--bd:#d7dfe5;--glow:rgba(240,82,0,.14)}
@@ -52,13 +60,17 @@ tr+tr td{border-top:1px solid var(--bd)}
 .share-stats{width:100%;margin:12px 0;background:linear-gradient(135deg,var(--ac),#d93f00);color:#fff!important;border-color:var(--ac)!important;font-weight:900;box-shadow:0 6px 18px rgba(255,90,0,.25)}
 .cloudbtn{margin-left:auto;border:1px solid var(--bd);background:var(--card);color:var(--mu);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:800}.cloudbtn.ok{color:var(--ac2);border-color:var(--ac2)}
 .sheet input{width:100%;margin-bottom:8px}
+/* ===== Modo app ===== */
+html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+body{-webkit-user-select:none;user-select:none;touch-action:manipulation;min-height:100vh;min-height:100dvh}
+input{-webkit-user-select:text;user-select:text}
 /* ===== Pantalla compacta ===== */
 body{padding:6px 10px 24px}
 .brand{padding:2px 2px 8px;gap:8px}.brand-mark{width:34px;height:34px;font-size:19px;border-radius:10px}.brand-name{font-size:18px}
 .cloudbtn{padding:5px 10px}
 .tabs{margin-bottom:8px}.tabs button{padding:8px 2px;font-size:13px}
 .card{padding:10px;margin-bottom:8px}
-.rv{gap:8px;padding:6px 8px}.rv input{padding:7px 10px;font-size:15px;border-radius:9px}
+.rv{gap:8px;padding:6px 8px}.rv input{padding:7px 10px;font-size:16px;border-radius:9px}
 .scrow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:4px}
 .sc .t{text-align:center}.sc .n{font-size:11px;line-height:1.1;color:var(--mu);font-weight:800}.sc .s{font-size:36px;font-weight:900;line-height:1.05;color:#fff}
 .sc .pm button{width:34px;height:28px;margin:2px;border-radius:7px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:17px}
@@ -282,17 +294,18 @@ const FIREBASE_CONFIG={
 };
 /* ==================================================== */
 const DKEY='softball_dirty_v1',LKEY='softball_linked_v1';
-const cloud={user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',synced:{live:false,meta:false}};
-const cfgOk=()=>typeof firebase!=='undefined'&&FIREBASE_CONFIG.apiKey&&!/^PEGA/.test(FIREBASE_CONFIG.apiKey);
+const cloud={denied:false,user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',synced:{live:false,meta:false}};
+const cfgSet=()=>!!FIREBASE_CONFIG.apiKey&&!/^PEGA/.test(FIREBASE_CONFIG.apiKey);
+const cfgOk=()=>typeof firebase!=='undefined'&&cfgSet();
 const isDirty=()=>{try{return localStorage.getItem(DKEY)==='1'}catch(e){return false}};
 const setDirty=v=>{try{v?localStorage.setItem(DKEY,'1'):localStorage.removeItem(DKEY)}catch(e){}};
 const liveOf=()=>({players:S.players,idx:S.idx,inning:S.inning,outs:S.outs,bases:S.bases,us:S.us,them:S.them,rival:S.rival,date:S.date,msg:S.msg});
 const metaOf=()=>({team:S.team,roster:S.roster,games:S.games});
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='☁ Local',ok=false;
- if(cfgOk()){if(!cloud.user)t='☁ Entrar';else if(!cloud.online)t='☁ Sin red';else if(cloud.pending||cloud.timer)t='☁ …';else{t='☁ ✓';ok=true}}
+ if(cfgOk()){if(!cloud.user)t='☁ Entrar';else if(cloud.denied)t='☁ Sin acceso';else if(!cloud.online)t='☁ Sin red';else if(cloud.pending||cloud.timer)t='☁ …';else{t='☁ ✓';ok=true}}
  b.textContent=t;b.className='cloudbtn'+(ok?' ok':'')}
-function cloudPush(){if(!cfgOk())return;setDirty(true);if(!cloud.ref)return;clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>{cloud.timer=null;flush()},350);updBtn()}
+function cloudPush(){if(!cfgSet())return;setDirty(true);if(!cloud.ref)return;clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>{cloud.timer=null;flush()},350);updBtn()}
 function flush(force){
  if(!cloud.ref||!cloud.synced.live||!cloud.synced.meta)return;
  const L=JSON.stringify(liveOf()),M=JSON.stringify(metaOf()),jobs=[];
@@ -309,29 +322,30 @@ function mergeMeta(v){try{const o=JSON.parse(v),dirty=isDirty(),first=localStora
  if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||''}
  else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||''}
  localStorage.setItem(LKEY,cloud.user.uid);cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
-function cloudStart(u){cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false};cloud.lastLive='';cloud.lastMeta='';
+function cloudStart(u){cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false};cloud.lastLive='';cloud.lastMeta='';
  cloud.ref.child('live').on('value',snap=>{const v=snap.val();
   if(!cloud.synced.live){cloud.synced.live=true;if(v!=null&&!isDirty())applyLive(v);flush();return}
-  if(v==null||v===cloud.lastLive)return;applyLive(v)},e=>{console.error(e);updBtn()});
+  if(v==null||v===cloud.lastLive)return;applyLive(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
  cloud.ref.child('meta').on('value',snap=>{const v=snap.val();
   if(!cloud.synced.meta){cloud.synced.meta=true;if(v!=null)mergeMeta(v);else{try{localStorage.setItem(LKEY,u.uid)}catch(e){}}flush();return}
-  if(v==null||v===cloud.lastMeta)return;applyMeta(v)},e=>console.error(e));
+  if(v==null||v===cloud.lastMeta)return;applyMeta(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
  updBtn()}
 function cloudStop(){if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off()}cloud.ref=null;cloud.user=null;updBtn()}
 const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
 function cloudLogin(create){const e=document.getElementById('cl_e').value.trim(),p=document.getElementById('cl_p').value,m=document.getElementById('cl_m');m.textContent='';
  if(!e||!p){m.textContent='Escribe correo y contraseña';return}
- const a=firebase.auth();(create?a.createUserWithEmailAndPassword(e,p):a.signInWithEmailAndPassword(e,p)).then(()=>closeS()).catch(er=>{m.textContent=AERR[er.code]||('Error: '+(er.code||er.message))})}
+ const a=firebase.auth();a.signInWithEmailAndPassword(e,p).then(()=>closeS()).catch(er=>{m.textContent=AERR[er.code]||('Error: '+(er.code||er.message))})}
 function cloudLogout(){firebase.auth().signOut();closeS()}
 function cloudSync(){flush(true);closeS()}
 function cloudSheet(){let body;
  if(!cfgOk())body=`<h3>Nube (Firebase)</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">Aún no está conectada. Pega tu configuración de Firebase en FIREBASE_CONFIG (dentro del archivo, cerca del final) y sube el archivo a tu hosting. Mientras tanto, la app guarda solo en este teléfono.</div><button class="btn" onclick="closeS()">Cerrar</button>`;
- else if(!cloud.user)body=`<h3>Iniciar sesión</h3><input id="cl_e" type="email" placeholder="Correo" autocomplete="username"><input id="cl_p" type="password" placeholder="Contraseña" autocomplete="current-password"><div id="cl_m" style="color:var(--rd);font-size:13px;min-height:18px;margin-bottom:6px"></div><button class="btn" onclick="cloudLogin(false)">Entrar</button><button class="btn" onclick="cloudLogin(true)">Crear cuenta</button><button class="btn" onclick="closeS()">Cerrar</button>`;
- else body=`<h3>Nube conectada</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">${esc(cloud.user.email||'')}<br>${cloud.online?'Sincronizando en tiempo real':'Sin conexión: se enviará al reconectar'}</div><button class="btn" onclick="cloudSync()">Sincronizar ahora</button><button class="btn" style="color:var(--rd)" onclick="cloudLogout()">Cerrar sesión</button><button class="btn" onclick="closeS()">Cerrar</button>`;
+ else if(!cloud.user)body=`<h3>Iniciar sesión</h3><div style="font-size:13px;color:var(--mu);margin-bottom:10px">Las cuentas las crea el administrador.</div><input id="cl_e" type="email" placeholder="Correo" autocomplete="username"><input id="cl_p" type="password" placeholder="Contraseña" autocomplete="current-password"><div id="cl_m" style="color:var(--rd);font-size:13px;min-height:18px;margin-bottom:6px"></div><button class="btn" onclick="cloudLogin(false)">Entrar</button><button class="btn" onclick="closeS()">Cerrar</button>`;
+ else body=`<h3>Nube conectada</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">${esc(cloud.user.email||'')}<br>${cloud.denied?'Esta cuenta no tiene permiso para guardar datos. Pide acceso al administrador.':cloud.online?'Sincronizando en tiempo real':'Sin conexión: se enviará al reconectar'}</div><button class="btn" onclick="cloudSync()">Sincronizar ahora</button><button class="btn" style="color:var(--rd)" onclick="cloudLogout()">Cerrar sesión</button><button class="btn" onclick="closeS()">Cerrar</button>`;
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div>${body}</div></div>`}
 function cloudInit(){updBtn();if(!cfgOk())return;try{firebase.initializeApp(FIREBASE_CONFIG);cloud.db=firebase.database();
  cloud.db.ref('.info/connected').on('value',s=>{cloud.online=!!s.val();updBtn()});
  firebase.auth().onAuthStateChanged(u=>{if(u)cloudStart(u);else cloudStop()})}catch(e){console.error(e)}}
 cloudInit();
 </script>
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
 </body></html>
