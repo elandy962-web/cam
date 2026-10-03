@@ -401,7 +401,7 @@ addEventListener('online',()=>{if(cfgSet()&&!cloud.db)cloudInit()});
 cloudInit();
 </script>
 <script>
-function fit(){const w=innerWidth,h=innerHeight,land=w>h*1.15,r=document.documentElement;
+function fitScreen(){const w=innerWidth,h=innerHeight,land=w>h*1.15,r=document.documentElement;
  let k=land?Math.min(w/780,h/400):Math.min(w/400,h/580);k=Math.max(1,Math.min(k,3));
  const W=w/k,H=h/k,two=land&&W>=740,cmp=!land&&H<640;
  document.body.style.zoom=k;document.body.style.minHeight=H+'px';
@@ -409,7 +409,7 @@ function fit(){const w=innerWidth,h=innerHeight,land=w>h*1.15,r=document.documen
  let dh=cmp?96:120,bh=cmp?36:42;
  if(two){const R=H-156,colW=(W-40)/2;dh=Math.max(110,Math.min(R-85,(colW-170)/1.1333,260));bh=Math.max(38,Math.min(80,(R-108)/3))}
  r.style.setProperty('--dh',dh+'px');r.style.setProperty('--bh',bh+'px')}
-addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,250));fit();
+addEventListener('resize',fitScreen);addEventListener('orientationchange',()=>setTimeout(fitScreen,250));fitScreen();
 </script>
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
 </body></html>
