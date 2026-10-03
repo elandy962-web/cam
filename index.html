@@ -118,7 +118,7 @@ let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-S.games=S.games||[];S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
+S.games=S.games||[];S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 const P=id=>S.players.find(p=>p.id===id);
 const cur=()=>S.players[S.idx%S.players.length];
@@ -192,8 +192,8 @@ function toLine(id){const r=S.roster.find(x=>x.id===id);if(!r||P(id))return;S.pl
 function fromLine(id,force){const p=P(id);if(!p)return;if(!force&&p.AB+p.BB+p.R+p.SAC>0){ask('Este jugador ya tiene estadísticas en este juego. ¿Quitarlo del lineup?',()=>fromLine(id,true),'Quitar');return}const c=cur().id;S.players=S.players.filter(x=>x.id!==id);S.bases=S.bases.map(b=>b===id?null:b);const k=S.players.findIndex(x=>x.id===c);S.idx=k>=0?k:(S.players.length?S.idx%S.players.length:0);save();render()}
 function mv(id,d){const i=S.players.findIndex(p=>p.id===id),j=i+d;if(j<0||j>=S.players.length)return;const c=cur().id;[S.players[i],S.players[j]]=[S.players[j],S.players[i]];S.idx=S.players.findIndex(p=>p.id===c);save();render()}
 function delR(id){ask('¿Quitar del plantel?',()=>{if(P(id))fromLine(id,true);S.roster=S.roster.filter(x=>x.id!==id);save();render()},'Quitar')}
-function seasonStats(){const m={};S.games.forEach(g=>g.players.forEach(p=>{const k=p.id!=null?p.id:p.name,t=m[k]||(m[k]={name:p.name,num:p.num||'',GP:0,AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});if(p.AB+p.BB+p.SAC+p.R>0)t.GP++;['AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'].forEach(k=>t[k]+=p[k]||0)}));return Object.values(m).sort((a,b)=>b.H-a.H||b.AB-a.AB)}
-function rec(){let w=0,l=0,e=0;S.games.forEach(g=>g.us>g.them?w++:g.us<g.them?l++:e++);return 'Récord '+w+'G - '+l+'P'+(e?' - '+e+'E':'')}
+function seasonStats(){const m={};(S.base&&S.base.players||[]).forEach(p=>{m[p.id]={name:p.name,num:p.num||'',GP:p.GP||0,AB:p.AB||0,H:p.H||0,s1:p.s1||0,s2:p.s2||0,s3:p.s3||0,hr:p.hr||0,BB:p.BB||0,K:p.K||0,R:p.R||0,RBI:p.RBI||0,SAC:p.SAC||0}});S.games.forEach(g=>g.players.forEach(p=>{const k=p.id!=null?p.id:p.name,t=m[k]||(m[k]={name:p.name,num:p.num||'',GP:0,AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});if(p.AB+p.BB+p.SAC+p.R>0)t.GP++;['AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'].forEach(k=>t[k]+=p[k]||0)}));return Object.values(m).sort((a,b)=>b.H-a.H||b.AB-a.AB)}
+function rec(){let w=S.base?S.base.w||0:0,l=S.base?S.base.l||0:0,e=S.base?S.base.e||0:0;S.games.forEach(g=>g.us>g.them?w++:g.us<g.them?l++:e++);return 'Récord '+w+'G - '+l+'P'+(e?' - '+e+'E':'')}
 const AB_={'doble play':'DP','triple play':'TP','jugada de selección':'FC',sencillo:'H1',doble:'H2',triple:'H3','jonrón':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SF'};
 const sc=p=>p.s1+2*p.s2+3*p.s3+4*p.hr+p.R+p.RBI+0.5*p.BB+0.5*p.SAC-0.25*p.K;
 function mvp(ps){let b=null,v=0;ps.forEach(p=>{const x=sc(p);if(x>v||(b&&x===v&&x>0&&p.H>b.H)){b=p;v=x}});return b}
@@ -275,7 +275,7 @@ function fcb(){if(!S.players.length){tab(2);return}const bs=S.bases;let ch=0;whi
  act(b=>{b.AB++;const nb=[null,null,null];for(let i=0;i<3;i++){const id=bs[i];if(id==null)continue;if(i<ch-1)nb[i+1]=id;else if(i===ch-1){(P(id).log=P(id).log||[]).push({i:S.inning,a:'*'});ev.push(nm(P(id))+' out')}else nb[i]=id}
   nb[0]=b.id;S.bases=nb;out();nxt();return nm(b)+': jugada de selección'})}
 function editP(id){const r=S.roster.find(x=>x.id===id);if(!r)return;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Editar jugador</h3><input id="en" value="${esc(r.name)}" placeholder="Nombre"><input id="em" value="${esc(r.num||'')}" placeholder="Número" inputmode="numeric"><button class="btn" style="background:var(--ac);color:#fff" onclick="saveP(${id})">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
-function saveP(id){const n=document.getElementById('en').value.trim(),m=document.getElementById('em').value.trim();if(!n)return;closeS();const up=p=>{if(p&&p.id===id){p.name=n;p.num=m}};S.roster.forEach(up);S.players.forEach(up);(S.subs||[]).forEach(up);S.games.forEach(g=>g.players.forEach(up));save();render()}
+function saveP(id){const n=document.getElementById('en').value.trim(),m=document.getElementById('em').value.trim();if(!n)return;closeS();const up=p=>{if(p&&p.id===id){p.name=n;p.num=m}};S.roster.forEach(up);S.players.forEach(up);(S.subs||[]).forEach(up);(S.base&&S.base.players||[]).forEach(up);S.games.forEach(g=>g.players.forEach(up));save();render()}
 let SUBOUT=null;
 function subSheet(){if(!S.players.length){tab(2);return}SUBOUT=null;drawSub()}
 function drawSub(){let h;
@@ -285,6 +285,17 @@ function drawSub(){let h;
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto">${h}</div></div>`}
 function subNew(){const n=document.getElementById('sn').value.trim(),m=document.getElementById('sm').value.trim();if(!n)return;const r={id:Date.now()+Math.random(),name:n,num:m};S.roster.push(r);doSub(r.id)}
 function doSub(newId){const old=P(SUBOUT),r=S.roster.find(x=>x.id===newId);if(!old||!r)return;closeS();hist.push(JSON.stringify(S));const i=S.players.indexOf(old);S.subs=S.subs||[];S.subs.push({...old,sub:true});S.players[i]={...mk(r.name,r.num),id:newId};S.bases=S.bases.map(b=>b===old.id?newId:b);S.msg='Sustitución: entra '+nm(r)+' por '+nm(old);SUBOUT=null;save();render()}
+function baseSheet(){const b=S.base;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3>Acumulado anterior</h3><div style="font-size:13px;color:var(--mu);margin-bottom:10px">${b?`Cargado: ${b.players.length} jugadores · récord ${b.w}-${b.l}. Si importas otro archivo, reemplaza este.`:'Carga el archivo .json con los totales anteriores (jugadores, juegos y récord). Se suma a las estadísticas de temporada.'}</div><input type="file" id="bf" accept=".json,application/json"><textarea id="bt" placeholder="…o pega aquí el contenido del archivo" style="width:100%;height:90px;margin:8px 0;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);padding:8px;font-size:16px"></textarea><div id="bm" style="color:var(--rd);font-size:13px;min-height:18px;margin-bottom:6px"></div><button class="btn" style="background:var(--ac);color:#fff" onclick="baseGo()">Importar</button>${b?'<button class="btn" style="color:var(--rd)" onclick="baseDel()">Quitar acumulado</button>':''}<button class="btn" onclick="closeS()">Cerrar</button></div></div>`}
+function baseGo(){const f=document.getElementById('bf').files[0],t=document.getElementById('bt').value.trim(),m=document.getElementById('bm');const run=txt=>{const r=importBase(txt);if(r)m.textContent=r;else closeS()};
+ if(f){const rd=new FileReader();rd.onload=()=>run(rd.result);rd.readAsText(f)}else if(t)run(t);else m.textContent='Elige el archivo o pega el contenido'}
+function baseDel(){ask('¿Quitar el acumulado anterior? Las estadísticas de temporada volverán a sumar solo los juegos guardados.',()=>{S.base=null;save();render()},'Quitar')}
+function importBase(txt){let d;try{d=JSON.parse(txt)}catch(e){return 'El archivo no es válido'}
+ if(!d||!Array.isArray(d.players))return 'No encontré la lista de jugadores';
+ const key=x=>String(x||'').trim().toLowerCase(),N=v=>Number(v)||0;
+ const ent=(n,u)=>{let r=S.roster.find(q=>key(q.name)===key(n)&&(String(q.num||'')===String(u||'')||!q.num));if(!r){r={id:Date.now()+Math.random(),name:String(n).trim(),num:String(u||'')};S.roster.push(r)}else if(!r.num&&u)r.num=String(u);return r};
+ const pl=d.players.map(p=>{const r=ent(p.name,p.num);return {id:r.id,name:r.name,num:r.num||'',GP:N(p.GP),AB:N(p.AB),H:N(p.s1)+N(p.s2)+N(p.s3)+N(p.hr),s1:N(p.s1),s2:N(p.s2),s3:N(p.s3),hr:N(p.hr),BB:N(p.BB),K:N(p.K),R:N(p.R),RBI:N(p.RBI),SAC:N(p.SAC)}});
+ (d.roster||[]).forEach(p=>ent(p.name,p.num));
+ S.base={w:N(d.w),l:N(d.l),e:N(d.e),players:pl};save();render();return ''}
 function tab(n){T=n;V=null;render()}
 const avg=p=>p.AB?(p.H/p.AB).toFixed(3).replace(/^0/,''):'.000';
 function brandUpdate(){const el=document.getElementById('bn');const n=(S.team||'').trim()||'Softball';if(el){const w=n.toUpperCase().split(/\s+/);el.innerHTML=w.length>1?esc(w[0])+' <span>'+esc(w.slice(1).join(' '))+'</span>':'<span>'+esc(w[0])+'</span>'}document.title=n}
@@ -305,13 +316,13 @@ a.innerHTML=`<div class="card row rv"><input placeholder="Equipo rival" value="$
 <button class="g" style="font-size:12px;line-height:1.1" onclick="fcb()">Out, se<br>embasó</button><button class="g" onclick="sac()">SF</button><button class="g" onclick="undo()">↶ Deshacer</button><button class="e" onclick="endGame()">Terminar</button></div></div>`;
 }else if(T==1){
 const sea=ST==1,ps=sea?seasonStats():gamePlayers();
-a.innerHTML=`<div class="tabs"><button class="${!sea?'on':''}" onclick="ST=0;render()">Este juego</button><button class="${sea?'on':''}" onclick="ST=1;render()">Temporada</button></div>${sea?`<div class="card" style="text-align:center"><b>${rec()}</b><div style="color:var(--mu);font-size:12px">Suma de los juegos guardados</div></div>`:''}${ps.length?tbl(ps,sea):'<div class="card" style="color:var(--mu)">Sin datos todavía.</div>'}${!sea&&ps.length?sumCard(ps,S.inning):''}${ps.length?`<button class="btn share-stats" onclick="mkStatsImg(${sea})">🖼 Crear imagen de estadísticas</button>`:''}<div style="color:var(--mu);font-size:12px;text-align:center">JJ juegos · AB turnos · CA carreras anotadas · CE carreras empujadas · H total de hits · H1 sencillo · H2 doble · H3 triple · SF sacrificio · AVE promedio</div>`;
+a.innerHTML=`<div class="tabs"><button class="${!sea?'on':''}" onclick="ST=0;render()">Este juego</button><button class="${sea?'on':''}" onclick="ST=1;render()">Temporada</button></div>${sea?`<div class="card" style="text-align:center"><b>${rec()}</b><div style="color:var(--mu);font-size:12px">${S.base?'Acumulado anterior + juegos guardados':'Suma de los juegos guardados'}</div></div>`:''}${ps.length?tbl(ps,sea):'<div class="card" style="color:var(--mu)">Sin datos todavía.</div>'}${!sea&&ps.length?sumCard(ps,S.inning):''}${ps.length?`<button class="btn share-stats" onclick="mkStatsImg(${sea})">🖼 Crear imagen de estadísticas</button>`:''}<div style="color:var(--mu);font-size:12px;text-align:center">JJ juegos · AB turnos · CA carreras anotadas · CE carreras empujadas · H total de hits · H1 sencillo · H2 doble · H3 triple · SF sacrificio · AVE promedio</div>`;
 }else if(T==3){a.innerHTML=histHTML()}else{
 const inL=id=>S.players.some(p=>p.id===id);
 a.innerHTML=`<div class="card"><b>Mi equipo</b><div class="row" style="margin-top:8px"><input placeholder="Nombre de tu equipo" value="${esc(S.team)}" onchange="S.team=this.value;save();brandUpdate()"></div></div><div class="card"><div class="row"><input id="np" placeholder="Nombre del jugador" onkeydown="if(event.key=='Enter')addR()"><input id="nn" placeholder="#" inputmode="numeric" style="flex:0 0 60px;text-align:center"><button class="btn" style="flex:0 0 auto" onclick="addR()">Al plantel</button></div></div>
 <div class="card"><b>Lineup de hoy (${S.players.length})</b>${S.players.map((p,i)=>`<div class="pl"><span>${p.sub?'↳':(i+1)+'.'} ${esc(nm(p))}</span><span><button style="color:var(--tx)" onclick="mv(${p.id},-1)">▲</button><button style="color:var(--tx)" onclick="mv(${p.id},1)">▼</button><button onclick="fromLine(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Toca "+ Lineup" en los jugadores del plantel, en el orden en que batean.</div>'}</div>
 <div class="card"><b>Plantel (${S.roster.length})</b>${S.roster.map(p=>`<div class="pl"><span>${esc(nm(p))}</span><span>${inL(p.id)?'<span style="color:var(--ac);font-size:13px">✓ en lineup</span>':`<button style="color:var(--ac);font-size:14px;font-weight:700" onclick="toLine(${p.id})">+ Lineup</button>`}<button style="color:var(--tx)" onclick="editP(${p.id})">✎</button><button onclick="delR(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Agrega aquí a todo tu equipo.</div>'}</div>
-<button class="btn" style="width:100%;color:var(--rd)" onclick="newGame()">Nuevo juego (reiniciar)</button>`;
+<button class="btn" style="width:100%;margin-bottom:8px" onclick="baseSheet()">Importar acumulado anterior</button><button class="btn" style="width:100%;color:var(--rd)" onclick="newGame()">Nuevo juego (reiniciar)</button>`;
 }}
 render();
 </script><script>
@@ -333,7 +344,7 @@ const cfgOk=()=>typeof firebase!=='undefined'&&cfgSet();
 const isDirty=()=>{try{return localStorage.getItem(DKEY)==='1'}catch(e){return false}};
 const setDirty=v=>{try{v?localStorage.setItem(DKEY,'1'):localStorage.removeItem(DKEY)}catch(e){}};
 const liveOf=()=>({players:S.players,subs:S.subs,idx:S.idx,inning:S.inning,outs:S.outs,bases:S.bases,us:S.us,them:S.them,rival:S.rival,date:S.date,msg:S.msg});
-const metaOf=()=>({team:S.team,roster:S.roster,games:S.games});
+const metaOf=()=>({team:S.team,roster:S.roster,games:S.games,base:S.base||null});
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='☁ Local',ok=false;
  if(cfgSet()&&typeof firebase==='undefined')t='☁ Reparar';
@@ -350,11 +361,11 @@ function flush(force){
  jobs.forEach(j=>j.then(()=>{cloud.pending--;if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn()}).catch(e=>{cloud.pending--;updBtn();console.error(e)}));
  updBtn()}
 function applyLive(v){try{const o=JSON.parse(v);['players','subs','idx','inning','outs','bases','us','them','rival','date','msg'].forEach(k=>{if(o[k]!==undefined)S[k]=o[k]});cloud.lastLive=v;hist=[];persist();render()}catch(e){console.error(e)}}
-function applyMeta(v){try{const o=JSON.parse(v);S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
+function applyMeta(v){try{const o=JSON.parse(v);S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';S.base=o.base||null;cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
 function mergeMeta(v){try{const o=JSON.parse(v),dirty=isDirty(),first=localStorage.getItem(LKEY)!==cloud.user.uid;
  const uni=(a,b)=>{const ids=new Set((a||[]).map(x=>x.id));return [...(a||[]),...(b||[]).filter(x=>!ids.has(x.id))]};
- if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||''}
- else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||''}
+ if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||'';S.base=(dirty?S.base:o.base)||S.base||o.base||null}
+ else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';S.base=o.base||null}
  localStorage.setItem(LKEY,cloud.user.uid);cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
 function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false};cloud.lastLive='';cloud.lastMeta='';
  cloud.ref.child('live').on('value',snap=>{const v=snap.val();
@@ -364,7 +375,7 @@ function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}i
   if(!cloud.synced.meta){cloud.synced.meta=true;if(v!=null)mergeMeta(v);else{try{localStorage.setItem(LKEY,u.uid)}catch(e){}}flush();return}
   if(v==null||v===cloud.lastMeta)return;applyMeta(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
  updBtn()}
-function wipeLocal(){S={subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(DKEY);localStorage.removeItem(LKEY)}catch(e){}}
+function wipeLocal(){S={base:null,subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(DKEY);localStorage.removeItem(LKEY)}catch(e){}}
 function cloudStop(){clearTimeout(cloud.timer);cloud.timer=null;if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off()}cloud.ref=null;cloud.user=null;updBtn()}
 const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
 function cloudLogin(create){const e=document.getElementById('cl_e').value.trim(),p=document.getElementById('cl_p').value,m=document.getElementById('cl_m');m.textContent='';
