@@ -338,13 +338,13 @@ const FIREBASE_CONFIG={
 };
 /* ==================================================== */
 const DKEY='softball_dirty_v1',LKEY='softball_linked_v1';
-const cloud={denied:false,user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',synced:{live:false,meta:false}};
+const cloud={denied:false,user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',lastBase:'',synced:{live:false,meta:false,base:false}};
 const cfgSet=()=>!!FIREBASE_CONFIG.apiKey&&!/^PEGA/.test(FIREBASE_CONFIG.apiKey);
 const cfgOk=()=>typeof firebase!=='undefined'&&cfgSet();
 const isDirty=()=>{try{return localStorage.getItem(DKEY)==='1'}catch(e){return false}};
 const setDirty=v=>{try{v?localStorage.setItem(DKEY,'1'):localStorage.removeItem(DKEY)}catch(e){}};
 const liveOf=()=>({players:S.players,subs:S.subs,idx:S.idx,inning:S.inning,outs:S.outs,bases:S.bases,us:S.us,them:S.them,rival:S.rival,date:S.date,msg:S.msg});
-const metaOf=()=>({team:S.team,roster:S.roster,games:S.games,base:S.base||null});
+const metaOf=()=>({team:S.team,roster:S.roster,games:S.games});
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='☁ Local',ok=false;
  if(cfgSet()&&typeof firebase==='undefined')t='☁ Reparar';
@@ -352,31 +352,36 @@ function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='�
  b.textContent=t;b.className='cloudbtn'+(ok?' ok':'')}
 function cloudPush(){if(!cfgSet())return;setDirty(true);if(!cloud.ref)return;clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>{cloud.timer=null;flush()},350);updBtn()}
 function flush(force){
- if(!cloud.ref||!cloud.synced.live||!cloud.synced.meta)return;
- const L=JSON.stringify(liveOf()),M=JSON.stringify(metaOf()),jobs=[];
+ if(!cloud.ref||!cloud.synced.live||!cloud.synced.meta||!cloud.synced.base)return;
+ const L=JSON.stringify(liveOf()),M=JSON.stringify(metaOf()),BS=JSON.stringify(S.base||null),jobs=[];
  if(force||L!==cloud.lastLive){cloud.lastLive=L;jobs.push(cloud.ref.child('live').set(L))}
  if(force||M!==cloud.lastMeta){cloud.lastMeta=M;jobs.push(cloud.ref.child('meta').set(M))}
+ if(force||BS!==cloud.lastBase){cloud.lastBase=BS;jobs.push(cloud.ref.child('base').set(BS))}
  if(!jobs.length){if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn();return}
  cloud.pending+=jobs.length;
  jobs.forEach(j=>j.then(()=>{cloud.pending--;if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn()}).catch(e=>{cloud.pending--;updBtn();console.error(e)}));
  updBtn()}
 function applyLive(v){try{const o=JSON.parse(v);['players','subs','idx','inning','outs','bases','us','them','rival','date','msg'].forEach(k=>{if(o[k]!==undefined)S[k]=o[k]});cloud.lastLive=v;hist=[];persist();render()}catch(e){console.error(e)}}
-function applyMeta(v){try{const o=JSON.parse(v);S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';S.base=o.base||null;cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
+function applyMeta(v){try{const o=JSON.parse(v);S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';if(o.base&&!S.base)S.base=o.base;cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
+function applyBase(v){try{S.base=JSON.parse(v);cloud.lastBase=v;persist();render()}catch(e){console.error(e)}}
 function mergeMeta(v){try{const o=JSON.parse(v),dirty=isDirty(),first=localStorage.getItem(LKEY)!==cloud.user.uid;
  const uni=(a,b)=>{const ids=new Set((a||[]).map(x=>x.id));return [...(a||[]),...(b||[]).filter(x=>!ids.has(x.id))]};
- if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||'';S.base=(dirty?S.base:o.base)||S.base||o.base||null}
- else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';S.base=o.base||null}
+ if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||'';if(o.base&&!S.base)S.base=o.base}
+ else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';if(o.base&&!S.base)S.base=o.base}
  localStorage.setItem(LKEY,cloud.user.uid);cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
-function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false};cloud.lastLive='';cloud.lastMeta='';
+function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false,base:false};cloud.lastLive='';cloud.lastMeta='';cloud.lastBase='';
  cloud.ref.child('live').on('value',snap=>{const v=snap.val();
   if(!cloud.synced.live){cloud.synced.live=true;if(v!=null&&!isDirty())applyLive(v);flush();return}
   if(v==null||v===cloud.lastLive)return;applyLive(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
+ cloud.ref.child('base').on('value',snap=>{const v=snap.val();
+  if(!cloud.synced.base){cloud.synced.base=true;if(v!=null&&!(isDirty()&&S.base))applyBase(v);flush();return}
+  if(v==null||v===cloud.lastBase)return;applyBase(v)},e=>{console.error(e)});
  cloud.ref.child('meta').on('value',snap=>{const v=snap.val();
   if(!cloud.synced.meta){cloud.synced.meta=true;if(v!=null)mergeMeta(v);else{try{localStorage.setItem(LKEY,u.uid)}catch(e){}}flush();return}
   if(v==null||v===cloud.lastMeta)return;applyMeta(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
  updBtn()}
 function wipeLocal(){S={base:null,subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(DKEY);localStorage.removeItem(LKEY)}catch(e){}}
-function cloudStop(){clearTimeout(cloud.timer);cloud.timer=null;if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off()}cloud.ref=null;cloud.user=null;updBtn()}
+function cloudStop(){clearTimeout(cloud.timer);cloud.timer=null;if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off();cloud.ref.child('base').off()}cloud.ref=null;cloud.user=null;updBtn()}
 const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
 function cloudLogin(create){const e=document.getElementById('cl_e').value.trim(),p=document.getElementById('cl_p').value,m=document.getElementById('cl_m');m.textContent='';
  if(!e||!p){m.textContent='Escribe correo y contraseña';return}
