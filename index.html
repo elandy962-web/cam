@@ -93,6 +93,15 @@ body{padding:6px 10px 24px}
 .cmp .diaw{margin-top:6px!important}
 .cmp .sc .s{font-size:30px}.cmp .sc .msg{min-height:26px}
 .cmp .grid{gap:5px;margin-top:6px}.cmp .grid button{font-size:14px}
+.lu{position:sticky;top:0;z-index:5}
+.lug{display:grid;grid-auto-flow:column;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:10px;margin-top:6px}
+.ls{display:flex;align-items:center;gap:4px;min-height:30px;border-bottom:1px solid var(--bd);font-size:13px}
+.ls b{flex:0 0 16px;color:var(--ac2);font-size:12px}
+.ls .ln{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ls.e .ln{color:var(--mu)}
+.ls .lb{display:flex;flex:0 0 auto}
+.ls .lb button{border:none;background:none;color:var(--tx);font-size:12px;padding:0;width:19px;height:28px}
+.ls .lb button.x{color:var(--rd)}
 /* ===== Escala automática (celular, tablet, vertical y horizontal) ===== */
 .diaw{width:calc(var(--dh,120px)*1.1333)!important;height:var(--dh,120px)!important;margin:10px auto 0;position:relative}
 .diaw .dia{position:absolute!important;left:0;top:0;width:100%!important;height:100%!important;margin:0!important;transform:none!important}
@@ -105,7 +114,7 @@ body{padding:6px 10px 24px}
 .land .g0{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
 .land .g0>.rv{grid-column:1/-1}.land .g0>.card{margin-bottom:0}
 </style></head><body>
-<div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name" id="bn"><span>SOFTBALL</span></div></div><button id="cloud" class="cloudbtn" onclick="cloudSheet()">☁ Local</button></div>
+<div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name" id="bn" onclick="teamSheet()" style="cursor:pointer"><span>SOFTBALL</span></div></div><button id="cloud" class="cloudbtn" onclick="cloudSheet()">☁ Local</button></div>
 <div class="tabs"><button id="t0" onclick="tab(0)">Juego</button><button id="t1" onclick="tab(1)">Estadísticas</button><button id="t2" onclick="tab(2)">Equipo</button><button id="t3" onclick="tab(3)">Historial</button></div>
 <div id="app"></div><div id="sheet"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -296,6 +305,9 @@ function importBase(txt){let d;try{d=JSON.parse(txt)}catch(e){return 'El archivo
  const pl=d.players.map(p=>{const r=ent(p.name,p.num);return {id:r.id,name:r.name,num:r.num||'',GP:N(p.GP),AB:N(p.AB),H:N(p.s1)+N(p.s2)+N(p.s3)+N(p.hr),s1:N(p.s1),s2:N(p.s2),s3:N(p.s3),hr:N(p.hr),BB:N(p.BB),K:N(p.K),R:N(p.R),RBI:N(p.RBI),SAC:N(p.SAC)}});
  (d.roster||[]).forEach(p=>ent(p.name,p.num));
  S.base={w:N(d.w),l:N(d.l),e:N(d.e),players:pl};save();render();return ''}
+function teamSheet(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Nombre del equipo</h3><div style="font-size:16px;font-weight:800;margin-bottom:10px">${esc(S.team||'Sin nombre')}</div><div style="font-size:13px;color:var(--mu);margin-bottom:10px">¿Quieres cambiarlo?</div><button class="btn" style="background:var(--ac);color:#fff" onclick="teamEdit()">Sí, cambiar nombre</button><button class="btn" onclick="closeS()">No</button></div></div>`}
+function teamEdit(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Nuevo nombre</h3><input id="tn" value="${esc(S.team)}" placeholder="Nombre del equipo"><button class="btn" style="background:var(--ac);color:#fff" onclick="teamSave()">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
+function teamSave(){const v=document.getElementById('tn').value.trim();closeS();if(!v)return;S.team=v;save();render()}
 function tab(n){T=n;V=null;render()}
 const avg=p=>p.AB?(p.H/p.AB).toFixed(3).replace(/^0/,''):'.000';
 function brandUpdate(){const el=document.getElementById('bn');const n=(S.team||'').trim()||'Softball';if(el){const w=n.toUpperCase().split(/\s+/);el.innerHTML=w.length>1?esc(w[0])+' <span>'+esc(w.slice(1).join(' '))+'</span>':'<span>'+esc(w[0])+'</span>'}document.title=n}
@@ -319,9 +331,11 @@ const sea=ST==1,ps=sea?seasonStats():gamePlayers();
 a.innerHTML=`<div class="tabs"><button class="${!sea?'on':''}" onclick="ST=0;render()">Este juego</button><button class="${sea?'on':''}" onclick="ST=1;render()">Temporada</button></div>${sea?`<div class="card" style="text-align:center"><b>${rec()}</b><div style="color:var(--mu);font-size:12px">${S.base?'Acumulado anterior + juegos guardados':'Suma de los juegos guardados'}</div></div>`:''}${ps.length?tbl(ps,sea):'<div class="card" style="color:var(--mu)">Sin datos todavía.</div>'}${!sea&&ps.length?sumCard(ps,S.inning):''}${ps.length?`<button class="btn share-stats" onclick="mkStatsImg(${sea})">🖼 Crear imagen de estadísticas</button>`:''}<div style="color:var(--mu);font-size:12px;text-align:center">JJ juegos · AB turnos · CA carreras anotadas · CE carreras empujadas · H total de hits · H1 sencillo · H2 doble · H3 triple · SF sacrificio · AVE promedio</div>`;
 }else if(T==3){a.innerHTML=histHTML()}else{
 const inL=id=>S.players.some(p=>p.id===id);
-a.innerHTML=`<div class="card"><b>Mi equipo</b><div class="row" style="margin-top:8px"><input placeholder="Nombre de tu equipo" value="${esc(S.team)}" onchange="S.team=this.value;save();brandUpdate()"></div></div><div class="card"><div class="row"><input id="np" placeholder="Nombre del jugador" onkeydown="if(event.key=='Enter')addR()"><input id="nn" placeholder="#" inputmode="numeric" style="flex:0 0 60px;text-align:center"><button class="btn" style="flex:0 0 auto" onclick="addR()">Al plantel</button></div></div>
-<div class="card"><b>Lineup de hoy (${S.players.length})</b>${S.players.map((p,i)=>`<div class="pl"><span>${p.sub?'↳':(i+1)+'.'} ${esc(nm(p))}</span><span><button style="color:var(--tx)" onclick="mv(${p.id},-1)">▲</button><button style="color:var(--tx)" onclick="mv(${p.id},1)">▼</button><button onclick="fromLine(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Toca "+ Lineup" en los jugadores del plantel, en el orden en que batean.</div>'}</div>
+const slots=Math.max(10,S.players.length+1),rows=Math.ceil(slots/2);
+const cell=i=>{const p=S.players[i];return p?`<div class="ls"><b>${i+1}</b><span class="ln">${esc(nm(p))}</span><span class="lb"><button onclick="mv(${p.id},-1)">▲</button><button onclick="mv(${p.id},1)">▼</button><button class="x" onclick="fromLine(${p.id})">✕</button></span></div>`:`<div class="ls e"><b>${i+1}</b><span class="ln">—</span></div>`};
+a.innerHTML=`<div class="card lu"><b>Lineup de hoy (${S.players.length})</b><div class="lug" style="grid-template-rows:repeat(${rows},auto)">${Array.from({length:slots},(_,i)=>cell(i)).join('')}</div></div>
 <div class="card"><b>Plantel (${S.roster.length})</b>${S.roster.map(p=>`<div class="pl"><span>${esc(nm(p))}</span><span>${inL(p.id)?'<span style="color:var(--ac);font-size:13px">✓ en lineup</span>':`<button style="color:var(--ac);font-size:14px;font-weight:700" onclick="toLine(${p.id})">+ Lineup</button>`}<button style="color:var(--tx)" onclick="editP(${p.id})">✎</button><button onclick="delR(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Agrega aquí a todo tu equipo.</div>'}</div>
+<div class="card"><b>Agregar jugador nuevo</b><div class="row" style="margin-top:8px"><input id="np" placeholder="Nombre del jugador" onkeydown="if(event.key=='Enter')addR()"><input id="nn" placeholder="#" inputmode="numeric" style="flex:0 0 60px;text-align:center"><button class="btn" style="flex:0 0 auto" onclick="addR()">Agregar</button></div></div>
 <button class="btn" style="width:100%;margin-bottom:8px" onclick="baseSheet()">Importar acumulado anterior</button><button class="btn" style="width:100%;color:var(--rd)" onclick="newGame()">Nuevo juego (reiniciar)</button>`;
 }}
 render();
