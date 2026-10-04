@@ -103,6 +103,20 @@ body{padding:6px 10px 24px}
 .ls .lb{display:flex;flex:0 0 auto}
 .ls .lb button{border:none;background:none;color:var(--tx);font-size:12px;padding:0;width:19px;height:28px}
 .ls .lb button.x{color:var(--rd)}
+.rsc{padding:10px 8px}
+table.rs{table-layout:fixed;width:100%;margin-top:6px;font-size:12px}
+table.rs th,table.rs td{padding:3px 1px;white-space:normal;vertical-align:top;text-align:center}
+table.rs th{font-size:11px;color:var(--mu)}
+table.rs td:first-child,table.rs th:first-child{position:static;background:none;text-align:left;padding-left:2px}
+table.rs td:first-child{max-width:none}
+table.rs .rn{font-weight:800;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.rs .rg{font-weight:400;color:var(--mu);font-size:10px}
+table.rs tr+tr td{border-top:1px solid var(--bd)}
+table.rs .ev{margin:1px 0;padding:1px 2px;font-size:11px;border-radius:4px;line-height:1.15;min-width:19px;text-align:center}
+table.rs .ev small{display:block;font-size:8px;font-weight:700;line-height:1;opacity:.95}
+table.rs .ev.x{font-size:16px;min-width:0}table.rs .ev.r{font-size:13px;min-width:0}
+table.rs.dn .ev{font-size:9px;padding:1px;min-width:15px}table.rs.dn th{font-size:10px}
+.rl{color:var(--mu);font-size:10px;margin-top:8px;line-height:1.35}
 /* ===== Escala automática (celular, tablet, vertical y horizontal) ===== */
 .diaw{width:calc(var(--dh,120px)*1.1333)!important;height:var(--dh,120px)!important;margin:10px auto 0;position:relative}
 .diaw .dia{position:absolute!important;left:0;top:0;width:100%!important;height:100%!important;margin:0!important;transform:none!important}
@@ -236,8 +250,9 @@ function line(p){const it=ex(p);return (p.AB?p.H+' de '+p.AB:'0 turnos')+(it.len
 const LBL={'1B':'H1','2B':'H2','3B':'H3','SAC':'SF','OUT*':'*'};
 const lbl=a=>LBL[a]||a;
 function cls(a){return /^(H1|H2|H3|HR)$/.test(a)?'h':/^(K|OUT|DP|TP)$/.test(a)?'o':a=='*'?'x':a=='◇'?'r':'w'}
-function sumCard(ps,gi){const m=mvp(ps);let N=Math.max(1,gi||0);ps.forEach(p=>(p.log||[]).forEach(e=>{if(e.i>N)N=e.i}));const cols=[...Array(N).keys()].map(k=>k+1);
-return `<div class="card tw"><b>Resumen por jugador y entrada</b><table style="margin-top:6px"><tr><th>Jugador</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${ps.map((p,i)=>`<tr><td>${p.sub?'↳':(i+1)+'.'} ${esc(nm(p))}${m&&m.id===p.id?' ⭐':''}<div style="font-weight:400;color:var(--mu);font-size:11px">${p.AB?p.H+' de '+p.AB:'0 turnos'}</div></td>${cols.map(c=>`<td style="vertical-align:top;white-space:normal;min-width:58px">${(p.log||[]).filter(e=>e.i==c).map(e=>`<span class="ev ${cls(lbl(e.a))}">${lbl(e.a)}${e.rbi?`<small> ${e.rbi}CE</small>`:''}</span>`).join('')}</td>`).join('')}</tr>`).join('')}</table><div style="color:var(--mu);font-size:11px;margin-top:8px">Columnas = entradas · verde hits · rojo out/K · amarillo BB/E/SF · <span style="color:#ff3b30;font-weight:900">*</span> out forzado o en bases · ◇ anotó · CE impulsadas · ⭐ MVP</div></div>`}
+function sumCard(ps,gi){const m=mvp(ps);let N=1;ps.forEach(p=>(p.log||[]).forEach(e=>{if(e.i>N)N=e.i}));const cols=[...Array(N).keys()].map(k=>k+1);
+const cell=(p,c)=>(p.log||[]).filter(e=>e.i==c).map(e=>`<span class="ev ${cls(lbl(e.a))}">${lbl(e.a)}${e.rbi?`<small>${e.rbi}CE</small>`:''}</span>`).join('');
+return `<div class="card rsc"><b>Resumen por jugador y entrada</b><table class="rs${N>8?' dn':''}"><colgroup><col style="width:${N>8?26:30}%"></colgroup><tr><th>Jugador</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${ps.map((p,i)=>`<tr><td><div class="rn">${p.sub?'↳':(i+1)+'.'} ${esc(nm(p))}${m&&m.id===p.id?' ⭐':''}</div><div class="rg">${p.AB?p.H+' de '+p.AB:'0 turnos'}</div></td>${cols.map(c=>`<td>${cell(p,c)}</td>`).join('')}</tr>`).join('')}</table><div class="rl">Columnas = entradas · <span style="color:#1fa95b">verde</span> hits · <span style="color:#e5383b">rojo</span> out/K · <span style="color:#d9a400">amarillo</span> BB/E/SF · <span style="color:#ff3b30;font-weight:900">*</span> out forzado o en bases · ◇ anotó · CE impulsadas · ⭐ MVP</div></div>`}
 function mvpCard(g){const m=mvp(g.players);return `<div class="card" style="text-align:center"><div style="color:var(--mu);font-size:12px">JUGADOR MÁS VALIOSO</div>${m?`<div style="font-size:24px;font-weight:800">⭐ ${esc(nm(m))}</div><div style="color:var(--mu);font-size:13px">${line(m)}</div>`:'<div style="color:var(--mu)">Sin datos</div>'}<div style="color:var(--mu);font-size:11px;margin-top:6px">Puntos: bases totales + carreras + impulsadas + ½ BB − ¼ K</div></div>`}
 function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();x.fill()}
 function fit(x,t,w){if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
