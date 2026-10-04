@@ -127,7 +127,7 @@ let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-S.games=S.games||[];S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
+S.games=S.games||[];S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,HF='',ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 const P=id=>S.players.find(p=>p.id===id);
 const cur=()=>S.players[S.idx%S.players.length];
@@ -209,8 +209,10 @@ const tbl=(ps,gp)=>{const cols=statCols(),leaders=leaderMap(ps,gp);return `<div 
 function histHTML(){const g=S.games.find(x=>x.id===V);
 if(g)return `<button class="btn" style="width:100%;margin-bottom:10px" onclick="V=null;render()">← Volver</button><div class="card"><b>${fd(g.date)} · vs ${esc(g.rival)}</b><div style="font-size:30px;font-weight:800;margin:4px 0">${g.us} - ${g.them} ${res(g)}</div><div style="color:var(--mu);font-size:13px">${g.reason} · ${g.inning} entradas</div></div>${mvpCard(g)}<button class="btn" style="width:100%;margin-bottom:10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="mkImg(${g.id})">🖼 Crear imagen del día</button>${tbl(g.players)}${sumCard(g.players)}<button class="btn" style="width:100%;color:var(--rd)" onclick="delG(${g.id})">Borrar juego</button>`;
 if(!S.games.length)return '<div class="card" style="color:var(--mu)">Aún no hay juegos guardados. Usa "Terminar juego" para guardar uno.</div>';
-const dates=[...new Set(S.games.map(g=>g.date))];
-return dates.map(date=>{const games=S.games.filter(g=>g.date===date);const first=games[0];return `<div class="card" style="padding-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>${fd(date)}</b><button class="btn" style="flex:0 0 auto;padding:8px 10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="event.stopPropagation();mkImg(${first.id})">🖼 Juegos del día</button></div>${games.map(g=>`<div onclick="V=${g.id};render()" style="cursor:pointer;border-top:1px solid var(--bd);padding:10px 0 2px"><div style="display:flex;justify-content:space-between;align-items:center"><b>vs ${esc(g.rival)}</b>${res(g)}</div><div style="font-size:24px;font-weight:800">${g.us} - ${g.them}</div><div style="color:var(--mu);font-size:13px">${g.reason} · ${g.inning} entradas</div></div>`).join('')}</div>`}).join('')}
+const flt=HF?S.games.filter(g=>g.date===HF):S.games;
+const bar=`<div class="card"><div style="display:flex;gap:8px;align-items:center"><input type="date" value="${HF}" onchange="HF=this.value;render()" style="flex:1;min-width:0"><button class="btn" style="flex:0 0 auto;padding:12px 14px" onclick="HF='';render()">Todas</button></div>${HF?(flt.length?`<button class="btn" style="width:100%;margin-top:8px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="mkImg(${flt[0].id})">🖼 Crear imagen del ${fd(HF)}</button>`:`<div style="color:var(--mu);font-size:13px;margin-top:8px">No hay juegos guardados el ${fd(HF)}.</div>`):'<div style="color:var(--mu);font-size:12px;margin-top:6px">Elige una fecha para ver sus juegos y crear su imagen.</div>'}</div>`;
+const dates=[...new Set(flt.map(g=>g.date))];
+return bar+dates.map(date=>{const games=flt.filter(g=>g.date===date);const first=games[0];return `<div class="card" style="padding-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>${fd(date)}</b><button class="btn" style="flex:0 0 auto;padding:8px 10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="event.stopPropagation();mkImg(${first.id})">🖼 Juegos del día</button></div>${games.map(g=>`<div onclick="V=${g.id};render()" style="cursor:pointer;border-top:1px solid var(--bd);padding:10px 0 2px"><div style="display:flex;justify-content:space-between;align-items:center"><b>vs ${esc(g.rival)}</b>${res(g)}</div><div style="font-size:24px;font-weight:800">${g.us} - ${g.them}</div><div style="color:var(--mu);font-size:13px">${g.reason} · ${g.inning} entradas</div></div>`).join('')}</div>`}).join('')}
 function addR(){const el=document.getElementById('np'),v=el.value.trim();if(!v)return;S.roster.push({id:Date.now()+Math.random(),name:v,num:(document.getElementById('nn').value||'').trim()});save();render()}
 function toLine(id){const r=S.roster.find(x=>x.id===id);if(!r||P(id))return;S.players.push({...mk(r.name,r.num),id});save();render()}
 function fromLine(id,force){const p=P(id);if(!p)return;if(!force&&p.AB+p.BB+p.R+p.SAC>0){ask('Este jugador ya tiene estadísticas en este juego. ¿Quitarlo del lineup?',()=>fromLine(id,true),'Quitar');return}const c=cur().id;S.players=S.players.filter(x=>x.id!==id);S.bases=S.bases.map(b=>b===id?null:b);const k=S.players.findIndex(x=>x.id===c);S.idx=k>=0?k:(S.players.length?S.idx%S.players.length:0);save();render()}
@@ -260,7 +262,7 @@ function mkStatsImg(season){
  const ps=season?seasonStats():gamePlayers();
  if(!ps.length){alert('No hay estadísticas para crear la imagen.');return}
  const cols=statCols(),leaders=leaderMap(ps,season);
- const W=1800,rowH=82,headH=330,footerH=70,H=headH+100+ps.length*rowH+footerH;
+ const nameW=520,cellW=66,x0=30,tableW=nameW+cols.length*cellW+14,W=tableW+60,rowH=76,headH=330,footerH=70,H=headH+110+ps.length*rowH+footerH;
  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
  const F='"Arial Black","Helvetica Neue",system-ui,sans-serif',ORANGE='#ff5a00',GOLD='#ffb000',NAVY='#071523',WHITE='#fff',MUTED='rgba(255,255,255,.68)';
  const gr=x.createLinearGradient(0,0,W,H);gr.addColorStop(0,NAVY);gr.addColorStop(1,'#03070c');x.fillStyle=gr;x.fillRect(0,0,W,H);
@@ -269,27 +271,27 @@ function mkStatsImg(season){
  x.fillStyle=NAVY;x.textAlign='left';x.font='italic 900 76px '+F;x.fillText(fit(x,(S.team||'MI EQUIPO').toUpperCase(),W-120),55,92);
  x.font='italic 900 46px '+F;x.fillText(season?'ESTADÍSTICAS DE TEMPORADA':'ESTADÍSTICAS DEL JUEGO',55,155);
  x.font='700 27px system-ui,sans-serif';x.fillStyle=NAVY;x.fillText(season?rec():`${fd(S.date)} · vs ${(S.rival||'Rival').toUpperCase()}`,55,198);
- const x0=40,y0=260,tableW=W-80,nameW=430,cellW=(tableW-nameW)/cols.length;
- x.fillStyle='rgba(255,255,255,.10)';x.fillRect(x0,y0,tableW,78);x.fillStyle=ORANGE;x.fillRect(x0,y0,12,78);
- x.textAlign='left';x.fillStyle=GOLD;x.font='italic 900 27px '+F;x.fillText('JUGADOR',x0+28,y0+49);cols.forEach((h,i)=>{x.textAlign='center';x.fillText(h,x0+nameW+i*cellW+cellW/2,y0+49)});
+ const y0=260,hr=84;
+ x.fillStyle='rgba(255,255,255,.10)';x.fillRect(x0,y0,tableW,hr);x.fillStyle=ORANGE;x.fillRect(x0,y0,12,hr);
+ x.textAlign='left';x.fillStyle=GOLD;x.font='italic 900 28px '+F;x.fillText('JUGADOR',x0+28,y0+53);cols.forEach((h,i)=>{x.textAlign='center';x.fillText(h,x0+nameW+i*cellW+cellW/2,y0+53)});
  ps.forEach((p,i)=>{
-   const y=y0+78+i*rowH;
+   const y=y0+hr+i*rowH;
    x.fillStyle=i%2?'rgba(255,255,255,.035)':'rgba(255,255,255,.075)';x.fillRect(x0,y,tableW,rowH);
    x.fillStyle='rgba(255,90,0,.7)';x.fillRect(x0,y,6,rowH);
    const v=statVals(p,season);
    // Nombre del jugador: siempre se dibuja desde p.name, independiente de statVals.
-   x.textAlign='left';x.fillStyle=WHITE;x.font='800 30px system-ui,sans-serif';
-   x.fillText(fit(x,String(nm(p)||'Jugador'),nameW-55),x0+28,y+52);
+   x.textAlign='left';x.fillStyle=WHITE;x.font='800 38px system-ui,sans-serif';
+   x.fillText(fit(x,String(nm(p)||'Jugador'),nameW-40),x0+24,y+53);
    v.forEach((z,j)=>{
      const xx=x0+nameW+j*cellW+cellW/2;
      const lead=leaders[j]&&leaders[j].has(i);
-     x.textAlign='center';x.fillStyle=lead?GOLD:WHITE;x.font='800 27px system-ui,sans-serif';
-     x.fillText(String(z),xx,y+52);
+     x.textAlign='center';x.fillStyle=lead?GOLD:WHITE;x.font='800 32px system-ui,sans-serif';
+     x.fillText(String(z),xx,y+51);
    });
    x.strokeStyle='rgba(255,255,255,.08)';x.beginPath();x.moveTo(x0,y+rowH);x.lineTo(x0+tableW,y+rowH);x.stroke();
  });
- x.textAlign='left';x.fillStyle=MUTED;x.font='italic 800 22px '+F;x.fillText('Los líderes de cada estadística están resaltados en dorado.',x0,y0+78+ps.length*rowH+40);
- x.textAlign='center';x.fillStyle=MUTED;x.font='italic 800 23px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,26)+' · ESTADÍSTICAS',W/2,H-24);
+ x.textAlign='left';x.fillStyle=MUTED;x.font='italic 800 26px '+F;x.fillText('Los líderes de cada estadística están resaltados en dorado.',x0,y0+hr+ps.length*rowH+48);
+ x.textAlign='center';x.fillStyle=MUTED;x.font='italic 800 26px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,26)+' · ESTADÍSTICAS',W/2,H-24);
  IBLOB_NAME=season?'estadisticas_temporada.png':'estadisticas_juego.png';IBLOB=null;c.toBlob(b=>{IBLOB=b});const url=c.toDataURL('image/png');
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><img src="${url}" style="display:block;width:100%;max-width:100%;height:auto;border-radius:10px;object-fit:contain"><div style="color:var(--mu);font-size:13px;margin:8px 0">Los líderes de cada estadística están resaltados en dorado. Puedes compartirla directamente.</div><button class="btn" onclick="shareImg()">Compartir</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`
 }
