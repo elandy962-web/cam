@@ -138,7 +138,22 @@ const mk=(n,num)=>({id:Date.now()+Math.random(),name:n,num:num||'',log:[],AB:0,H
 function run(rid,bid){const r=P(rid);r.R++;S.us++;(r.log=r.log||[]).push({i:S.inning,a:"◇",run:1});if(bid!=null)P(bid).RBI++;ev.push(nm(r)+' anotó')}
 function out(){S.outs++;if(S.outs>=3){S.outs=0;S.inning++;S.bases=[null,null,null];ev.push('Cambio de entrada')}}
 function act(fn){if(!S.players.length){tab(2);return}hist.push(JSON.stringify(S));if(hist.length>60)hist.shift();ev=[];const b=cur(),inn=S.inning,r0=b.RBI,L0=(b.log=b.log||[]).length;const d=fn(b);const ab=AB_[d.slice(d.indexOf(': ')+2).toLowerCase()];if(ab)b.log.splice(L0,0,{i:inn,a:ab,rbi:b.RBI-r0});S.msg=d+(ev.length?' · '+ev.join(', '):'');save();render()}
-function hit(n){const names=['','Sencillo','Doble','Triple','Jonrón'];act(b=>{b.AB++;b.H++;b[n==4?'hr':'s'+n]++;const nb=[null,null,null];for(let i=2;i>=0;i--){const r=S.bases[i];if(r!=null){const t=i+n;if(t>=3)run(r,b.id);else nb[t]=r}}if(n==4)run(b.id,b.id);else nb[n-1]=b.id;S.bases=nb;const d=nm(b)+': '+names[n];nxt();return d})}
+function hit(n){if(n<4&&S.bases.some(x=>x!=null)){openHit(n);return}hitDo(n,null)}
+function hitDo(n,dest){const names=['','Sencillo','Doble','Triple','Jonrón'];act(b=>{b.AB++;b.H++;b[n==4?'hr':'s'+n]++;const nb=[null,null,null];let outs=0;
+ for(let i=2;i>=0;i--){const r=S.bases[i];if(r==null)continue;let t=dest?dest[i]:(i+n>=3?'H':i+n+1);if(t==='s')t=i+1;
+  if(t==='H')run(r,b.id);else if(t==='O'){(P(r).log=P(r).log||[]).push({i:S.inning,a:'*'});outs++}else nb[t-1]=r}
+ if(n==4)run(b.id,b.id);else nb[n-1]=b.id;S.bases=nb;const d=nm(b)+': '+names[n];for(let k=0;k<outs;k++)out();nxt();return d})}
+let HS=null;
+function openHit(n){const rs=[];S.bases.forEach((id,i)=>{if(id!=null)rs.push({i,id,t:(i+n>=3?'H':i+n+1)})});HS={n,r:rs};drawHit()}
+function hitCount(k){const n=HS.n,rs=HS.r;let lim=4,sc=0;for(let q=rs.length-1;q>=0;q--){const x=rs[q];if(sc<k){x.t='H';sc++}else{let t=Math.min(x.i+n+1,lim-1);if(t<x.i+1)t=x.i+1;x.t=t;lim=t}}drawHit()}
+function hitDup(){const n=HS.n,f=[n-1];HS.r.forEach(x=>{if(x.t!=='H'&&x.t!=='O')f.push(x.t==='s'?x.i:x.t-1)});return new Set(f).size!==f.length}
+function drawHit(){const n=HS.n,b=cur(),ob=(l,on,fn)=>`<button class="${on?'on':''}" onclick="${fn}">${l}</button>`,dup=hitDup(),sc=HS.r.filter(x=>x.t==='H').length;
+ let h=`<h3 style="margin:0 0 6px">H${n} de ${esc(nm(b))}</h3><div style="font-size:13px;color:var(--mu);margin-bottom:6px">¿Cuántos corredores anotaron?</div><div class="sg">${Array.from({length:HS.r.length+1},(_,k)=>ob(k,sc===k,`hitCount(${k})`)).join('')}</div>`;
+ for(let k=HS.r.length-1;k>=0;k--){const x=HS.r[k],o=['s'];for(let q=x.i+2;q<=3;q++)o.push(q);o.push('H','O');
+  h+=`<div style="font-size:13px;color:var(--mu)">Corredor en ${x.i+1}ª: <b style="color:var(--tx)">${esc(nm(P(x.id)))}</b></div><div class="sg">${o.map(v=>ob(v==='s'?'Se queda':v==='H'?'Anota':v==='O'?'Out':v+'ª',x.t===v,`HS.r[${k}].t=${typeof v==='number'?v:`'${v}'`};drawHit()`)).join('')}</div>`}
+ h+=`<div style="font-size:13px;margin-bottom:8px;color:${dup?'var(--rd)':'var(--mu)'}">${dup?'Dos jugadores quedarían en la misma base':'Anotan: '+sc+' · el bateador queda en '+n+'ª'}</div><button class="btn" style="background:var(--ac);color:#fff;${dup?'opacity:.4':''}" ${dup?'disabled':''} onclick="confirmHit()">Confirmar</button><button class="btn" onclick="closeS()">Cancelar</button>`;
+ document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto">${h}</div></div>`}
+function confirmHit(){if(hitDup())return;const d=[null,null,null];HS.r.forEach(x=>d[x.i]=x.t);const n=HS.n;closeS();hitDo(n,d)}
 function walk(err){act(b=>{if(err)b.AB++;else b.BB++;const bs=S.bases;if(bs[0]!=null){if(bs[1]!=null){if(bs[2]!=null)run(bs[2],err?null:b.id);bs[2]=bs[1]}bs[1]=bs[0]}bs[0]=b.id;const d=nm(b)+(err?': llega por error':': base por bolas');nxt();return d})}
 function ko(){act(b=>{b.AB++;b.K++;out();nxt();return nm(b)+': ponchado'})}
 function fo(){act(b=>{b.AB++;out();nxt();return nm(b)+': out'})}
@@ -166,7 +181,7 @@ function endGame(){document.getElementById('sheet').innerHTML=`<div class="sheet
 <button class="btn" onclick="fin('Suspendido (lluvia o tiempo)')">Suspendido (lluvia o tiempo)</button>
 <button class="btn" onclick="fin('Forfeit')">Forfeit</button>
 <button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
-function fin(r){closeS();const g={id:Date.now(),team:S.team,rival:S.rival.trim()||'Rival',date:S.date||today(),us:S.us,them:S.them,inning:S.inning,reason:r,players:JSON.parse(JSON.stringify(gamePlayers()))};S.games.unshift(g);S.players=S.players.map(p=>({...mk(p.name),id:p.id}));Object.assign(S,{subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego guardado en Historial'});hist=[];V=g.id;save();T=3;render()}
+function fin(r){closeS();const g={id:Date.now(),team:S.team,rival:S.rival.trim()||'Rival',date:S.date||today(),us:S.us,them:S.them,inning:S.inning,reason:r,players:JSON.parse(JSON.stringify(gamePlayers()))};S.games.unshift(g);S.players=[];Object.assign(S,{subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego guardado en Historial · Lineup vacío'});hist=[];V=g.id;save();T=3;render()}
 let CB=null;
 function ask(msg,fn,lbl){CB=fn;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>${esc(msg)}</h3><button class="btn" style="color:var(--rd)" onclick="closeS();CB&&CB()">${lbl||'Sí, continuar'}</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
 function delG(id){ask('¿Borrar este juego guardado?',()=>{S.games=S.games.filter(g=>g.id!==id);V=null;save();render()},'Borrar juego')}
