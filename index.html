@@ -241,29 +241,38 @@ return `<div class="card tw"><b>Resumen por jugador y entrada</b><table style="m
 function mvpCard(g){const m=mvp(g.players);return `<div class="card" style="text-align:center"><div style="color:var(--mu);font-size:12px">JUGADOR MÁS VALIOSO</div>${m?`<div style="font-size:24px;font-weight:800">⭐ ${esc(nm(m))}</div><div style="color:var(--mu);font-size:13px">${line(m)}</div>`:'<div style="color:var(--mu)">Sin datos</div>'}<div style="color:var(--mu);font-size:11px;margin-top:6px">Puntos: bases totales + carreras + impulsadas + ½ BB − ¼ K</div></div>`}
 function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();x.fill()}
 function fit(x,t,w){if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'}
+function imgPal(){const cs=getComputedStyle(document.documentElement),g=n=>(cs.getPropertyValue(n)||'').trim();
+ const bg=g('--bg')||'#071523',ac=g('--ac')||'#ff5a00',ac2r=g('--ac2')||'#ffb000';
+ const rgb=h=>{h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]};
+ const lum=h=>{const[r,q,b]=rgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*q+.0722*b};
+ const al=(h,a)=>{const[r,q,b]=rgb(h);return `rgba(${r},${q},${b},${a})`},dk=(h,k)=>{const[r,q,b]=rgb(h);return `rgb(${Math.round(r*(1-k))},${Math.round(q*(1-k))},${Math.round(b*(1-k))})`};
+ const light=lum(bg)>.5,ac2=light?dk(ac2r,.3):ac2r;
+ return {bg,bg2:light?'#d9e0e6':dk(bg,.5),on:lum(ac)>.28?'#0b1520':'#ffffff',on2:lum(ac2r)>.28&&!light?'#0b1520':'#ffffff',ac,ac2,
+  text:light?'#14202b':'#ffffff',mute:light?'rgba(20,32,43,.62)':'rgba(255,255,255,.62)',panel:light?'rgba(0,0,0,.06)':'rgba(255,255,255,.08)',panel2:light?'rgba(0,0,0,.03)':'rgba(255,255,255,.035)',
+  line:light?'rgba(0,0,0,.10)':'rgba(255,255,255,.08)',stripe:al(ac,.08),band:al(ac,.7)}}
 function mkImg(id){const g=S.games.find(q=>q.id===id);if(!g)return;const day=S.games.filter(q=>q.date===g.date).reverse();
 const W=1080,CH=440,H=300+day.length*(CH+30)+110,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-const F='"Arial Black","Helvetica Neue",system-ui,sans-serif',LIME='#ff5a00',GOLD='#ffb000',NAVY='#071523';
-const gr=x.createLinearGradient(0,0,W,H);gr.addColorStop(0,NAVY);gr.addColorStop(1,'#04070d');x.fillStyle=gr;x.fillRect(0,0,W,H);
-x.fillStyle='rgba(255,90,0,.08)';for(let k=-2;k<9;k++){x.beginPath();x.moveTo(k*170,0);x.lineTo(k*170+70,0);x.lineTo(k*170-330,H);x.lineTo(k*170-400,H);x.closePath();x.fill()}
+const F='"Arial Black","Helvetica Neue",system-ui,sans-serif',PL=imgPal(),LIME=PL.ac,GOLD=PL.ac2,NAVY=PL.on;
+const gr=x.createLinearGradient(0,0,W,H);gr.addColorStop(0,PL.bg);gr.addColorStop(1,PL.bg2);x.fillStyle=gr;x.fillRect(0,0,W,H);
+x.fillStyle=PL.stripe;for(let k=-2;k<9;k++){x.beginPath();x.moveTo(k*170,0);x.lineTo(k*170+70,0);x.lineTo(k*170-330,H);x.lineTo(k*170-400,H);x.closePath();x.fill()}
 x.fillStyle=LIME;x.beginPath();x.moveTo(0,0);x.lineTo(W,0);x.lineTo(W,200);x.lineTo(0,250);x.closePath();x.fill();
 x.fillStyle=NAVY;x.textAlign='left';x.font='italic 900 76px '+F;x.fillText(fit(x,(g.team||S.team||'MI EQUIPO').toUpperCase(),W-120),60,112);
 x.font='italic 900 34px '+F;x.fillText('RESULTADOS · '+fd(g.date),60,172);
 day.forEach((q,i)=>{const y=300+i*(CH+30),w=q.us>q.them,l=q.us<q.them,tm=(q.team||g.team||S.team||'Mi equipo').toUpperCase(),rv=q.rival.toUpperCase(),m=mvp(q.players);
-x.fillStyle='rgba(255,255,255,.07)';x.fillRect(50,y,W-100,CH);x.fillStyle=LIME;x.fillRect(50,y,14,CH);
+x.fillStyle=PL.panel;x.fillRect(50,y,W-100,CH);x.fillStyle=LIME;x.fillRect(50,y,14,CH);
 x.textAlign='left';x.fillStyle=LIME;x.font='italic 900 24px '+F;x.fillText('FINAL',95,y+42);
-x.textAlign='right';x.fillStyle='rgba(255,255,255,.55)';x.font='italic 700 22px '+F;x.fillText(fit(x,q.reason.toUpperCase(),600),W-95,y+42);
-(q.home?[[rv,q.them,l],[tm,q.us,w]]:[[tm,q.us,w],[rv,q.them,l]]).forEach((r,k)=>{const yy=y+105+k*90;x.fillStyle=(w||l)?(r[2]?LIME:'rgba(255,255,255,.55)'):'#fff';x.textAlign='left';x.font='italic 900 44px '+F;x.fillText(fit(x,r[0],650),95,yy);x.textAlign='right';x.font='italic 900 82px '+F;x.fillText(r[1],W-95,yy+8)});
+x.textAlign='right';x.fillStyle=PL.mute;x.font='italic 700 22px '+F;x.fillText(fit(x,q.reason.toUpperCase(),600),W-95,y+42);
+(q.home?[[rv,q.them,l],[tm,q.us,w]]:[[tm,q.us,w],[rv,q.them,l]]).forEach((r,k)=>{const yy=y+105+k*90;x.fillStyle=(w||l)?(r[2]?LIME:PL.mute):PL.text;x.textAlign='left';x.font='italic 900 44px '+F;x.fillText(fit(x,r[0],650),95,yy);x.textAlign='right';x.font='italic 900 82px '+F;x.fillText(r[1],W-95,yy+8)});
 x.fillStyle=LIME;x.beginPath();x.moveTo(90,y+222);x.lineTo(W-70,y+222);x.lineTo(W-90,y+282);x.lineTo(70,y+282);x.closePath();x.fill();
 x.fillStyle=NAVY;x.textAlign='center';x.font='italic 900 36px '+F;x.fillText(fit(x,w?'GANÓ '+tm:l?'GANÓ '+rv:'EMPATE',W-260),W/2,y+263);
-x.fillStyle=GOLD;rr(x,95,y+308,120,46,10);x.fillStyle=NAVY;x.textAlign='center';x.font='italic 900 28px '+F;x.fillText('MVP',155,y+342);
+x.fillStyle=GOLD;rr(x,95,y+308,120,46,10);x.fillStyle=PL.on2;x.textAlign='center';x.font='italic 900 28px '+F;x.fillText('MVP',155,y+342);
 x.textAlign='left';x.fillStyle=GOLD;x.font='italic 900 40px '+F;
 if(m){x.fillText(fit(x,nm(m).toUpperCase(),W-95-240-40),240,y+346);
 const e=ex(m).filter(t=>!/ (1B|K|BB|SAC)$|^(1B|K|BB|SAC)$/.test(t)||true);
-x.fillStyle='#fff';x.font='700 30px system-ui,sans-serif';x.fillText(fit(x,m.H+(m.H==1?' hit':' hits')+' en '+m.AB+(m.AB==1?' turno':' turnos')+(e.length?' · '+e.join(' · '):''),W-190),95,y+400);
-x.fillStyle='rgba(255,255,255,.6)';x.font='400 24px system-ui,sans-serif';x.fillText(fit(x,(m.log||[]).filter(t=>!t.run).map(t=>'E'+t.i+' '+lbl(t.a)).join(' · '),W-190),95,y+432)}
+x.fillStyle=PL.text;x.font='700 30px system-ui,sans-serif';x.fillText(fit(x,m.H+(m.H==1?' hit':' hits')+' en '+m.AB+(m.AB==1?' turno':' turnos')+(e.length?' · '+e.join(' · '):''),W-190),95,y+400);
+x.fillStyle=PL.mute;x.font='400 24px system-ui,sans-serif';x.fillText(fit(x,(m.log||[]).filter(t=>!t.run).map(t=>'E'+t.i+' '+lbl(t.a)).join(' · '),W-190),95,y+432)}
 else{x.fillText('SIN DATOS',240,y+346)}});
-x.textAlign='center';x.fillStyle='rgba(255,255,255,.45)';x.font='italic 900 24px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,30),W/2,H-45);
+x.textAlign='center';x.fillStyle=PL.mute;x.font='italic 900 24px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,30),W/2,H-45);
 IBLOB_NAME='resultados.png';IBLOB=null;c.toBlob(b=>{IBLOB=b});const url=c.toDataURL('image/png');
 document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><img src="${url}" style="width:100%;border-radius:10px"><div style="color:var(--mu);font-size:13px;margin:8px 0">Mantén presionada la imagen para guardarla.</div><button class="btn" onclick="shareImg()">Compartir</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`}
 function mkStatsImg(season){
@@ -272,20 +281,20 @@ function mkStatsImg(season){
  const cols=statCols(),leaders=leaderMap(ps,season);
  const nameW=520,cellW=66,x0=30,tableW=nameW+cols.length*cellW+14,W=tableW+60,rowH=76,headH=330,footerH=70,H=headH+110+ps.length*rowH+footerH;
  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
- const F='"Arial Black","Helvetica Neue",system-ui,sans-serif',ORANGE='#ff5a00',GOLD='#ffb000',NAVY='#071523',WHITE='#fff',MUTED='rgba(255,255,255,.68)';
- const gr=x.createLinearGradient(0,0,W,H);gr.addColorStop(0,NAVY);gr.addColorStop(1,'#03070c');x.fillStyle=gr;x.fillRect(0,0,W,H);
- x.fillStyle='rgba(255,90,0,.08)';for(let k=-2;k<16;k++){x.beginPath();x.moveTo(k*230,0);x.lineTo(k*230+95,0);x.lineTo(k*230-420,H);x.lineTo(k*230-520,H);x.closePath();x.fill()}
+ const F='"Arial Black","Helvetica Neue",system-ui,sans-serif',PL=imgPal(),ORANGE=PL.ac,GOLD=PL.ac2,NAVY=PL.on,WHITE=PL.text,MUTED=PL.mute;
+ const gr=x.createLinearGradient(0,0,W,H);gr.addColorStop(0,PL.bg);gr.addColorStop(1,PL.bg2);x.fillStyle=gr;x.fillRect(0,0,W,H);
+ x.fillStyle=PL.stripe;for(let k=-2;k<16;k++){x.beginPath();x.moveTo(k*230,0);x.lineTo(k*230+95,0);x.lineTo(k*230-420,H);x.lineTo(k*230-520,H);x.closePath();x.fill()}
  x.fillStyle=ORANGE;x.beginPath();x.moveTo(0,0);x.lineTo(W,0);x.lineTo(W,170);x.lineTo(0,215);x.closePath();x.fill();
  x.fillStyle=NAVY;x.textAlign='left';x.font='italic 900 76px '+F;x.fillText(fit(x,(S.team||'MI EQUIPO').toUpperCase(),W-120),55,92);
  x.font='italic 900 46px '+F;x.fillText(season?'ESTADÍSTICAS DE TEMPORADA':'ESTADÍSTICAS DEL JUEGO',55,155);
  x.font='700 27px system-ui,sans-serif';x.fillStyle=NAVY;x.fillText(season?rec():`${fd(S.date)} · vs ${(S.rival||'Rival').toUpperCase()}`,55,198);
  const y0=260,hr=84;
- x.fillStyle='rgba(255,255,255,.10)';x.fillRect(x0,y0,tableW,hr);x.fillStyle=ORANGE;x.fillRect(x0,y0,12,hr);
+ x.fillStyle=PL.panel;x.fillRect(x0,y0,tableW,hr);x.fillStyle=ORANGE;x.fillRect(x0,y0,12,hr);
  x.textAlign='left';x.fillStyle=GOLD;x.font='italic 900 28px '+F;x.fillText('JUGADOR',x0+28,y0+53);cols.forEach((h,i)=>{x.textAlign='center';x.fillText(h,x0+nameW+i*cellW+cellW/2,y0+53)});
  ps.forEach((p,i)=>{
    const y=y0+hr+i*rowH;
-   x.fillStyle=i%2?'rgba(255,255,255,.035)':'rgba(255,255,255,.075)';x.fillRect(x0,y,tableW,rowH);
-   x.fillStyle='rgba(255,90,0,.7)';x.fillRect(x0,y,6,rowH);
+   x.fillStyle=i%2?PL.panel2:PL.panel;x.fillRect(x0,y,tableW,rowH);
+   x.fillStyle=PL.band;x.fillRect(x0,y,6,rowH);
    const v=statVals(p,season);
    // Nombre del jugador: siempre se dibuja desde p.name, independiente de statVals.
    x.textAlign='left';x.fillStyle=WHITE;x.font='800 38px system-ui,sans-serif';
@@ -296,7 +305,7 @@ function mkStatsImg(season){
      x.textAlign='center';x.fillStyle=lead?GOLD:WHITE;x.font='800 32px system-ui,sans-serif';
      x.fillText(String(z),xx,y+51);
    });
-   x.strokeStyle='rgba(255,255,255,.08)';x.beginPath();x.moveTo(x0,y+rowH);x.lineTo(x0+tableW,y+rowH);x.stroke();
+   x.strokeStyle=PL.line;x.beginPath();x.moveTo(x0,y+rowH);x.lineTo(x0+tableW,y+rowH);x.stroke();
  });
  x.textAlign='left';x.fillStyle=MUTED;x.font='italic 800 26px '+F;x.fillText('Los líderes de cada estadística están resaltados en dorado.',x0,y0+hr+ps.length*rowH+48);
  x.textAlign='center';x.fillStyle=MUTED;x.font='italic 800 26px '+F;x.fillText((S.team||'SOFTBALL').toUpperCase().slice(0,26)+' · ESTADÍSTICAS',W/2,H-24);
