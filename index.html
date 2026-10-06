@@ -117,6 +117,8 @@ table.rs .ev small{display:block;font-size:8px;font-weight:700;line-height:1;opa
 table.rs .ev.x{font-size:16px;min-width:0}table.rs .ev.r{font-size:13px;min-width:0}
 table.rs.dn .ev{font-size:9px;padding:1px;min-width:15px}table.rs.dn th{font-size:10px}
 .rl{color:var(--mu);font-size:10px;margin-top:8px;line-height:1.35}
+.av{border-radius:10px;overflow:hidden;flex:0 0 auto;background:linear-gradient(145deg,var(--ac),var(--ac-d));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;border:2px solid var(--ac2);box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer}.av img{width:100%;height:100%;object-fit:cover;display:block}
+.bl{display:flex;align-items:center;gap:10px;min-width:0}.bi{min-width:0}.bat .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.br{display:flex;align-items:center;gap:8px;flex:0 0 auto}.bt{text-align:right}
 /* ===== Escala automática (celular, tablet, vertical y horizontal) ===== */
 .diaw{width:calc(var(--dh,120px)*1.1333)!important;height:var(--dh,120px)!important;margin:10px auto 0;position:relative}
 .diaw .dia{position:absolute!important;left:0;top:0;width:100%!important;height:100%!important;margin:0!important;transform:none!important}
@@ -149,7 +151,7 @@ let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-S.games=S.games||[];S.home=!!S.home;S.rl=S.rl||[];S.ml=S.ml||[];if(S.pend===undefined)S.pend=null;S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,HF='',ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
+S.games=S.games||[];S.photos=S.photos||{};S.home=!!S.home;S.rl=S.rl||[];S.ml=S.ml||[];if(S.pend===undefined)S.pend=null;S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,HF='',ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
 const P=id=>S.players.find(p=>p.id===id);
 const cur=()=>S.players[S.idx%S.players.length];
@@ -239,7 +241,7 @@ function addR(){const el=document.getElementById('np'),v=el.value.trim();if(!v)r
 function toLine(id){const r=S.roster.find(x=>x.id===id);if(!r||P(id))return;S.players.push({...mk(r.name,r.num),id});save();render()}
 function fromLine(id,force){const p=P(id);if(!p)return;if(!force&&p.AB+p.BB+p.R+p.SAC>0){ask('Este jugador ya tiene estadísticas en este juego. ¿Quitarlo del lineup?',()=>fromLine(id,true),'Quitar');return}const c=cur().id;S.players=S.players.filter(x=>x.id!==id);S.bases=S.bases.map(b=>b===id?null:b);const k=S.players.findIndex(x=>x.id===c);S.idx=k>=0?k:(S.players.length?S.idx%S.players.length:0);save();render()}
 function mv(id,d){const i=S.players.findIndex(p=>p.id===id),j=i+d;if(j<0||j>=S.players.length)return;const c=cur().id;[S.players[i],S.players[j]]=[S.players[j],S.players[i]];S.idx=S.players.findIndex(p=>p.id===c);save();render()}
-function delR(id){ask('¿Quitar del plantel?',()=>{if(P(id))fromLine(id,true);S.roster=S.roster.filter(x=>x.id!==id);save();render()},'Quitar')}
+function delR(id){ask('¿Quitar del plantel?',()=>{if(P(id))fromLine(id,true);S.roster=S.roster.filter(x=>x.id!==id);if(S.photos)delete S.photos[id];save();render()},'Quitar')}
 function seasonStats(){const m={};(S.base&&S.base.players||[]).forEach(p=>{m[p.id]={name:p.name,num:p.num||'',GP:p.GP||0,AB:p.AB||0,H:p.H||0,s1:p.s1||0,s2:p.s2||0,s3:p.s3||0,hr:p.hr||0,BB:p.BB||0,K:p.K||0,R:p.R||0,RBI:p.RBI||0,SAC:p.SAC||0}});S.games.forEach(g=>g.players.forEach(p=>{const k=p.id!=null?p.id:p.name,t=m[k]||(m[k]={name:p.name,num:p.num||'',GP:0,AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});if(p.AB+p.BB+p.SAC+p.R>0)t.GP++;['AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'].forEach(k=>t[k]+=p[k]||0)}));return Object.values(m).sort((a,b)=>b.H-a.H||b.AB-a.AB)}
 function rec(){let w=S.base?S.base.w||0:0,l=S.base?S.base.l||0:0,e=S.base?S.base.e||0:0;S.games.forEach(g=>g.us>g.them?w++:g.us<g.them?l++:e++);return 'Récord '+w+'G - '+l+'P'+(e?' - '+e+'E':'')}
 const AB_={'doble play':'DP','triple play':'TP','jugada de selección':'FC',sencillo:'H1',doble:'H2',triple:'H3','jonrón':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SF'};
@@ -332,7 +334,7 @@ function fcb(){if(!S.players.length){tab(2);return}const bs=S.bases;let ch=0;whi
  if(ch<1){S.msg='Necesitas un corredor en 1ª para este botón (si fue error usa Error)';save();render();return}
  act(b=>{b.AB++;const nb=[null,null,null];for(let i=0;i<3;i++){const id=bs[i];if(id==null)continue;if(i<ch-1)nb[i+1]=id;else if(i===ch-1){(P(id).log=P(id).log||[]).push({i:S.inning,a:'*'});ev.push(nm(P(id))+' out')}else nb[i]=id}
   nb[0]=b.id;S.bases=nb;out();nxt();return nm(b)+': jugada de selección'})}
-function editP(id){const r=S.roster.find(x=>x.id===id);if(!r)return;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Editar jugador</h3><input id="en" value="${esc(r.name)}" placeholder="Nombre"><input id="em" value="${esc(r.num||'')}" placeholder="Número" inputmode="numeric"><button class="btn" style="background:var(--ac);color:#fff" onclick="saveP(${id})">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
+function editP(id){const r=S.roster.find(x=>x.id===id);if(!r)return;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3>Editar jugador</h3><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><div id="pva">${av(r,84,1)}</div><div style="flex:1"><label class="btn" style="display:block;text-align:center;margin:0 0 8px;padding:12px">📷 Foto<input type="file" accept="image/*" style="display:none" onchange="photoPick(${id},this.files[0])"></label><button class="btn" style="margin:0;color:var(--rd)" onclick="photoDel(${id})">Quitar foto</button></div></div><input id="en" value="${esc(r.name)}" placeholder="Nombre"><input id="em" value="${esc(r.num||'')}" placeholder="Número" inputmode="numeric"><button class="btn" style="background:var(--ac);color:#fff" onclick="saveP(${id})">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
 function saveP(id){const n=document.getElementById('en').value.trim(),m=document.getElementById('em').value.trim();if(!n)return;closeS();const up=p=>{if(p&&p.id===id){p.name=n;p.num=m}};S.roster.forEach(up);S.players.forEach(up);(S.subs||[]).forEach(up);(S.base&&S.base.players||[]).forEach(up);S.games.forEach(g=>g.players.forEach(up));save();render()}
 let SUBOUT=null;
 function subSheet(){if(!S.players.length){tab(2);return}SUBOUT=null;drawSub()}
@@ -373,6 +375,11 @@ const THEMES=[['fuego','Fuego','#ff5a00','#071523'],['cancha','Cancha','#2fb457'
 function applyTheme(t){if(!THEMES.some(x=>x[0]===t))t='fuego';document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('softball_theme',t)}catch(e){}const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',THEMES.find(x=>x[0]===t)[3])}
 function themeSheet(){const cur=document.documentElement.getAttribute('data-theme')||'fuego';document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Apariencia</h3>${THEMES.map(t=>`<button class="btn" style="display:flex;align-items:center;gap:12px" onclick="applyTheme('${t[0]}');themeSheet()"><span style="width:26px;height:26px;border-radius:50%;background:${t[2]};border:3px solid ${t[3]};box-shadow:0 0 0 1px var(--bd)"></span><span style="flex:1;text-align:left">${t[1]}</span>${cur===t[0]?'✓':''}</button>`).join('')}<button class="btn" onclick="closeS()">Listo</button></div></div>`}
 applyTheme(document.documentElement.getAttribute('data-theme')||'fuego');
+function av(p,sz,nc){if(!p)return '';const u=(S.photos||{})[p.id],t=p.num?String(p.num):String(p.name||'?').charAt(0).toUpperCase();return `<div class="av" style="width:${sz}px;height:${Math.round(sz*4/3)}px;font-size:${Math.round(sz*(t.length>2?.3:t.length>1?.4:.52))}px"${nc?'':` onclick="event.stopPropagation();photoView(${p.id})"`}>${u?`<img src="${u}" alt="">`:esc(t)}</div>`}
+function shrink(im,sx,sy,sw,sh,W,H){let src=im,cx=sx,cy=sy,cw=sw,ch=sh;while(cw/2>=W){const c=document.createElement('canvas');c.width=Math.round(cw/2);c.height=Math.round(ch/2);c.getContext('2d').drawImage(src,cx,cy,cw,ch,0,0,c.width,c.height);src=c;cx=0;cy=0;cw=c.width;ch=c.height}const f=document.createElement('canvas');f.width=W;f.height=H;const x=f.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(src,cx,cy,cw,ch,0,0,W,H);return f}
+function photoPick(id,file){if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const cw=Math.min(im.width,im.height*3/4),ch=cw*4/3,c=shrink(im,(im.width-cw)/2,(im.height-ch)*0.3,cw,ch,480,640);let u=c.toDataURL('image/jpeg',.86);if(u.length>110000)u=c.toDataURL('image/jpeg',.74);S.photos=S.photos||{};S.photos[id]=u;save();render();const r=S.roster.find(q=>q.id===id),el=document.getElementById('pva');if(el&&r)el.innerHTML=av(r,84,1)};im.src=rd.result};rd.readAsDataURL(file)}
+function photoDel(id){if(S.photos)delete S.photos[id];save();render();const r=S.roster.find(q=>q.id===id),el=document.getElementById('pva');if(el&&r)el.innerHTML=av(r,84,1)}
+function photoView(id){const p=S.roster.find(x=>x.id===id)||P(id);if(!p)return;const u=(S.photos||{})[id];document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="text-align:center"><div style="width:225px;height:300px;margin:4px auto 12px;border-radius:14px;overflow:hidden;border:3px solid var(--ac2);display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,var(--ac),var(--ac-d));color:#fff;font-size:90px;font-weight:900">${u?`<img src="${u}" style="width:100%;height:100%;object-fit:cover">`:esc(p.num?String(p.num):String(p.name||'?').charAt(0).toUpperCase())}</div><h3 style="margin:0 0 12px">${esc(nm(p))}</h3><button class="btn" onclick="editP(${id})">📷 Cambiar foto</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`}
 function tab(n){T=n;V=null;render()}
 const avg=p=>p.AB?(p.H/p.AB).toFixed(3).replace(/^0/,''):'.000';
 function brandUpdate(){const el=document.getElementById('bn');const n=(S.team||'').trim()||'Softball';if(el){const w=n.toUpperCase().split(/\s+/);el.innerHTML=w.length>1?esc(w[0])+' <span>'+esc(w.slice(1).join(' '))+'</span>':'<span>'+esc(w[0])+'</span>'}document.title=n}
@@ -387,8 +394,8 @@ a.innerHTML=`<div class="card row rv"><input placeholder="Equipo rival" value="$
 <div class="cen"><div class="inn"><span>Entrada ${S.inning}</span><span class="outs">${[0,1,2].map(i=>`<i class="${i<S.outs?'f':''}"></i>`).join('')}</span></div><div class="diaw"><div class="dia"><div class="sq"></div>${bs}<div class="home"></div></div></div></div>
 <div class="t rvb ${S.pend!=null?'pend':''}" onclick="rivalTap()"><div class="n">${esc(S.rival||'Rival').toUpperCase()}</div><div class="s">${S.them}</div><div class="rvh">${S.pend!=null?'Toca: carreras ent. '+(S.pend+1):'Toca para anotar'}</div><button class="hv" onclick="event.stopPropagation();lineSheet()">📋 Entradas</button></div></div>
 <div class="msg">${S.msg||'Toca un corredor para avanzarlo, anotarlo o sacarlo out'}</div></div>
-<div class="card"><div class="bat"><div><div class="sm">AL BATE</div><div class="nm">${has?esc(nm(b)):'—'}</div><div class="sm">${has?`${b.H}-${b.AB} · ${avg(b)} · ${b.RBI} CI · ${b.R} C`:''}</div></div>
-<div class="sm" style="text-align:right">EN DECK<br><b style="font-size:15px;color:var(--tx)">${has?esc(nm(nx)):'—'}</b><br><button class="subb" onclick="subSheet()">⇄ Sustituir</button></div></div>
+<div class="card"><div class="bat"><div class="bl">${has?av(b,56):''}<div class="bi"><div class="sm">AL BATE</div><div class="nm">${has?esc(nm(b)):'—'}</div><div class="sm">${has?`${b.H}-${b.AB} · ${avg(b)} · ${b.RBI} CI · ${b.R} C`:''}</div></div></div>
+<div class="br"><div class="bt"><div class="sm">EN DECK</div><b style="font-size:15px;color:var(--tx)">${has?esc(nm(nx)):'—'}</b><br><button class="subb" onclick="subSheet()">⇄ Sustituir</button></div>${has?av(nx,42):''}</div></div>
 <div class="grid"><button onclick="hit(1)">H1</button><button onclick="hit(2)">H2</button><button onclick="hit(3)">H3</button><button onclick="hit(4)">HR</button>
 <button class="w" onclick="walk(false)">BB</button><button class="w" onclick="walk(true)">Error</button><button class="o" onclick="ko()">K</button><button class="o" onclick="fo()">Out</button>
 <button class="g" style="font-size:12px;line-height:1.1" onclick="fcb()">Out, se<br>embasó</button><button class="g" onclick="sac()">SF</button><button class="g" onclick="undo()">↶ Deshacer</button><button class="e" onclick="endGame()">Terminar</button></div></div>`;
@@ -400,7 +407,7 @@ const inL=id=>S.players.some(p=>p.id===id);
 const slots=Math.max(10,S.players.length+1),rows=Math.ceil(slots/2);
 const cell=i=>{const p=S.players[i];return p?`<div class="ls"><b>${i+1}</b><span class="ln">${esc(nm(p))}</span><span class="lb"><button onclick="mv(${p.id},-1)">▲</button><button onclick="mv(${p.id},1)">▼</button><button class="x" onclick="fromLine(${p.id})">✕</button></span></div>`:`<div class="ls e"><b>${i+1}</b><span class="ln">—</span></div>`};
 a.innerHTML=`<div class="card lu"><b>Lineup de hoy (${S.players.length})</b><div class="lug" style="grid-template-rows:repeat(${rows},auto)">${Array.from({length:slots},(_,i)=>cell(i)).join('')}</div></div>
-<div class="card"><b>Plantel (${S.roster.length})</b>${S.roster.map(p=>`<div class="pl"><span>${esc(nm(p))}</span><span>${inL(p.id)?'<span style="color:var(--ac);font-size:13px">✓ en lineup</span>':`<button style="color:var(--ac);font-size:14px;font-weight:700" onclick="toLine(${p.id})">+ Lineup</button>`}<button style="color:var(--tx)" onclick="editP(${p.id})">✎</button><button onclick="delR(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Agrega aquí a todo tu equipo.</div>'}</div>
+<div class="card"><b>Plantel (${S.roster.length})</b>${S.roster.map(p=>`<div class="pl"><span style="display:flex;align-items:center;gap:8px;min-width:0">${av(p,28)}${esc(nm(p))}</span><span>${inL(p.id)?'<span style="color:var(--ac);font-size:13px">✓ en lineup</span>':`<button style="color:var(--ac);font-size:14px;font-weight:700" onclick="toLine(${p.id})">+ Lineup</button>`}<button style="color:var(--tx)" onclick="editP(${p.id})">✎</button><button onclick="delR(${p.id})">✕</button></span></div>`).join('')||'<div style="color:var(--mu);padding:8px 0">Agrega aquí a todo tu equipo.</div>'}</div>
 <div class="card"><b>Agregar jugador nuevo</b><div class="row" style="margin-top:8px"><input id="np" placeholder="Nombre del jugador" onkeydown="if(event.key=='Enter')addR()"><input id="nn" placeholder="#" inputmode="numeric" style="flex:0 0 60px;text-align:center"><button class="btn" style="flex:0 0 auto" onclick="addR()">Agregar</button></div></div>
 <button class="btn" style="width:100%;margin-bottom:8px" onclick="baseSheet()">Importar acumulado anterior</button><button class="btn" style="width:100%;color:var(--rd)" onclick="newGame()">Nuevo juego (reiniciar)</button>`;
 }}
@@ -418,7 +425,7 @@ const FIREBASE_CONFIG={
 };
 /* ==================================================== */
 const DKEY='softball_dirty_v1',LKEY='softball_linked_v1';
-const cloud={denied:false,user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',lastBase:'',synced:{live:false,meta:false,base:false}};
+const cloud={denied:false,user:null,ref:null,db:null,online:false,pending:0,timer:null,lastLive:'',lastMeta:'',lastBase:'',lastPhotos:'',synced:{live:false,meta:false,base:false,photos:false}};
 const cfgSet=()=>!!FIREBASE_CONFIG.apiKey&&!/^PEGA/.test(FIREBASE_CONFIG.apiKey);
 const cfgOk=()=>typeof firebase!=='undefined'&&cfgSet();
 const isDirty=()=>{try{return localStorage.getItem(DKEY)==='1'}catch(e){return false}};
@@ -432,11 +439,12 @@ function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='�
  b.textContent=t;b.className='cloudbtn'+(ok?' ok':'')}
 function cloudPush(){if(!cfgSet())return;setDirty(true);if(!cloud.ref)return;clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>{cloud.timer=null;flush()},350);updBtn()}
 function flush(force){
- if(!cloud.ref||!cloud.synced.live||!cloud.synced.meta||!cloud.synced.base)return;
- const L=JSON.stringify(liveOf()),M=JSON.stringify(metaOf()),BS=JSON.stringify(S.base||null),jobs=[];
+ if(!cloud.ref||!cloud.synced.live||!cloud.synced.meta||!cloud.synced.base||!cloud.synced.photos)return;
+ const L=JSON.stringify(liveOf()),M=JSON.stringify(metaOf()),BS=JSON.stringify(S.base||null),PS=JSON.stringify(S.photos||{}),jobs=[];
  if(force||L!==cloud.lastLive){cloud.lastLive=L;jobs.push(cloud.ref.child('live').set(L))}
  if(force||M!==cloud.lastMeta){cloud.lastMeta=M;jobs.push(cloud.ref.child('meta').set(M))}
  if(force||BS!==cloud.lastBase){cloud.lastBase=BS;jobs.push(cloud.ref.child('base').set(BS))}
+ if(force||PS!==cloud.lastPhotos){cloud.lastPhotos=PS;jobs.push(cloud.ref.child('photos').set(PS))}
  if(!jobs.length){if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn();return}
  cloud.pending+=jobs.length;
  jobs.forEach(j=>j.then(()=>{cloud.pending--;if(!cloud.pending&&!cloud.timer)setDirty(false);updBtn()}).catch(e=>{cloud.pending--;updBtn();console.error(e)}));
@@ -449,19 +457,22 @@ function mergeMeta(v){try{const o=JSON.parse(v),dirty=isDirty(),first=localStora
  if(first||dirty){S.games=uni(o.games,S.games).sort((a,b)=>b.id-a.id);S.roster=uni(o.roster,S.roster);S.team=(dirty?S.team:o.team)||S.team||o.team||'';if(o.base&&!S.base)S.base=o.base}
  else{S.games=o.games||[];S.roster=o.roster||[];S.team=o.team||'';if(o.base&&!S.base)S.base=o.base}
  localStorage.setItem(LKEY,cloud.user.uid);cloud.lastMeta=v;persist();render()}catch(e){console.error(e)}}
-function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false,base:false};cloud.lastLive='';cloud.lastMeta='';cloud.lastBase='';
+function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.synced={live:false,meta:false,base:false,photos:false};cloud.lastLive='';cloud.lastMeta='';cloud.lastBase='';cloud.lastPhotos='';
  cloud.ref.child('live').on('value',snap=>{const v=snap.val();
   if(!cloud.synced.live){cloud.synced.live=true;if(v!=null&&!isDirty())applyLive(v);flush();return}
   if(v==null||v===cloud.lastLive)return;applyLive(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
  cloud.ref.child('base').on('value',snap=>{const v=snap.val();
   if(!cloud.synced.base){cloud.synced.base=true;if(v!=null&&!(isDirty()&&S.base))applyBase(v);flush();return}
   if(v==null||v===cloud.lastBase)return;applyBase(v)},e=>{console.error(e)});
+ cloud.ref.child('photos').on('value',snap=>{const v=snap.val();
+  if(!cloud.synced.photos){cloud.synced.photos=true;if(v!=null){try{const r=JSON.parse(v),l=S.photos||{};S.photos=isDirty()?{...r,...l}:{...l,...r};cloud.lastPhotos=v;persist();render()}catch(e){console.error(e)}}flush();return}
+  if(v==null||v===cloud.lastPhotos)return;try{S.photos=JSON.parse(v);cloud.lastPhotos=v;persist();render()}catch(e){console.error(e)}},e=>{console.error(e)});
  cloud.ref.child('meta').on('value',snap=>{const v=snap.val();
   if(!cloud.synced.meta){cloud.synced.meta=true;if(v!=null)mergeMeta(v);else{try{localStorage.setItem(LKEY,u.uid)}catch(e){}}flush();return}
   if(v==null||v===cloud.lastMeta)return;applyMeta(v)},e=>{console.error(e);cloud.denied=true;updBtn()});
  updBtn()}
-function wipeLocal(){S={home:false,rl:[],ml:[],pend:null,base:null,subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(DKEY);localStorage.removeItem(LKEY)}catch(e){}}
-function cloudStop(){clearTimeout(cloud.timer);cloud.timer=null;if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off();cloud.ref.child('base').off()}cloud.ref=null;cloud.user=null;updBtn()}
+function wipeLocal(){S={photos:{},home:false,rl:[],ml:[],pend:null,base:null,subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(DKEY);localStorage.removeItem(LKEY)}catch(e){}}
+function cloudStop(){clearTimeout(cloud.timer);cloud.timer=null;if(cloud.ref){cloud.ref.child('live').off();cloud.ref.child('meta').off();cloud.ref.child('base').off();cloud.ref.child('photos').off()}cloud.ref=null;cloud.user=null;updBtn()}
 const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
 function cloudLogin(create){const e=document.getElementById('cl_e').value.trim(),p=document.getElementById('cl_p').value,m=document.getElementById('cl_m');m.textContent='';
  if(!e||!p){m.textContent='Escribe correo y contraseña';return}
@@ -492,7 +503,7 @@ function fitScreen(){const w=innerWidth,h=innerHeight,land=w>h*1.15,r=document.d
  document.body.style.zoom=k;document.body.style.minHeight=H+'px';
  r.classList.toggle('land',two);r.classList.toggle('cmp',cmp);
  let dh=cmp?96:120,bh=cmp?36:42;
- if(two){const R=H-156,colW=(W-40)/2;dh=Math.max(110,Math.min(R-85,(colW-170)/1.1333,260));bh=Math.max(38,Math.min(80,(R-108)/3))}
+ if(two){const R=H-156,colW=(W-40)/2;dh=Math.max(110,Math.min(R-85,(colW-170)/1.1333,260));bh=Math.max(34,Math.min(80,(R-136)/3))}
  r.style.setProperty('--dh',dh+'px');r.style.setProperty('--bh',bh+'px')}
 addEventListener('resize',fitScreen);addEventListener('orientationchange',()=>setTimeout(fitScreen,250));fitScreen();
 </script>
