@@ -382,7 +382,8 @@ function importBase(txt){let d;try{d=JSON.parse(txt)}catch(e){return 'El archivo
  const ent=(n,u)=>{let r=S.roster.find(q=>key(q.name)===key(n)&&(String(q.num||'')===String(u||'')||!q.num));if(!r){r={id:uid(),name:String(n).trim(),num:String(u||'')};S.roster.push(r)}else if(!r.num&&u)r.num=String(u);return r};
  const pl=d.players.map(p=>{const r=ent(p.name,p.num);return {id:r.id,name:r.name,num:r.num||'',GP:N(p.GP),AB:N(p.AB),H:N(p.s1)+N(p.s2)+N(p.s3)+N(p.hr),s1:N(p.s1),s2:N(p.s2),s3:N(p.s3),hr:N(p.hr),BB:N(p.BB),K:N(p.K),R:N(p.R),RBI:N(p.RBI),SAC:N(p.SAC)}});
  (d.roster||[]).forEach(p=>ent(p.name,p.num));
- S.base={w:N(d.w),l:N(d.l),e:N(d.e),players:pl};dedupeRoster(false);save();render();return ''}
+ {const us=new Set();pl.forEach(p=>{if(us.has(p.id)){const r=S.roster.find(q=>q.id===p.id&&String(q.name).trim().toLowerCase()!==String(p.name).trim().toLowerCase());const nid=uid();p.id=nid;const rr=S.roster.find(q=>String(q.name).trim().toLowerCase()===String(p.name).trim().toLowerCase()&&String(q.num||'')===String(p.num||'')&&q.id!==nid);if(rr)rr.id=nid}us.add(p.id)})}
+S.base={w:N(d.w),l:N(d.l),e:N(d.e),players:pl};dedupeRoster(false);save();render();return ''}
 function teamSheet(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Nombre del equipo</h3><div style="font-size:16px;font-weight:800;margin-bottom:10px">${esc(S.team||'Sin nombre')}</div><div style="font-size:13px;color:var(--mu);margin-bottom:10px">¿Quieres cambiarlo?</div><button class="btn" style="background:var(--ac);color:#fff" onclick="teamEdit()">Sí, cambiar nombre</button><button class="btn" onclick="closeS()">No</button></div></div>`}
 function teamEdit(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Nuevo nombre</h3><input id="tn" value="${esc(S.team)}" placeholder="Nombre del equipo"><button class="btn" style="background:var(--ac);color:#fff" onclick="teamSave()">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
 function teamSave(){const v=document.getElementById('tn').value.trim();closeS();if(!v)return;S.team=v;save();render()}
@@ -452,14 +453,14 @@ function geAddP(){geRead();const have=new Set(GE.players.map(p=>p.id)),list=S.ro
 function geAddPick(id){const r=S.roster.find(x=>x.id===id);if(!r)return;GE.players.push({...mk(r.name,r.num),id});GI=GE.players.length-1;drawGP()}
 function geSave(){geRead();const i=S.games.findIndex(x=>x.id===GE.id);if(i<0)return;GE.rival=(GE.rival||'').trim()||'Rival';GE.players.forEach(p=>{p.H=p.s1+p.s2+p.s3+p.hr});S.games[i]=GE;GE=null;document.getElementById('sheet').innerHTML='';save();render()}
 const SUMK=['GP','AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'];
-function dedupeRoster(loose){const key=r=>String(r.name||'').trim().toLowerCase(),num=r=>String(r.num||'').trim();
+function dedupeRoster(loose){fixIds();const key=r=>String(r.name||'').trim().toLowerCase(),num=r=>String(r.num||'').trim();
  const same=(a,b)=>key(a)===key(b)&&(num(a)===num(b)&&(loose||num(a)!=='')||(loose&&(!num(a)||!num(b))));
  const used=new Set((S.base&&S.base.players||[]).map(p=>p.id));S.games.forEach(g=>(g.players||[]).forEach(p=>used.add(p.id)));
  const rank=r=>(used.has(r.id)?2:0)+((S.photos||{})[r.id]?1:0),keep=[],rm={};let n=0;
  [...S.roster].sort((a,b)=>rank(b)-rank(a)).forEach(r=>{const k=keep.find(x=>same(x,r));if(k){rm[r.id]=k.id;if(!num(k)&&num(r))k.num=r.num;k.off=!!(k.off&&r.off);n++}else keep.push(r)});
  const mp=id=>rm[id]!==undefined?rm[id]:id;
  if(n){S.roster=S.roster.filter(r=>!(r.id in rm));
-  const fold=arr=>{const o=[],seen={};arr.forEach(p=>{p.id=mp(p.id);const q=seen[p.id];if(q){SUMK.forEach(k=>q[k]=(q[k]||0)+(p[k]||0));if(p.log)q.log=(q.log||[]).concat(p.log)}else{seen[p.id]=p;o.push(p)}});return o};
+  const fold=arr=>{const o=[],seen={},nk=p=>String(p.name||'').trim().toLowerCase();arr.forEach(p=>{p.id=mp(p.id);const key=p.id+'|'+nk(p),q=seen[key];if(q){SUMK.forEach(k=>q[k]=(q[k]||0)+(p[k]||0));if(p.log)q.log=(q.log||[]).concat(p.log)}else{seen[key]=p;o.push(p)}});return o};
   S.players=fold(S.players);S.subs=fold(S.subs||[]);S.bases=S.bases.map(b=>b==null?b:mp(b));
   S.games.forEach(g=>{g.players=fold(g.players||[])});if(S.base)S.base.players=fold(S.base.players||[]);
   const ph=S.photos||{};Object.keys(rm).forEach(o=>{if(ph[o]){if(!ph[rm[o]])ph[rm[o]]=ph[o];delete ph[o]}})}
