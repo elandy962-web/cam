@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marcador Overlay</title>
+<style>
+  body {
+    margin: 0;
+    padding: 10px;
+    background: transparent; /* Fondo transparente para transmisiones */
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #fff;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+  .scoreboard-overlay {
+    background: rgba(11, 21, 32, 0.88);
+    border: 2px solid rgba(255, 90, 0, 0.6);
+    border-radius: 12px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+  }
+  .team-box { text-align: center; }
+  .team-name { font-size: 13px; font-weight: 800; color: #aeb8c2; text-transform: uppercase; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .team-score { font-size: 32px; font-weight: 900; line-height: 1; color: #fff; }
+  .vs { font-size: 14px; font-weight: 900; color: #ff5a00; }
+  .info-box { display: flex; flex-direction: column; align-items: center; padding: 0 8px; border-left: 1px solid rgba(255,255,255,0.15); border-right: 1px solid rgba(255,255,255,0.15); }
+  .inning-text { font-size: 12px; font-weight: 800; color: #ffb000; margin-bottom: 4px; }
+  .outs-container { display: flex; gap: 4px; align-items: center; }
+  .out-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #ffb000; background: transparent; }
+  .out-dot.active { background: #ffb000; }
+</style>
+</head>
+<body>
+
+<div class="scoreboard-overlay">
+  <div class="team-box">
+    <div class="team-name" id="ov_team">Nosotros</div>
+    <div class="team-score" id="ov_us">0</div>
+  </div>
+  <div class="vs">VS</div>
+  <div class="team-box">
+    <div class="team-name" id="ov_rival">Rival</div>
+    <div class="team-score" id="ov_them">0</div>
+  </div>
+  <div class="info-box">
+    <div class="inning-text" id="ov_inning">1 ⚾</div>
+    <div class="outs-container" id="ov_outs">
+      <div class="out-dot"></div>
+      <div class="out-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts de Firebase para leer los datos en tiempo real -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  // Usa la misma configuración de Firebase que tu app principal
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCN0x4MpIssHWsxoLfEUIeEv5HDF9Xvyes",
+    authDomain: "softball-110a8.firebaseapp.com",
+    databaseURL: "https://softball-110a8-default-rtdb.firebaseio.com",
+    projectId: "softball-110a8",
+    appId: "1:223305263586:web:295eec26091c97954371bb"
+  };
+
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const db = firebase.database();
+
+  // Escucha los cambios en tiempo real desde la base de datos
+  // Nota: Para que esto funcione de forma completamente sincronizada sin iniciar sesión, 
+  // asegúrate de que las reglas de Firebase Realtime Database permitan lectura pública (read: true).
+  
+  // Como ejemplo rápido, puedes pasar el ID de usuario o leer del nodo general si compartes la ruta:
+  // Aquí puedes ajustar la ruta dependiendo de cómo guardes los datos en tu base de datos de Firebase.
+  
+  function bindOverlay(userId) {
+    const ref = db.ref('softball/' + userId + '/live');
+    ref.on('value', snapshot => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      document.getElementById('ov_us').textContent = data.us || 0;
+      document.getElementById('ov_them').textContent = data.them || 0;
+      document.getElementById('ov_rival').textContent = data.rival || 'Rival';
+      document.getElementById('ov_team').textContent = data.team || 'Nosotros';
+      
+      const topBot = ((data.side === 'us') === !data.home) ? '▲' : '▼';
+      document.getElementById('ov_inning').textContent = `${topBot} ${data.inning || 1}`;
+
+      const outs = data.outs || 0;
+      const dots = document.querySelectorAll('.out-dot');
+      dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index < outs);
+      });
+    });
+  }
+
+  // Puedes cambiar esto por el ID de usuario específico que genera Firebase al iniciar sesión
+  // O estructurar tu base de datos para que el overlay lea directo del partido activo.
+  const urlParams = new URLSearchParams(window.location.search);
+  const uid = urlParams.get('uid') || 'TU_USER_ID_DE_FIREBASE';
+  bindOverlay(uid);
+</script>
+</body>
+</html>
