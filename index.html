@@ -173,7 +173,7 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
-const APP_VERSION='2.8.0',APP_BUILD='22/10/2026';
+const APP_VERSION='2.8.2',APP_BUILD='22/10/2026';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
@@ -234,7 +234,17 @@ function endGame(){document.getElementById('sheet').innerHTML=`<div class="sheet
 <button class="btn" onclick="fin('KO / diferencia de carreras')">KO / diferencia de carreras</button>
 <button class="btn" onclick="fin('Suspendido (lluvia o tiempo)')">Suspendido (lluvia o tiempo)</button>
 <button class="btn" onclick="fin('Forfeit')">Forfeit</button>
-<button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
+<button class="btn" style="color:var(--rd);margin-top:14px" onclick="cancelGame()">🗑 Cancelar juego (no se guarda)</button>
+<button class="btn" style="color:var(--rd)" onclick="cancelGame(1)">🗑 Cancelar y quitar lineups</button>
+<button class="btn" onclick="closeS()">← Volver al juego</button></div></div>`}
+/* Cancelar juego: descarta el juego en curso sin guardarlo en el Historial ni sumarlo a la temporada.
+   Conserva los dos lineups (con sus estadísticas en cero), el rival y la fecha, para poder empezar de nuevo. */
+function cancelGame(clr){ask(clr?'¿Cancelar este juego y quitar los lineups? Se borran el marcador y las estadísticas de este juego y no se guarda en el Historial. Tu lineup y el del rival quedan vacíos (tu plantel no se toca). Esto no se puede deshacer.':'¿Cancelar este juego? Se borran el marcador y las estadísticas de este juego y no se guarda en el Historial. Los lineups se quedan para volver a empezar. Esto no se puede deshacer.',()=>{
+ if(clr){S.players=[];Object.assign(S,{side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego cancelado · no se guardó nada · Lineup vacío'});hist=[];T=0;save();render();return}
+ const z=p=>({...p,log:[],AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});
+ S.players=S.players.map(z);if(S.opp)S.opp={idx:0,players:S.opp.players.map(z)};
+ Object.assign(S,{side:S.home?'op':'us',started:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Juego cancelado · no se guardó nada'});
+ hist=[];T=0;save();render()},clr?'Sí, cancelar y quitar lineups':'Sí, cancelar juego')}
 function fin(r){closeS();const g={id:Date.now(),team:S.team,rival:S.rival.trim()||'Rival',date:S.date||today(),us:S.us,them:S.them,inning:S.inning,home:S.home,rl:S.rl,ml:S.ml,opp:(S.opp&&S.opp.players.some(p=>p.AB+p.BB+p.SAC+p.R>0))?JSON.parse(JSON.stringify(S.opp)):null,reason:r,players:JSON.parse(JSON.stringify(gamePlayers()))};S.games.unshift(g);S.players=[];Object.assign(S,{side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego guardado en Historial · Lineup vacío'});hist=[];V=g.id;save();T=3;render()}
 let CB=null;
 function ask(msg,fn,lbl){CB=fn;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>${esc(msg)}</h3><button class="btn" style="color:var(--rd)" onclick="closeS();CB&&CB()">${lbl||'Sí, continuar'}</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
