@@ -1,5 +1,5 @@
 /* Service worker: la app abre sin internet. Sube el número de V cuando cambies archivos. */
-const V = 'softball-2.7.0';
+const V = 'softball-2.8.0';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 const SDK = ['app', 'auth', 'database'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
 self.addEventListener('install', e => {
@@ -28,6 +28,8 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (u.origin !== location.origin) return;
+  /* El marcador de la transmisión siempre se pide fresco a internet (nunca de la copia guardada). */
+  if (u.pathname.endsWith('marcador.html')) return;
   e.respondWith(caches.match(r, { ignoreSearch: true }).then(hit => {
     const net = fetch(r).then(res => {
       if (res && res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); }

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marcador</title>
+<style>
+html,body{margin:0;height:100%;background:transparent!important;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+:root{--ln:255,255,255;--u:12px;--a1:#ff5a00;--a2:#ffb000;--tx:#fff;--bgc:rgba(7,21,35,.92);--on:#fff}
+#bug{position:absolute;display:none;width:calc(var(--u)*38);border-radius:calc(var(--u)*1.2);overflow:hidden;box-shadow:0 calc(var(--u)*.3) calc(var(--u)*1.4) rgba(0,0,0,.5);color:var(--tx);background:var(--bgc)}
+#bug.tl{left:calc(var(--u)*1.5);top:calc(var(--u)*1.5)}
+#bug.tr{right:calc(var(--u)*1.5);top:calc(var(--u)*1.5)}
+#bug.bl{left:calc(var(--u)*1.5);bottom:calc(var(--u)*1.5)}
+#bug.br{right:calc(var(--u)*1.5);bottom:calc(var(--u)*1.5)}
+.main{display:flex}
+.teams{flex:1;min-width:0}
+.row{display:flex;align-items:center;height:calc(var(--u)*4.4);padding:0 calc(var(--u)*1.2) 0 calc(var(--u)*.8);gap:calc(var(--u)*.8);font-weight:800;font-size:calc(var(--u)*2);text-transform:uppercase;border-left:calc(var(--u)*.45) solid transparent;letter-spacing:.02em}
+.row+.row{border-top:1px solid rgba(var(--ln),.1)}
+.row.bat{border-left-color:var(--a2);background:rgba(var(--ln),.08)}
+.row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .sc{font-size:calc(var(--u)*3.1);font-variant-numeric:tabular-nums;min-width:calc(var(--u)*2.6);text-align:center}
+.info{display:flex;align-items:center;gap:calc(var(--u)*1.3);padding:calc(var(--u)*.7) calc(var(--u)*1.2);font-size:calc(var(--u)*1.9);font-weight:800;color:var(--a2);border-top:1px solid rgba(var(--ln),.1)}
+.dots{display:inline-flex;gap:calc(var(--u)*.5)}
+.dots i{display:block;width:calc(var(--u)*1.35);height:calc(var(--u)*1.35);border-radius:50%;border:calc(var(--u)*.22) solid var(--a2);box-sizing:border-box}
+.dots i.on{background:var(--a2)}
+.info .o{font-size:calc(var(--u)*1.3);color:var(--tx);opacity:.7;margin-left:calc(var(--u)*-.6)}
+.dia{flex:0 0 calc(var(--u)*11);display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid rgba(var(--ln),.1)}
+.dia svg{width:calc(var(--u)*9);height:calc(var(--u)*9)}
+.bar{display:flex;align-items:center;gap:calc(var(--u)*1);padding:calc(var(--u)*.9) calc(var(--u)*1.4);background:var(--a1);color:var(--on);font-weight:800;font-size:calc(var(--u)*2)}
+.bar .lb{font-size:calc(var(--u)*1.3);opacity:.85;letter-spacing:.06em}
+.bar .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .av{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:.8em}
+.bar small{font-size:.62em;opacity:.8;letter-spacing:.06em;margin:0 calc(var(--u)*.3) 0 calc(var(--u)*.6)}
+.ls{display:grid;font-size:calc(var(--u)*1.35);font-weight:800;padding:calc(var(--u)*.5) calc(var(--u)*1.2) calc(var(--u)*.7);border-top:1px solid rgba(var(--ln),.1);font-variant-numeric:tabular-nums;row-gap:calc(var(--u)*.25)}
+.ls span{text-align:center}.ls .h{opacity:.55;font-size:.85em}.ls .t{text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:calc(var(--u)*.6)}.ls .now{color:var(--a2)}
+.runners{font-size:calc(var(--u)*1.35);opacity:.9;padding:0 calc(var(--u)*1.4) calc(var(--u)*.8);color:var(--tx)}
+</style>
+</head><body>
+<div id="bug" class="tl"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* Marcador para la transmisión (solo lectura). Se pega en CameraFi Live (Widget → WEB → URL #1). Uso: marcador.html?c=CODIGO
+   La posición, el tamaño y las opciones se controlan en vivo desde la app (📺).
+   En la URL quedan como valores de respaldo: p=tl|tr|bl|br  s=1.2  n=1 (corredores)  l=1 (carreras por entrada)
+   c=demo muestra un ejemplo sin conexión. */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyCN0x4MpIssHWsxoLfEUIeEv5HDF9Xvyes",
+  authDomain:"softball-110a8.firebaseapp.com",
+  databaseURL:"https://softball-110a8-default-rtdb.firebaseio.com", // revisa que sea igual al que muestra Realtime Database > Datos
+  projectId:"softball-110a8",
+  appId:"1:223305263586:web:295eec26091c97954371bb"
+};
+const q=new URLSearchParams(location.search),c0=(q.get('c')||'').trim(),code=c0.toLowerCase()==='demo'?'demo':c0.toUpperCase().replace(/[^A-Z0-9]/g,'');
+const U={p:(q.get('p')||'tl').toLowerCase(),s:parseFloat(q.get('s'))||1,n:q.get('n')==='1',l:q.get('l')==='1'};
+let pos=U.p,sc=U.s,showN=U.n,showL=U.l;
+const bug=document.getElementById('bug');
+function sizeIt(){document.documentElement.style.setProperty('--u',(Math.min(innerWidth/100,innerHeight/56)*sc)+'px')}
+function opts(v){v=v||{};pos=['tl','tr','bl','br'].includes(v.p)?v.p:(['tl','tr','bl','br'].includes(U.p)?U.p:'tl');
+ sc=Math.max(.5,Math.min(3,parseFloat(v.s)||U.s));showN=v.n!=null?!!v.n:U.n;showL=v.l!=null?!!v.l:U.l;bug.className=pos;sizeIt()}
+opts();
+addEventListener('resize',sizeIt);sizeIt();
+const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rgb=h=>{h=String(h||'').trim().replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return isNaN(n)||h.length!==6?null:[(n>>16)&255,(n>>8)&255,n&255]};
+const lum=h=>{const c=rgb(h);if(!c)return 0;const [r,g,b]=c.map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b};
+function colors(c){c=c||{};const r=document.documentElement.style,bg=rgb(c.bg);
+ if(rgb(c.ac))r.setProperty('--a1',c.ac);if(rgb(c.a2))r.setProperty('--a2',c.a2);
+ r.setProperty('--on',lum(c.ac)>.28?'#0b1520':'#ffffff');
+ const light=lum(c.bg)>.5;r.setProperty('--tx',light?'#14202b':'#ffffff');r.setProperty('--ln',light?'20,32,43':'255,255,255');
+ r.setProperty('--bgc',bg?`rgba(${bg[0]},${bg[1]},${bg[2]},.93)`:'rgba(7,21,35,.93)')}
+function diamond(b){const on=i=>b[i]?'var(--a2)':'rgba(var(--ln),.18)',st=i=>b[i]?'var(--a2)':'rgba(var(--ln),.55)';
+ const base=(x,y,i)=>`<rect x="${x-8}" y="${y-8}" width="16" height="16" transform="rotate(45 ${x} ${y})" fill="${on(i)}" stroke="${st(i)}" stroke-width="3"/>`;
+ return `<svg viewBox="0 0 100 100"><path d="M50 86 L86 50 L50 14 L14 50 Z" fill="rgba(var(--ln),.06)" stroke="rgba(var(--ln),.35)" stroke-width="2.5"/>${base(50,14,1)}${base(14,50,2)}${base(86,50,0)}<path d="M50 80 L56 86 L56 91 L44 91 L44 86 Z" fill="rgba(var(--ln),.75)"/></svg>`}
+function lineScore(d,rows){const ml=d.ml||[],rl=d.rl||[],cur=d.inn|0;let N=Math.max(ml.length,rl.length,cur,1);const s0=Math.max(0,N-9),cols=[];for(let i=s0;i<N;i++)cols.push(i);
+ const val=(a,i)=>{const v=a[i];return v==null||v<0?'':String(v)};
+ const g=`grid-template-columns:minmax(0,1fr) repeat(${cols.length},calc(var(--u)*2.6))`;
+ return `<div class="ls" style="${g}"><span></span>${cols.map(i=>`<span class="h${i+1===cur&&d.st?' now':''}">${i+1}</span>`).join('')}${rows.map(r=>`<span class="t">${esc(r.n)}</span>${cols.map(i=>`<span>${val(r.us?ml:rl,i)}</span>`).join('')}`).join('')}</div>`}
+function draw(d){if(!d||d.off){bug.style.display='none';return}
+ opts(d.v);colors(d.c);const home=!!d.home,tm=d.tm||'Nosotros',rv=d.rv||'Rival',batUs=d.sd!=='op';
+ const T={n:tm,s:d.us|0,b:batUs,us:1},R={n:rv,s:d.th|0,b:!batUs,us:0},rows=home?[R,T]:[T,R];
+ const bs=d.b||['','',''],outs=Math.max(0,Math.min(3,d.outs|0));
+ const dots=[0,1,2].map(i=>`<i class="${i<outs?'on':''}"></i>`).join('');
+ const bt=d.bat;let bar;
+ if(!d.st)bar=`<span class="nm">Por comenzar</span>`;
+ else if(bt)bar=`<span class="lb">AL BATE</span><span class="nm">${bt.u?'#'+esc(bt.u)+' ':''}${esc(bt.n)}${bt.p?' · '+esc(bt.p):''}</span><span class="av">${bt.h?`<small>HOY</small>${esc(bt.h)}`:''}${bt.a?`<small>AVE</small>${esc(bt.a)}`:''}</span>`;
+ else bar='';
+ const names=showN?[['1ª',bs[0]],['2ª',bs[1]],['3ª',bs[2]]].filter(x=>x[1]).map(x=>x[0]+' '+esc(x[1])).join(' · '):'';
+ bug.innerHTML=`<div class="main"><div class="teams">${rows.map(r=>`<div class="row${r.b&&d.st?' bat':''}"><span class="nm">${esc(r.n)}</span><span class="sc">${r.s}</span></div>`).join('')}<div class="info"><span>${d.top?'▲':'▼'} ${d.inn|0}</span><span class="dots">${dots}</span><span class="o">OUTS</span></div></div><div class="dia">${diamond([!!bs[0],!!bs[1],!!bs[2]])}</div></div>${showL?lineScore(d,rows):''}${names?`<div class="runners">${names}</div>`:''}${bar?`<div class="bar">${bar}</div>`:''}`;
+ bug.style.display='block'}
+if(code==='demo'){draw({tm:'Team Perversos',rv:'Tigres',us:4,th:2,inn:3,top:1,outs:2,st:1,sd:'us',home:0,b:['Ricoche','','Noel'],bat:{n:'Robert',u:'20',p:'C',a:'.333',h:'2-3'},ml:[1,0,3],rl:[0,2],v:{n:1,l:1},c:{ac:'#ff5a00',a2:'#ffb000',bg:'#071523'}})}
+else if(code&&typeof firebase!=='undefined'){try{firebase.initializeApp(FIREBASE_CONFIG);firebase.database().ref('scoreboard/'+code+'/d').on('value',s=>draw(s.val()))}catch(e){console.error(e)}}
+</script>
+</body></html>

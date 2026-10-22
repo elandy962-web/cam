@@ -165,7 +165,7 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 .hv{margin-top:3px;padding:4px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--mu);font-size:11px;font-weight:800}
 .ls2{width:100%;border-collapse:collapse;font-size:14px}.ls2 th,.ls2 td{padding:7px 4px;text-align:center}.ls2 th{color:var(--mu);font-size:12px}.ls2 td:first-child{text-align:left;font-weight:800;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ls2 tr+tr td{border-top:1px solid var(--bd)}.lc{color:var(--ac2);text-decoration:underline dotted}
 </style></head><body>
-<div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name" id="bn" onclick="teamSheet()" style="cursor:pointer"><span>SOFTBALL</span></div></div><button id="cloud" class="cloudbtn" onclick="cloudSheet()">☁ Local</button><button class="cloudbtn" style="margin-left:8px" onclick="themeSheet()" aria-label="Apariencia">⚙&#xFE0E;</button></div>
+<div class="brand"><div class="brand-mark">♛</div><div><div class="brand-name" id="bn" onclick="teamSheet()" style="cursor:pointer"><span>SOFTBALL</span></div></div><button id="cloud" class="cloudbtn" onclick="cloudSheet()">☁ Local</button><button id="txb" class="cloudbtn" style="margin-left:8px" onclick="txSheet()" aria-label="Transmitir">📺</button><button class="cloudbtn" style="margin-left:8px" onclick="themeSheet()" aria-label="Apariencia">⚙&#xFE0E;</button></div>
 <div class="tabs"><button id="t0" onclick="tab(0)">Juego</button><button id="t1" onclick="tab(1)">Estadísticas</button><button id="t2" onclick="tab(2)">Equipo</button><button id="t3" onclick="tab(3)">Historial</button></div>
 <div id="app"></div><div id="sheet"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -173,14 +173,14 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
-const APP_VERSION='2.7.0',APP_BUILD='11/10/2026';
+const APP_VERSION='2.8.0',APP_BUILD='22/10/2026';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 S.games=S.games||[];S.photos=S.photos||{};if(S.opp===undefined)S.opp=null;if(S.side===undefined)S.side='us';if(S.started===undefined)S.started=(S.inning>1||S.outs>0||S.us>0||S.them>0||(S.players||[]).some(p=>p.AB+p.BB+p.SAC+p.R>0));S.home=!!S.home;S.rl=S.rl||[];S.ml=S.ml||[];if(S.pend===undefined)S.pend=null;S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,HF='',ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush()};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush();if(typeof txQueue==='function')txQueue()};
 const P=id=>S.players.find(p=>p.id===id)||(S.opp&&S.opp.players.find(p=>p.id===id));
 const AP=()=>S.side==='op'&&S.opp?S.opp.players:S.players,AI=()=>S.side==='op'&&S.opp?S.opp.idx:S.idx,cur=()=>{const a=AP();return a[AI()%a.length]},ourCur=()=>S.players[S.idx%S.players.length];
 let NS=null;const nxt=()=>{const sd=NS||S.side,op=sd==='op'&&S.opp,a=op?S.opp.players:S.players;if(op)S.opp.idx=(S.opp.idx+1)%a.length;else S.idx=(S.idx+1)%a.length};
@@ -423,7 +423,7 @@ function lineTbl(o,live){const mine=o.ml||[],riv=o.rl||[];const N=Math.max(mine.
  return `<table class="ls2"><tr><th></th>${cols.map(i=>`<th>${i+1}</th>`).join('')}<th>T</th></tr>${o.home?rr+rm:rm+rr}</table>`}
 function lineSheet(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3 style="margin:0 0 4px">Carreras por entrada</h3><div style="font-size:12px;color:var(--mu);margin-bottom:8px">${S.home?'Local: bateas en la parte baja.':'Visitante: bateas primero.'} Toca una carrera del rival para corregirla.</div><div style="overflow-x:auto">${lineTbl(S,true)}</div><button class="btn" style="margin-top:12px" onclick="closeS()">Cerrar</button></div></div>`}
 const THEMES=[['fuego','Fuego','#ff5a00','#071523'],['cancha','Cancha','#2fb457','#06170e'],['oceano','Océano','#12b5cb','#05222b'],['morado','Morado','#9b5cff','#120a24'],['claro','Claro','#f05200','#eef1f4']];
-function applyTheme(t){if(!THEMES.some(x=>x[0]===t))t='fuego';document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('softball_theme',t)}catch(e){}const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',THEMES.find(x=>x[0]===t)[3])}
+function applyTheme(t){if(!THEMES.some(x=>x[0]===t))t='fuego';document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('softball_theme',t)}catch(e){}if(typeof txQueue==='function')txQueue();const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',THEMES.find(x=>x[0]===t)[3])}
 function themeSheet(){const cur=document.documentElement.getAttribute('data-theme')||'fuego';document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Apariencia</h3>${THEMES.map(t=>`<button class="btn" style="display:flex;align-items:center;gap:12px" onclick="applyTheme('${t[0]}');themeSheet()"><span style="width:26px;height:26px;border-radius:50%;background:${t[2]};border:3px solid ${t[3]};box-shadow:0 0 0 1px var(--bd)"></span><span style="flex:1;text-align:left">${t[1]}</span>${cur===t[0]?'✓':''}</button>`).join('')}<div class="ver" style="margin:8px 0 10px">Versión ${APP_VERSION} · ${APP_BUILD}</div><button class="btn" onclick="cloudRepair()">↻ Buscar actualización</button><button class="btn" onclick="closeS()">Listo</button></div></div>`}
 applyTheme(document.documentElement.getAttribute('data-theme')||'fuego');
 function av(p,sz,nc){if(!p)return '';const u=(S.photos||{})[p.id],t=p.num?String(p.num):((/^Jugador (\d+)/.exec(p.name||'')||[])[1]||String(p.name||'?').charAt(0).toUpperCase());return `<div class="av" style="width:${sz}px;height:${Math.round(sz*4/3)}px;font-size:${Math.round(sz*(t.length>2?.3:t.length>1?.4:.52))}px"${nc?'':` onclick="event.stopPropagation();photoView(${p.id})"`}>${u?`<img src="${u}" alt="">`:esc(t)}</div>`}
@@ -581,7 +581,7 @@ function cloudUp(){ask('Subir hace que la nube quede igual que este dispositivo:
 function cloudDown(){ask('Descargar hace que este dispositivo quede igual que la nube: lo que tengas aquí se reemplaza. ¿Continuar?',()=>{if(cloud.busy)return;cloud.busy=true;waitS('Descargando…');
  cloudRead().then(r=>{try{if(r.meta){const m=JSON.parse(r.meta);S.team=m.team||'';S.roster=m.roster||[];S.games=m.games||[]}if(r.base!=null)S.base=JSON.parse(r.base);if(r.photos!=null)S.photos=JSON.parse(r.photos)||{};if(r.live){const l=JSON.parse(r.live);['players','subs','idx','inning','outs','bases','us','them','rival','date','msg','home','rl','ml','pend','opp','side','started'].forEach(k=>{if(l[k]!==undefined)S[k]=l[k]});hist=[]}}catch(e){throw e}
   fixIds();persist();syncOk('Listo ✓ Este dispositivo quedó igual que la nube.')}).catch(syncErr)},'Descargar')}
-function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);updBtn()}
+function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);updBtn();if(typeof txQueue==='function')txQueue()}
 function wipeLocal(){S={side:'us',started:false,opp:null,photos:{},home:false,rl:[],ml:[],pend:null,base:null,subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(LKEY);localStorage.removeItem(MKEY);localStorage.removeItem(SKEY)}catch(e){}}
 function cloudStop(){cloud.ref=null;cloud.user=null;updBtn()}
 const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
@@ -606,6 +606,65 @@ function cloudInit(){updBtn();if(!cfgSet())return;if(typeof firebase==='undefine
 addEventListener('online',()=>{if(cfgSet()&&!cloud.db)cloudInit()});
 try{const fx=fixIds();if(dedupeRoster(false)||fx){save();render()}}catch(e){}
 cloudInit();
+</script>
+<script>
+/* ===================== TRANSMISIÓN =====================
+   Publica el marcador en scoreboard/CODIGO/d. marcador.html?c=CODIGO lo muestra como superposición web en CameraFi Live.
+   Se envía solo cuando cambia algo (cada jugada pasa por save()). Requiere sesión iniciada en ☁. */
+const TXKEY='softball_tx';
+let TX=(()=>{let o=null;try{o=JSON.parse(localStorage.getItem(TXKEY)||'null')}catch(e){}o=o||{};return {code:o.code||'',on:!!o.on,p:o.p||'tl',s:+o.s||1,n:!!o.n,l:!!o.l}})();
+let txT=null,txLast='',txErr='',txAt=0;
+const txSave=()=>lss(TXKEY,JSON.stringify(TX));
+function txNewCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint32Array(6);crypto.getRandomValues(r);return Array.from(r,v=>a[v%a.length]).join('')}
+if(!TX.code){TX.code=txNewCode();txSave()}
+const txReady=()=>!!(cloud.db&&cloud.user&&TX.code);
+function txColors(){const cs=getComputedStyle(document.documentElement),g=n=>(cs.getPropertyValue(n)||'').trim();return {ac:g('--ac'),a2:g('--ac2'),bg:g('--bg')}}
+/* Promedio de temporada (juegos guardados + acumulado + lo de hoy) para nuestros bateadores */
+function txSeason(p){let AB=p.AB||0,H=p.H||0;try{const s=seasonStats(true).find(q=>q.id===p.id);if(s){AB+=s.AB||0;H+=s.H||0}}catch(e){}return AB?f3(H/AB):'.000'}
+function txData(){const st=!!S.started,sd=S.side||'us',op=sd==='op',ap=AP(),b=st&&ap.length?cur():null;
+ const d={off:0,st:st?1:0,tm:S.team||'Nosotros',rv:S.rival||'Rival',us:S.us|0,th:S.them|0,inn:S.inning|0,top:((sd==='us')===!S.home)?1:0,outs:S.outs|0,sd,home:S.home?1:0,
+  b:(S.bases||[null,null,null]).map(id=>{if(id==null)return '';const p=P(id);return p?String(p.name||'?'):'?'}),
+  ml:(S.ml||[]).map(x=>x==null?-1:x|0),rl:(S.rl||[]).map(x=>x==null?-1:x|0),
+  c:txColors(),v:{p:TX.p,s:TX.s,n:TX.n?1:0,l:TX.l?1:0}};
+ if(b)d.bat={n:String(b.name||''),u:String(b.num||''),p:String(posOf(b)||''),h:(b.H|0)+'-'+(b.AB|0),a:op?(b.AB?f3(b.H/b.AB):'.000'):txSeason(b)};
+ return d}
+function txQueue(){clearTimeout(txT);txT=setTimeout(txSend,250)}
+function txSend(){txBtn();if(!txReady())return;
+ const d=TX.on?txData():{off:1},j=JSON.stringify(d);
+ if(j===txLast||(!TX.on&&!txLast))return;
+ d.t=Date.now();
+ tmo(cloud.db.ref('scoreboard/'+TX.code).update({d,o:cloud.user.uid}),10000)
+  .then(()=>{txLast=j;txErr='';txAt=Date.now();txBtn();txStat()})
+  .catch(e=>{txErr=String(e&&(e.code||e.message)||'error');txBtn();txStat();if(TX.on){clearTimeout(txT);txT=setTimeout(txSend,5000)}})}
+function txBtn(){const b=document.getElementById('txb');if(!b)return;b.textContent=TX.on?(txErr||!txReady()?'📺 !':'📺 ●'):'📺';b.className='cloudbtn'+(TX.on?(txErr||!txReady()?' pd':' ok'):'')}
+function txUrl(){return new URL('marcador.html',location.href).href.split('?')[0]+'?c='+TX.code}
+function txStat(){const el=document.getElementById('txst');if(!el)return;
+ el.innerHTML=!TX.on?'Marcador oculto. Puedes dejar el enlace puesto en CameraFi: aparece cuando lo muestres.'
+ :txErr?`<span style="color:var(--rd);font-weight:800">● Sin conexión con la nube (${esc(txErr)}). Reintentando…</span>`
+ :`<span style="color:var(--ac2);font-weight:800">● En vivo</span>${txAt?' · actualizado '+new Date(txAt).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):''}`}
+function txSheet(){const ready=txReady(),o=(l,on,fn)=>`<button class="${on?'on':''}" onclick="${fn}">${l}</button>`,lb=t=>`<div style="font-size:12px;font-weight:800;color:var(--mu);margin-top:4px">${t}</div>`;
+ const st=!cloud.db?'<div style="color:var(--rd);font-weight:800">La nube no está disponible. Revisa el botón ☁.</div>'
+  :!cloud.user?'<div style="color:var(--ac2);font-weight:800">Inicia sesión en ☁ para poder transmitir.</div>':'<div id="txst"></div>';
+ document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:92%;overflow:auto"><h3 style="margin:0 0 4px">📺 Transmitir marcador</h3><div style="font-size:13px;color:var(--mu);margin-bottom:8px">Código <b style="color:var(--tx);letter-spacing:2px">${TX.code}</b></div><div class="cinfo">${st}</div>
+<button class="btn" style="${TX.on?'color:var(--rd)':'background:var(--ac);color:#fff'}${ready||TX.on?'':';opacity:.45'}" ${ready||TX.on?'':'disabled'} onclick="txToggle()">${TX.on?'■ Ocultar marcador':'▶ Mostrar marcador en vivo'}</button>
+${lb('Posición')}<div class="sg">${[['tl','↖ Arriba izq.'],['tr','↗ Arriba der.'],['bl','↙ Abajo izq.'],['br','↘ Abajo der.']].map(x=>o(x[1],TX.p===x[0],`txSet('p','${x[0]}')`)).join('')}</div>
+${lb('Tamaño')}<div class="sg">${[[.8,'Pequeño'],[1,'Normal'],[1.25,'Grande'],[1.5,'Muy grande']].map(x=>o(x[1],TX.s==x[0],`txSet('s',${x[0]})`)).join('')}</div>
+${lb('Mostrar también')}<div class="sg">${o('Nombres de corredores',TX.n,"txSet('n',!TX.n)")}${o('Carreras por entrada',TX.l,"txSet('l',!TX.l)")}</div>
+${lb('Enlace para CameraFi Live (Widget → WEB → URL #1)')}<input id="txu" readonly value="${esc(txUrl())}" onclick="this.select()">
+<button class="btn" id="txc" onclick="txCopy()">📋 Copiar enlace</button><button class="btn" onclick="window.open(txUrl(),'_blank')">👁 Vista previa</button>
+<div class="chint">En CameraFi pon la superposición en Pantalla completa. La posición, el tamaño y las opciones se cambian en vivo desde aquí, sin tocar el celular de la cámara.</div>
+<button class="btn" onclick="txNewAsk()">Cambiar código</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`;
+ txStat()}
+function txToggle(){TX.on=!TX.on;if(!TX.on)txLast='~';txSave();txSend();txSheet()}
+function txSet(k,v){TX[k]=v;txSave();txQueue();txSheet()}
+function txCopy(){const u=txUrl(),ok=()=>{const b=document.getElementById('txc');if(b)b.textContent='✓ Copiado'};
+ const fb=()=>{const i=document.getElementById('txu');if(i){i.select();try{document.execCommand('copy');ok()}catch(e){}}};
+ if(navigator.clipboard)navigator.clipboard.writeText(u).then(ok,fb);else fb()}
+function txNewAsk(){ask('¿Cambiar el código? El enlace que tienes en CameraFi dejará de funcionar y tendrás que poner el nuevo.',()=>{
+ if(txReady())cloud.db.ref('scoreboard/'+TX.code).update({d:{off:1,t:Date.now()},o:cloud.user.uid}).catch(()=>{});
+ TX.code=txNewCode();txLast='';txSave();txQueue();txSheet()},'Cambiar código')}
+addEventListener('online',txQueue);
+txBtn();txQueue();
 </script>
 <script>
 function fitScreen(){const w=innerWidth,h=innerHeight,land=w>h*1.15,r=document.documentElement;
