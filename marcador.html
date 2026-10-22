@@ -71,9 +71,11 @@ function diamond(b){const on=i=>b[i]?'var(--a2)':'rgba(var(--ln),.18)',st=i=>b[i
  const base=(x,y,i)=>`<rect x="${x-8}" y="${y-8}" width="16" height="16" transform="rotate(45 ${x} ${y})" fill="${on(i)}" stroke="${st(i)}" stroke-width="3"/>`;
  return `<svg viewBox="0 0 100 100"><path d="M50 86 L86 50 L50 14 L14 50 Z" fill="rgba(var(--ln),.06)" stroke="rgba(var(--ln),.35)" stroke-width="2.5"/>${base(50,14,1)}${base(14,50,2)}${base(86,50,0)}<path d="M50 80 L56 86 L56 91 L44 91 L44 86 Z" fill="rgba(var(--ln),.75)"/></svg>`}
 function lineScore(d,rows){const ml=d.ml||[],rl=d.rl||[],cur=d.inn|0;let N=Math.max(ml.length,rl.length,cur,1);const s0=Math.max(0,N-9),cols=[];for(let i=s0;i<N;i++)cols.push(i);
- const val=(a,i)=>{const v=a[i];return v==null||v<0?'':String(v)};
+ /* Media entrada ya jugada o en curso sin carreras = 0; las que faltan por jugar quedan vacías. */
+ const top=!!d.top,began=(vis,i)=>!!d.st&&(vis?i+1<=cur:(i+1<cur||(i+1===cur&&!top)));
+ const val=(a,i,vis)=>{const v=a[i];return v!=null&&v>=0?String(v):began(vis,i)?'0':''};
  const g=`grid-template-columns:minmax(0,1fr) repeat(${cols.length},calc(var(--u)*2.6))`;
- return `<div class="ls" style="${g}"><span></span>${cols.map(i=>`<span class="h${i+1===cur&&d.st?' now':''}">${i+1}</span>`).join('')}${rows.map(r=>`<span class="t">${esc(r.n)}</span>${cols.map(i=>`<span>${val(r.us?ml:rl,i)}</span>`).join('')}`).join('')}</div>`}
+ return `<div class="ls" style="${g}"><span></span>${cols.map(i=>`<span class="h${i+1===cur&&d.st?' now':''}">${i+1}</span>`).join('')}${rows.map((r,k)=>`<span class="t">${esc(r.n)}</span>${cols.map(i=>`<span>${val(r.us?ml:rl,i,k===0)}</span>`).join('')}`).join('')}</div>`}
 function draw(d){if(!d||d.off){bug.style.display='none';return}
  opts(d.v);colors(d.c);const home=!!d.home,tm=d.tm||'Nosotros',rv=d.rv||'Rival',batUs=d.sd!=='op';
  const T={n:tm,s:d.us|0,b:batUs,us:1},R={n:rv,s:d.th|0,b:!batUs,us:0},rows=home?[R,T]:[T,R];
