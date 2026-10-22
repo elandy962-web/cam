@@ -81,7 +81,7 @@ function draw(d){if(!d||d.off){bug.style.display='none';return}
  const dots=[0,1,2].map(i=>`<i class="${i<outs?'on':''}"></i>`).join('');
  const bt=d.bat;let bar;
  if(!d.st)bar=`<span class="nm">Por comenzar</span>`;
- else if(bt)bar=`<span class="lb">AL BATE</span><span class="nm">${bt.u?'#'+esc(bt.u)+' ':''}${esc(bt.n)}${bt.p?' · '+esc(bt.p):''}</span><span class="av">${bt.h?`<small>HOY</small>${esc(bt.h)}`:''}${bt.a?`<small>AVE</small>${esc(bt.a)}`:''}</span>`;
+ else if(bt)bar=`<span class="lb">AL BATE</span><span class="nm">${esc(bt.n)}</span><span class="av">${bt.h?`<small>HOY</small>${esc(bt.h)}`:''}${bt.a?`<small>AVE</small>${esc(bt.a)}`:''}</span>`;
  else bar='';
  const names=showN?[['1ª',bs[0]],['2ª',bs[1]],['3ª',bs[2]]].filter(x=>x[1]).map(x=>x[0]+' '+esc(x[1])).join(' · '):'';
  bug.innerHTML=`<div class="main"><div class="teams">${rows.map(r=>`<div class="row${r.b&&d.st?' bat':''}"><span class="nm">${esc(r.n)}</span><span class="sc">${r.s}</span></div>`).join('')}<div class="info"><span>${d.top?'▲':'▼'} ${d.inn|0}</span><span class="dots">${dots}</span><span class="o">OUTS</span></div></div><div class="dia">${diamond([!!bs[0],!!bs[1],!!bs[2]])}</div></div>${showL?lineScore(d,rows):''}${names?`<div class="runners">${names}</div>`:''}${bar?`<div class="bar">${bar}</div>`:''}`;
