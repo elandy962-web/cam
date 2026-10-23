@@ -61,6 +61,7 @@ tr+tr td{border-top:1px solid var(--bd)}
 .share-stats{width:100%;margin:12px 0;background:linear-gradient(135deg,var(--ac),var(--ac-d));color:#fff!important;border-color:var(--ac)!important;font-weight:900;box-shadow:0 6px 18px color-mix(in srgb,var(--ac) 25%,transparent)}
 .cloudbtn{margin-left:auto;border:1px solid var(--bd);background:var(--card);color:var(--mu);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:800}.cinfo{font-size:12px;color:var(--mu);line-height:1.6;margin-bottom:10px;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}.chint{font-size:12px;color:var(--mu);margin:-2px 2px 10px}.cloudbtn.pd{color:var(--ac2);border-color:var(--ac2)}
 .cloudbtn.ok{color:var(--ac2);border-color:var(--ac2)}
+.txpv{position:relative;width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid var(--bd);margin-bottom:10px;background:linear-gradient(160deg,#4f7a3a,#2f5a2a 55%,#7a6a48)}.txpv iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}
 .updb{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:8;display:flex;align-items:center;gap:12px;width:max-content;max-width:calc(100% - 24px);background:var(--card);color:var(--tx);border:1px solid var(--ac);border-radius:14px;padding:8px 8px 8px 14px;box-shadow:0 8px 26px rgba(0,0,0,.4);font-weight:800;font-size:14px}
 .updb button{border:0;border-radius:10px;padding:10px 14px;background:var(--ac);color:#fff;font-weight:800;font-size:14px;white-space:nowrap}
 .sheet input{width:100%;margin-bottom:8px}
@@ -175,7 +176,7 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
-const APP_VERSION='2.9.0',APP_BUILD='22/10/2026';
+const APP_VERSION='2.9.1',APP_BUILD='22/10/2026';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
@@ -706,7 +707,7 @@ function txData(){const st=!!S.started,sd=S.side||'us',op=sd==='op',ap=AP(),b=st
   c:txColors(),v:{p:TX.p,s:TX.s,n:TX.n?1:0,l:TX.l?1:0}};
  if(b)d.bat={n:String(b.name||''),u:String(b.num||''),p:String(posOf(b)||''),h:(b.H|0)+'-'+(b.AB|0),a:op?(b.AB?f3(b.H/b.AB):'.000'):txSeason(b)};
  return d}
-function txQueue(){clearTimeout(txT);txT=setTimeout(txSend,250)}
+function txQueue(){clearTimeout(txT);txT=setTimeout(()=>{txSend();txPvPost()},250)}
 function txSend(){txBtn();if(!txReady())return;
  const d=TX.on?txData():{off:1},j=JSON.stringify(d);
  if(j===txLast||(!TX.on&&!txLast))return;
@@ -729,10 +730,14 @@ ${lb('Posición')}<div class="sg">${[['tl','↖ Arriba izq.'],['tr','↗ Arriba 
 ${lb('Tamaño')}<div class="sg">${[[.8,'Pequeño'],[1,'Normal'],[1.25,'Grande'],[1.5,'Muy grande']].map(x=>o(x[1],TX.s==x[0],`txSet('s',${x[0]})`)).join('')}</div>
 ${lb('Mostrar también')}<div class="sg">${o('Nombres de corredores',TX.n,"txSet('n',!TX.n)")}${o('Carreras por entrada',TX.l,"txSet('l',!TX.l)")}</div>
 ${lb('Enlace para CameraFi Live (Widget → WEB → URL #1)')}<input id="txu" readonly value="${esc(txUrl())}" onclick="this.select()">
-<button class="btn" id="txc" onclick="txCopy()">📋 Copiar enlace</button><button class="btn" onclick="window.open(txUrl(),'_blank')">👁 Vista previa</button>
+<button class="btn" id="txc" onclick="txCopy()">📋 Copiar enlace</button><button class="btn" onclick="txPrev()">👁 Vista previa</button>
 <div class="chint">En CameraFi pon la superposición en Pantalla completa. La posición, el tamaño y las opciones se cambian en vivo desde aquí, sin tocar el celular de la cámara.</div>
 <button class="btn" onclick="txNewAsk()">Cambiar código</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`;
  txStat()}
+/* Vista previa dentro de la app (sin abrir otra pestaña), con botón para cerrar. */
+function txPrev(){const u=txUrl()+'&pv=1';document.getElementById('sheet').innerHTML=`<div class="sheet"><div style="max-height:94%;overflow:auto"><h3 style="margin:0 0 4px">👁 Vista previa</h3><div style="font-size:12px;color:var(--mu);margin-bottom:8px">Así se ve encima del video (pantalla 16:9). ${TX.on?'Está en vivo en la transmisión.':'<b style="color:var(--ac2)">Ahora mismo está oculto:</b> en la transmisión no se ve hasta que toques Mostrar marcador en vivo.'}</div><div class="txpv"><iframe id="txpf" src="${esc(u)}" title="Vista previa del marcador"></iframe></div><button class="btn" onclick="txSheet()">← Volver</button><button class="btn" onclick="closeS()">✕ Cerrar</button></div></div>`}
+function txPvPost(){const f=document.getElementById('txpf');if(f&&f.contentWindow)try{f.contentWindow.postMessage({type:'pv',d:txData()},location.origin)}catch(e){}}
+addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.type==='pvready')txPvPost()});
 function txToggle(){TX.on=!TX.on;if(!TX.on)txLast='~';txSave();txSend();txSheet()}
 function txSet(k,v){TX[k]=v;txSave();txQueue();txSheet()}
 function txCopy(){const u=txUrl(),ok=()=>{const b=document.getElementById('txc');if(b)b.textContent='✓ Copiado'};

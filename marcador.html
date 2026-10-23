@@ -88,7 +88,10 @@ function draw(d){if(!d||d.off){bug.style.display='none';return}
  const names=showN?[['1ª',bs[0]],['2ª',bs[1]],['3ª',bs[2]]].filter(x=>x[1]).map(x=>x[0]+' '+esc(x[1])).join(' · '):'';
  bug.innerHTML=`<div class="main"><div class="teams">${rows.map(r=>`<div class="row${r.b&&d.st?' bat':''}"><span class="nm">${esc(r.n)}</span><span class="sc">${r.s}</span></div>`).join('')}<div class="info"><span>${d.top?'▲':'▼'} ${d.inn|0}</span><span class="dots">${dots}</span><span class="o">OUTS</span></div></div><div class="dia">${diamond([!!bs[0],!!bs[1],!!bs[2]])}</div></div>${showL?lineScore(d,rows):''}${names?`<div class="runners">${names}</div>`:''}${bar?`<div class="bar">${bar}</div>`:''}`;
  bug.style.display='block'}
-if(code==='demo'){draw({tm:'Team Perversos',rv:'Tigres',us:4,th:2,inn:3,top:1,outs:2,st:1,sd:'us',home:0,b:['Ricoche','','Noel'],bat:{n:'Robert',u:'20',p:'C',a:'.333',h:'2-3'},ml:[1,0,3],rl:[0,2],v:{n:1,l:1},c:{ac:'#ff5a00',a2:'#ffb000',bg:'#071523'}})}
+/* Vista previa dentro de la app: recibe los datos directamente de la app (no usa la nube). */
+const PV=q.get('pv')==='1';
+if(PV){addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.type==='pv')draw(e.data.d)});if(parent!==window)parent.postMessage({type:'pvready'},location.origin)}
+else if(code==='demo'){draw({tm:'Team Perversos',rv:'Tigres',us:4,th:2,inn:3,top:1,outs:2,st:1,sd:'us',home:0,b:['Ricoche','','Noel'],bat:{n:'Robert',u:'20',p:'C',a:'.333',h:'2-3'},ml:[1,0,3],rl:[0,2],v:{n:1,l:1},c:{ac:'#ff5a00',a2:'#ffb000',bg:'#071523'}})}
 else if(code&&typeof firebase!=='undefined'){try{firebase.initializeApp(FIREBASE_CONFIG);firebase.database().ref('scoreboard/'+code+'/d').on('value',s=>draw(s.val()))}catch(e){console.error(e)}}
 </script>
 </body></html>
