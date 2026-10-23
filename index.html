@@ -61,6 +61,8 @@ tr+tr td{border-top:1px solid var(--bd)}
 .share-stats{width:100%;margin:12px 0;background:linear-gradient(135deg,var(--ac),var(--ac-d));color:#fff!important;border-color:var(--ac)!important;font-weight:900;box-shadow:0 6px 18px color-mix(in srgb,var(--ac) 25%,transparent)}
 .cloudbtn{margin-left:auto;border:1px solid var(--bd);background:var(--card);color:var(--mu);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:800}.cinfo{font-size:12px;color:var(--mu);line-height:1.6;margin-bottom:10px;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}.chint{font-size:12px;color:var(--mu);margin:-2px 2px 10px}.cloudbtn.pd{color:var(--ac2);border-color:var(--ac2)}
 .cloudbtn.ok{color:var(--ac2);border-color:var(--ac2)}
+.updb{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:8;display:flex;align-items:center;gap:12px;width:max-content;max-width:calc(100% - 24px);background:var(--card);color:var(--tx);border:1px solid var(--ac);border-radius:14px;padding:8px 8px 8px 14px;box-shadow:0 8px 26px rgba(0,0,0,.4);font-weight:800;font-size:14px}
+.updb button{border:0;border-radius:10px;padding:10px 14px;background:var(--ac);color:#fff;font-weight:800;font-size:14px;white-space:nowrap}
 .sheet input{width:100%;margin-bottom:8px}
 /* ===== Modo app ===== */
 html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
@@ -173,13 +175,13 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
-const APP_VERSION='2.8.2',APP_BUILD='22/10/2026';
+const APP_VERSION='2.9.0',APP_BUILD='22/10/2026';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-S.games=S.games||[];S.photos=S.photos||{};if(S.opp===undefined)S.opp=null;if(S.side===undefined)S.side='us';if(S.started===undefined)S.started=(S.inning>1||S.outs>0||S.us>0||S.them>0||(S.players||[]).some(p=>p.AB+p.BB+p.SAC+p.R>0));S.home=!!S.home;S.rl=S.rl||[];S.ml=S.ml||[];if(S.pend===undefined)S.pend=null;S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();let V=null,HF='',ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
+S.games=S.games||[];S.photos=S.photos||{};if(S.opp===undefined)S.opp=null;if(S.side===undefined)S.side='us';if(S.started===undefined)S.started=(S.inning>1||S.outs>0||S.us>0||S.them>0||(S.players||[]).some(p=>p.AB+p.BB+p.SAC+p.R>0));S.home=!!S.home;S.rl=S.rl||[];S.ml=S.ml||[];if(S.pend===undefined)S.pend=null;S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();S.tomb=S.tomb&&typeof S.tomb==='object'?S.tomb:{};['g','r','ph','pa'].forEach(k=>{S.tomb[k]=S.tomb[k]||{}});let V=null,HF='',ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush();if(typeof txQueue==='function')txQueue()};
 const P=id=>S.players.find(p=>p.id===id)||(S.opp&&S.opp.players.find(p=>p.id===id));
 const AP=()=>S.side==='op'&&S.opp?S.opp.players:S.players,AI=()=>S.side==='op'&&S.opp?S.opp.idx:S.idx,cur=()=>{const a=AP();return a[AI()%a.length]},ourCur=()=>S.players[S.idx%S.players.length];
@@ -245,10 +247,10 @@ function cancelGame(clr){ask(clr?'¿Cancelar este juego y quitar los lineups? Se
  S.players=S.players.map(z);if(S.opp)S.opp={idx:0,players:S.opp.players.map(z)};
  Object.assign(S,{side:S.home?'op':'us',started:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Juego cancelado · no se guardó nada'});
  hist=[];T=0;save();render()},clr?'Sí, cancelar y quitar lineups':'Sí, cancelar juego')}
-function fin(r){closeS();const g={id:Date.now(),team:S.team,rival:S.rival.trim()||'Rival',date:S.date||today(),us:S.us,them:S.them,inning:S.inning,home:S.home,rl:S.rl,ml:S.ml,opp:(S.opp&&S.opp.players.some(p=>p.AB+p.BB+p.SAC+p.R>0))?JSON.parse(JSON.stringify(S.opp)):null,reason:r,players:JSON.parse(JSON.stringify(gamePlayers()))};S.games.unshift(g);S.players=[];Object.assign(S,{side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego guardado en Historial · Lineup vacío'});hist=[];V=g.id;save();T=3;render()}
+function fin(r){closeS();const g={id:Date.now(),team:S.team,rival:S.rival.trim()||'Rival',date:S.date||today(),us:S.us,them:S.them,inning:S.inning,home:S.home,rl:S.rl,ml:S.ml,opp:(S.opp&&S.opp.players.some(p=>p.AB+p.BB+p.SAC+p.R>0))?JSON.parse(JSON.stringify(S.opp)):null,reason:r,players:JSON.parse(JSON.stringify(gamePlayers()))};S.games.unshift(g);S.players=[];Object.assign(S,{side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego guardado en Historial · Lineup vacío'});hist=[];V=g.id;save();T=3;render();if(typeof cloud!=='undefined'&&cloud.user&&!cloud.denied)setTimeout(()=>ask('Juego guardado en el Historial ✓ ¿Sincronizar ahora con la nube para tenerlo respaldado?',cloudMerge,'🔄 Sincronizar ahora'),250)}
 let CB=null;
 function ask(msg,fn,lbl){CB=fn;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>${esc(msg)}</h3><button class="btn" style="color:var(--rd)" onclick="closeS();CB&&CB()">${lbl||'Sí, continuar'}</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
-function delG(id){ask('¿Borrar este juego guardado?',()=>{S.games=S.games.filter(g=>g.id!==id);V=null;save();render()},'Borrar juego')}
+function delG(id){ask('¿Borrar este juego guardado?',()=>{S.games=S.games.filter(g=>g.id!==id);S.tomb.g[id]=Date.now();V=null;save();render()},'Borrar juego')}
 const fd=d=>{const p=(d||'').split('-');return p.length==3?p[2]+'/'+p[1]+'/'+p[0]:d};
 const res=g=>{const w=g.us>g.them,l=g.us<g.them;return `<span style="background:${w?'var(--ac)':l?'var(--rd)':'var(--mu)'};color:#fff;border-radius:6px;padding:2px 8px;font-size:13px;font-weight:700">${w?'G':l?'P':'E'}</span>`};
 function statCols(){return ['JJ','AB','CA','CE','H','H1','H2','H3','HR','BB','K','SF','AVE']}
@@ -277,15 +279,15 @@ const flt=HF?S.games.filter(g=>g.date===HF):S.games;
 const bar=`<div class="card"><div style="display:flex;gap:8px;align-items:center"><input type="date" value="${HF}" onchange="HF=this.value;render()" style="flex:1;min-width:0"><button class="btn" style="flex:0 0 auto;padding:12px 14px" onclick="HF='';render()">Todas</button></div>${HF?(flt.length?`<button class="btn" style="width:100%;margin-top:8px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="mkImg(${flt[0].id})">🖼 Crear imagen del ${fd(HF)}</button>`:`<div style="color:var(--mu);font-size:13px;margin-top:8px">No hay juegos guardados el ${fd(HF)}.</div>`):'<div style="color:var(--mu);font-size:12px;margin-top:6px">Elige una fecha para ver sus juegos y crear su imagen.</div>'}</div>`;
 const dates=[...new Set(flt.map(g=>g.date))];
 return bar+dates.map(date=>{const games=flt.filter(g=>g.date===date);const first=games[0];return `<div class="card" style="padding-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>${fd(date)}</b><button class="btn" style="flex:0 0 auto;padding:8px 10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="event.stopPropagation();mkImg(${first.id})">🖼 Juegos del día</button></div>${games.map(g=>`<div onclick="V=${g.id};render()" style="cursor:pointer;border-top:1px solid var(--bd);padding:10px 0 2px"><div style="display:flex;justify-content:space-between;align-items:center"><b>vs ${esc(g.rival)}</b>${res(g)}</div><div style="font-size:24px;font-weight:800">${g.us} - ${g.them}</div><div style="color:var(--mu);font-size:13px">${g.reason} · ${g.inning} entradas</div></div>`).join('')}</div>`}).join('')}
-function addR(){const el=document.getElementById('np'),v=el.value.trim();if(!v)return;const nn=(document.getElementById('nn').value||'').trim();const ex=S.roster.find(r=>String(r.name).trim().toLowerCase()===v.toLowerCase()&&String(r.num||'').trim()===nn);if(ex){if(ex.off){ex.off=false;save();render();info('Se reactivó a '+ex.name+' (ya existía y estaba desactivado)')}else info('Ya existe ese jugador en el plantel');return}S.roster.push({id:uid(),name:v,num:nn});save();render()}
+function addR(){const el=document.getElementById('np'),v=el.value.trim();if(!v)return;const nn=(document.getElementById('nn').value||'').trim();const ex=S.roster.find(r=>String(r.name).trim().toLowerCase()===v.toLowerCase()&&String(r.num||'').trim()===nn);if(ex){if(ex.off){ex.off=false;ex.mt=Date.now();save();render();info('Se reactivó a '+ex.name+' (ya existía y estaba desactivado)')}else info('Ya existe ese jugador en el plantel');return}S.roster.push({id:uid(),name:v,num:nn});save();render()}
 function toLine(id){const r=S.roster.find(x=>x.id===id);if(!r||r.off||P(id))return;const k=(S.subs||[]).findIndex(x=>x.id===id);if(k>=0){const q=S.subs.splice(k,1)[0];delete q.sub;S.players.push(q)}else S.players.push({...mk(r.name,r.num),id,pos:r.pos||''});save();render()}
 function fromLine(id,force){const p=P(id);if(!p)return;const used=p.AB+p.BB+p.R+p.SAC>0||(p.log||[]).length>0;
  if(!force&&used){ask('Este jugador ya tiene estadísticas en este juego. Si lo quitas del lineup, lo que hizo queda guardado en el juego. ¿Quitarlo?',()=>fromLine(id,true),'Quitar');return}
  const c=ourCur().id;if(used){S.subs=S.subs||[];S.subs.push({...p,sub:true})}S.players=S.players.filter(x=>x.id!==id);S.bases=S.bases.map(b=>b===id?null:b);const k=S.players.findIndex(x=>x.id===c);S.idx=k>=0?k:(S.players.length?S.idx%S.players.length:0);save();render()}
 function mv(id,d){const i=S.players.findIndex(p=>p.id===id),j=i+d;if(j<0||j>=S.players.length)return;const c=ourCur().id;[S.players[i],S.players[j]]=[S.players[j],S.players[i]];S.idx=S.players.findIndex(p=>p.id===c);save();render()}
-function delR(id){const r=S.roster.find(x=>x.id===id);if(!r)return;ask('¿Desactivar a '+(r.name||'este jugador')+'? Sus estadísticas quedan archivadas y ya no salen en la temporada. Puedes reactivarlo cuando quieras.',()=>{if(P(id))fromLine(id,true);r.off=true;save();render()},'Desactivar')}
-function actR(id){const r=S.roster.find(x=>x.id===id);if(!r)return;r.off=false;save();render()}
-function delRPerm(id){const r=S.roster.find(x=>x.id===id);if(!r)return;ask('¿Eliminar definitivamente a '+(r.name||'este jugador')+'? Se pierde su archivo de la temporada (los juegos ya guardados conservan lo que hizo).',()=>{S.roster=S.roster.filter(x=>x.id!==id);if(S.photos)delete S.photos[id];save();render()},'Eliminar')}
+function delR(id){const r=S.roster.find(x=>x.id===id);if(!r)return;ask('¿Desactivar a '+(r.name||'este jugador')+'? Sus estadísticas quedan archivadas y ya no salen en la temporada. Puedes reactivarlo cuando quieras.',()=>{if(P(id))fromLine(id,true);r.off=true;r.mt=Date.now();save();render()},'Desactivar')}
+function actR(id){const r=S.roster.find(x=>x.id===id);if(!r)return;r.off=false;r.mt=Date.now();save();render()}
+function delRPerm(id){const r=S.roster.find(x=>x.id===id);if(!r)return;ask('¿Eliminar definitivamente a '+(r.name||'este jugador')+'? Se pierde su archivo de la temporada (los juegos ya guardados conservan lo que hizo).',()=>{S.roster=S.roster.filter(x=>x.id!==id);S.tomb.r[id]=Date.now();if(S.photos)delete S.photos[id];save();render()},'Eliminar')}
 let RNG={from:'',to:''};
 const inRng=d=>(!RNG.from||d>=RNG.from)&&(!RNG.to||d<=RNG.to);
 function seasonStats(all,rg){const m={};if(!rg)(S.base&&S.base.players||[]).forEach(p=>{m[p.id]={id:p.id,name:p.name,num:p.num||'',GP:p.GP||0,AB:p.AB||0,H:p.H||0,s1:p.s1||0,s2:p.s2||0,s3:p.s3||0,hr:p.hr||0,BB:p.BB||0,K:p.K||0,R:p.R||0,RBI:p.RBI||0,SAC:p.SAC||0}});S.games.forEach(g=>{if(rg&&!inRng(g.date))return;g.players.forEach(p=>{const k=p.id!=null?p.id:p.name,t=m[k]||(m[k]={id:p.id,name:p.name,num:p.num||'',GP:0,AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});if(p.AB+p.BB+p.SAC+p.R>0)t.GP++;['AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'].forEach(k=>t[k]+=p[k]||0)})});return Object.values(m).filter(p=>all||!S.roster.length||(r=>r&&!r.off)(S.roster.find(r=>r.id===p.id))).sort((a,b)=>b.H-a.H||b.AB-a.AB)}
@@ -381,7 +383,7 @@ function fcb(){if(!AP().length){tab(2);return}const bs=S.bases;let ch=0;while(ch
  act(b=>{b.AB++;const nb=[null,null,null];for(let i=0;i<3;i++){const id=bs[i];if(id==null)continue;if(i<ch-1)nb[i+1]=id;else if(i===ch-1){(P(id).log=P(id).log||[]).push({i:S.inning,a:'*'});ev.push(nm(P(id))+' out')}else nb[i]=id}
   nb[0]=b.id;S.bases=nb;out();nxt();return nm(b)+': jugada de selección'})}
 function editP(id){const r=S.roster.find(x=>x.id===id);if(!r)return;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3>Editar jugador</h3><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><div id="pva">${av(r,84,1)}</div><div style="flex:1"><label class="btn" style="display:block;text-align:center;margin:0 0 8px;padding:12px">📷 Foto<input type="file" accept="image/*" style="display:none" onchange="photoPick(${id},this.files[0])"></label><button class="btn" style="margin:0;color:var(--rd)" onclick="photoDel(${id})">Quitar foto</button></div></div><input id="en" value="${esc(r.name)}" placeholder="Nombre"><input id="em" value="${esc(r.num||'')}" placeholder="Número" inputmode="numeric"><select id="ep">${posOpts(r.pos||'')}</select><button class="btn" style="background:var(--ac);color:#fff" onclick="saveP(${id})">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
-function saveP(id){const n=document.getElementById('en').value.trim(),m=document.getElementById('em').value.trim();if(!n)return;closeS();const r0=S.roster.find(x=>x.id===id);if(r0)r0.pos=document.getElementById('ep').value;const up=p=>{if(p&&p.id===id){p.name=n;p.num=m}};S.roster.forEach(up);S.players.forEach(up);(S.subs||[]).forEach(up);(S.base&&S.base.players||[]).forEach(up);S.games.forEach(g=>g.players.forEach(up));save();render()}
+function saveP(id){const n=document.getElementById('en').value.trim(),m=document.getElementById('em').value.trim();if(!n)return;closeS();const r0=S.roster.find(x=>x.id===id);if(r0){r0.pos=document.getElementById('ep').value;r0.mt=Date.now()}const up=p=>{if(p&&p.id===id){p.name=n;p.num=m}};S.roster.forEach(up);S.players.forEach(up);(S.subs||[]).forEach(up);(S.base&&S.base.players||[]).forEach(up);S.games.forEach(g=>g.players.forEach(up));save();render()}
 let SUBOUT=null;
 function subSheet(){if(!S.players.length){tab(2);return}SUBOUT=null;drawSub()}
 function drawSub(){let h;
@@ -434,12 +436,12 @@ function lineTbl(o,live){const mine=o.ml||[],riv=o.rl||[];const N=Math.max(mine.
 function lineSheet(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3 style="margin:0 0 4px">Carreras por entrada</h3><div style="font-size:12px;color:var(--mu);margin-bottom:8px">${S.home?'Local: bateas en la parte baja.':'Visitante: bateas primero.'} Toca una carrera del rival para corregirla.</div><div style="overflow-x:auto">${lineTbl(S,true)}</div><button class="btn" style="margin-top:12px" onclick="closeS()">Cerrar</button></div></div>`}
 const THEMES=[['fuego','Fuego','#ff5a00','#071523'],['cancha','Cancha','#2fb457','#06170e'],['oceano','Océano','#12b5cb','#05222b'],['morado','Morado','#9b5cff','#120a24'],['claro','Claro','#f05200','#eef1f4']];
 function applyTheme(t){if(!THEMES.some(x=>x[0]===t))t='fuego';document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('softball_theme',t)}catch(e){}if(typeof txQueue==='function')txQueue();const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',THEMES.find(x=>x[0]===t)[3])}
-function themeSheet(){const cur=document.documentElement.getAttribute('data-theme')||'fuego';document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Apariencia</h3>${THEMES.map(t=>`<button class="btn" style="display:flex;align-items:center;gap:12px" onclick="applyTheme('${t[0]}');themeSheet()"><span style="width:26px;height:26px;border-radius:50%;background:${t[2]};border:3px solid ${t[3]};box-shadow:0 0 0 1px var(--bd)"></span><span style="flex:1;text-align:left">${t[1]}</span>${cur===t[0]?'✓':''}</button>`).join('')}<div class="ver" style="margin:8px 0 10px">Versión ${APP_VERSION} · ${APP_BUILD}</div><button class="btn" onclick="cloudRepair()">↻ Buscar actualización</button><button class="btn" onclick="closeS()">Listo</button></div></div>`}
+function themeSheet(){const cur=document.documentElement.getAttribute('data-theme')||'fuego';document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Apariencia</h3>${THEMES.map(t=>`<button class="btn" style="display:flex;align-items:center;gap:12px" onclick="applyTheme('${t[0]}');themeSheet()"><span style="width:26px;height:26px;border-radius:50%;background:${t[2]};border:3px solid ${t[3]};box-shadow:0 0 0 1px var(--bd)"></span><span style="flex:1;text-align:left">${t[1]}</span>${cur===t[0]?'✓':''}</button>`).join('')}<div class="ver" style="margin:8px 0 10px">Versión ${APP_VERSION} · ${APP_BUILD}</div><button class="btn" onclick="updManual()">↻ Buscar actualización</button><button class="btn" onclick="closeS()">Listo</button></div></div>`}
 applyTheme(document.documentElement.getAttribute('data-theme')||'fuego');
 function av(p,sz,nc){if(!p)return '';const u=(S.photos||{})[p.id],t=p.num?String(p.num):((/^Jugador (\d+)/.exec(p.name||'')||[])[1]||String(p.name||'?').charAt(0).toUpperCase());return `<div class="av" style="width:${sz}px;height:${Math.round(sz*4/3)}px;font-size:${Math.round(sz*(t.length>2?.3:t.length>1?.4:.52))}px"${nc?'':` onclick="event.stopPropagation();photoView(${p.id})"`}>${u?`<img src="${u}" alt="">`:esc(t)}</div>`}
 function shrink(im,sx,sy,sw,sh,W,H){let src=im,cx=sx,cy=sy,cw=sw,ch=sh;while(cw/2>=W){const c=document.createElement('canvas');c.width=Math.round(cw/2);c.height=Math.round(ch/2);c.getContext('2d').drawImage(src,cx,cy,cw,ch,0,0,c.width,c.height);src=c;cx=0;cy=0;cw=c.width;ch=c.height}const f=document.createElement('canvas');f.width=W;f.height=H;const x=f.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(src,cx,cy,cw,ch,0,0,W,H);return f}
-function photoPick(id,file){if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const cw=Math.min(im.width,im.height*3/4),ch=cw*4/3,c=shrink(im,(im.width-cw)/2,(im.height-ch)*0.3,cw,ch,480,640);let u=c.toDataURL('image/jpeg',.86);if(u.length>110000)u=c.toDataURL('image/jpeg',.74);S.photos=S.photos||{};S.photos[id]=u;save();render();const r=S.roster.find(q=>q.id===id),el=document.getElementById('pva');if(el&&r)el.innerHTML=av(r,84,1)};im.src=rd.result};rd.readAsDataURL(file)}
-function photoDel(id){if(S.photos)delete S.photos[id];save();render();const r=S.roster.find(q=>q.id===id),el=document.getElementById('pva');if(el&&r)el.innerHTML=av(r,84,1)}
+function photoPick(id,file){if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const cw=Math.min(im.width,im.height*3/4),ch=cw*4/3,c=shrink(im,(im.width-cw)/2,(im.height-ch)*0.3,cw,ch,480,640);let u=c.toDataURL('image/jpeg',.86);if(u.length>110000)u=c.toDataURL('image/jpeg',.74);S.photos=S.photos||{};S.photos[id]=u;S.tomb.pa[id]=Date.now();save();render();const r=S.roster.find(q=>q.id===id),el=document.getElementById('pva');if(el&&r)el.innerHTML=av(r,84,1)};im.src=rd.result};rd.readAsDataURL(file)}
+function photoDel(id){if(S.photos)delete S.photos[id];S.tomb.ph[id]=Date.now();save();render();const r=S.roster.find(q=>q.id===id),el=document.getElementById('pva');if(el&&r)el.innerHTML=av(r,84,1)}
 const f3=v=>{if(!isFinite(v))return '.000';const t=v.toFixed(3);return v>=1?t:t.replace(/^0/,'')};
 function sline(p){const AB=p.AB||0,H=p.H||0,BB=p.BB||0,SF=p.SAC||0,TB=(p.s1||0)+2*(p.s2||0)+3*(p.s3||0)+4*(p.hr||0),pa=AB+BB+SF,obp=pa?(H+BB)/pa:0,slg=AB?TB/AB:0;return {GP:p.GP!=null?p.GP:1,AB,R:p.R||0,H,h2:p.s2||0,h3:p.s3||0,hr:p.hr||0,RBI:p.RBI||0,BB,K:p.K||0,TB,avg:AB?H/AB:0,obp,slg,ops:obp+slg}}
 function photoView(id){const p=S.roster.find(x=>x.id===id)||P(id);if(!p)return;const u=(S.photos||{})[id],gp=gamePlayers().find(q=>q.id===id),se=seasonStats(true).find(q=>q.id===id),sg=gp?sline(gp):null,ss=se?sline(se):null,main=ss||sg;
@@ -470,7 +472,7 @@ function drawGP(){const p=GE.players[GI];document.getElementById('sheet').innerH
 function gpSave(){const p=GE.players[GI];GPF.forEach(([k])=>{p[k]=Math.max(0,Math.floor(+document.getElementById('gp_'+k).value||0))});p.H=p.s1+p.s2+p.s3+p.hr;if(p.AB<p.H)p.AB=p.H;p.pos=document.getElementById('gp_pos').value;drawGE()}
 function geAddP(){geRead();const have=new Set(GE.players.map(p=>p.id)),list=abc(S.roster.filter(r=>!r.off&&!have.has(r.id)));document.getElementById('sheet').innerHTML=`<div class="sheet"><div class="ge" style="max-height:92%;overflow:auto"><h3 style="margin:0 0 8px">Agregar jugador al juego</h3>${list.map(r=>`<button class="btn" onclick="geAddPick(${r.id})">${esc(nm(r))}</button>`).join('')||'<div style="color:var(--mu);font-size:13px;margin-bottom:8px">Todos los jugadores del plantel ya están en este juego.</div>'}<button class="btn" onclick="drawGE()">Atrás</button></div></div>`}
 function geAddPick(id){const r=S.roster.find(x=>x.id===id);if(!r)return;GE.players.push({...mk(r.name,r.num),id});GI=GE.players.length-1;drawGP()}
-function geSave(){geRead();const i=S.games.findIndex(x=>x.id===GE.id);if(i<0)return;GE.rival=(GE.rival||'').trim()||'Rival';GE.players.forEach(p=>{p.H=p.s1+p.s2+p.s3+p.hr});S.games[i]=GE;GE=null;document.getElementById('sheet').innerHTML='';save();render()}
+function geSave(){geRead();const i=S.games.findIndex(x=>x.id===GE.id);if(i<0)return;GE.rival=(GE.rival||'').trim()||'Rival';GE.players.forEach(p=>{p.H=p.s1+p.s2+p.s3+p.hr});GE.mt=Date.now();S.games[i]=GE;GE=null;document.getElementById('sheet').innerHTML='';save();render()}
 const SUMK=['GP','AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'];
 function dedupeRoster(loose){fixIds();const key=r=>String(r.name||'').trim().toLowerCase(),num=r=>String(r.num||'').trim();
  const same=(a,b)=>key(a)===key(b)&&(num(a)===num(b)&&(loose||num(a)!=='')||(loose&&(!num(a)||!num(b))));
@@ -500,6 +502,7 @@ const posOpts=v=>['',...POS.map(x=>x[0])].map(c=>`<option value="${c}"${v===c?' 
 function posSheet(id){const p=S.players.find(x=>x.id===id);if(!p)return;const taken={};S.players.forEach(q=>{if(q.pos)taken[q.pos]=q});
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3 style="margin:0 0 4px">Posición de ${esc(nm(p))}</h3><div style="font-size:12px;color:var(--mu);margin-bottom:8px">Si eliges una posición ocupada, los dos jugadores la intercambian.</div><div class="pg">${POS.map(([c,n,k])=>{const o=taken[c];return `<button class="${p.pos===c?'on':''}" onclick="posSet(${id},'${c}')"><b>${c}</b>${k?`<small>${k} · </small>`:''}<span>${n}${o&&o.id!==id?'<br><i style="opacity:.8">'+esc(o.name)+'</i>':''}</span></button>`}).join('')}</div><button class="btn" onclick="posSet(${id},'')">Sin posición</button><button class="btn" onclick="closeS()">Cerrar</button></div></div>`}
 function posSet(id,c){const p=S.players.find(x=>x.id===id);if(!p)return;const o=c?S.players.find(x=>x.pos===c&&x.id!==id):null;if(o)o.pos=p.pos||'';p.pos=c;save();closeS();render()}
+function infoH(h){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3 style="margin:0 0 12px">${h}</h3><button class="btn" onclick="closeS()">OK</button></div></div>`}
 function info(msg){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3 style="margin:0 0 12px">${esc(msg)}</h3><button class="btn" onclick="closeS()">OK</button></div></div>`}
 function dupSheet(){const f=fixIds(),n=dedupeRoster(true);if(f||n){save();render()}const m=[];if(f)m.push('se separaron '+f+' jugadores que compartían identificador');if(n)m.push('se unieron '+n+' repetidos');info(m.length?'Listo: '+m.join(' y ')+'.':'No encontré jugadores repetidos ni ligados.')}
 function tab(n){T=n;V=null;render()}
@@ -550,11 +553,12 @@ const FIREBASE_CONFIG={
 };
 /* ==================================================== */
 const LKEY='softball_linked_v1',MKEY='softball_lastmod',SKEY='softball_lastsync',DVKEY='softball_dev';
-const cloud={denied:false,user:null,ref:null,db:null,busy:false};
+const cloud={denied:false,user:null,ref:null,db:null,busy:false,online:null,off:0,remote:null};
+const SSKEY='softball_syncstamp',BAKKEY='softball_bak';
 const cfgSet=()=>!!FIREBASE_CONFIG.apiKey&&!/^PEGA/.test(FIREBASE_CONFIG.apiKey);
 const cfgOk=()=>typeof firebase!=='undefined'&&cfgSet();
 const liveOf=()=>({players:S.players,subs:S.subs,idx:S.idx,inning:S.inning,outs:S.outs,bases:S.bases,us:S.us,them:S.them,rival:S.rival,date:S.date,msg:S.msg,home:S.home,rl:S.rl,ml:S.ml,pend:S.pend,opp:S.opp||null,side:S.side,started:S.started});
-const metaOf=()=>({team:S.team,roster:S.roster,games:S.games});
+const metaOf=()=>({team:S.team,roster:S.roster,games:S.games,tomb:S.tomb});
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const lsn=k=>{try{return +localStorage.getItem(k)||0}catch(e){return 0}},lss=(k,v)=>{try{localStorage.setItem(k,String(v))}catch(e){}};
 const isPending=()=>lsn(MKEY)>lsn(SKEY);
@@ -563,37 +567,100 @@ const tmo=(p,ms)=>Promise.race([p,new Promise((_,j)=>setTimeout(()=>j(new Error(
 function devName(){let d='';try{d=localStorage.getItem(DVKEY)||''}catch(e){}if(!d){const ua=navigator.userAgent||'',k=/iPad/.test(ua)?'iPad':/iPhone/.test(ua)?'iPhone':/Android/.test(ua)?(/Mobile/.test(ua)?'Android':'Tablet Android'):/Windows/.test(ua)?'PC':/Mac/.test(ua)?'Mac':'Dispositivo';d=k+' '+Math.random().toString(36).slice(2,5).toUpperCase();lss(DVKEY,d)}return d}
 function updBtn(){const b=document.getElementById('cloud');if(!b)return;let t='☁ Local',c='';
  if(cfgSet()&&typeof firebase==='undefined')t='☁ Reparar';
- else if(cfgOk()){if(!cloud.user)t='☁ Entrar';else if(cloud.denied)t='☁ Sin acceso';else if(isPending()){t='☁ ●';c=' pd'}else{t='☁ ✓';c=' ok'}}
+ else if(cfgOk()){if(!cloud.user)t='☁ Entrar';else if(cloud.denied)t='☁ Sin acceso';else if(cloudNewer()){t='☁ ↓';c=' pd'}else if(isPending()){t='☁ ●';c=' pd'}else{t='☁ ✓';c=' ok'}}
  b.textContent=t;b.className='cloudbtn'+c}
 /* La sincronización es manual: guardar solo marca que hay cambios; nada se envía ni se recibe hasta pulsar Sincronizar. */
 function cloudPush(){if(!cfgSet())return;lss(MKEY,Date.now());updBtn()}
-function cloudRead(){return tmo(Promise.all(['live','meta','base','photos','stamp'].map(n=>cloud.ref.child(n).once('value').then(x=>x.val()))),12000).then(a=>({live:a[0],meta:a[1],base:a[2],photos:a[3],stamp:a[4]}))}
-function cloudWrite(){const r=cloud.ref;return tmo(Promise.all([r.child('live').set(JSON.stringify(liveOf())),r.child('meta').set(JSON.stringify(metaOf())),r.child('base').set(JSON.stringify(S.base||null)),r.child('photos').set(JSON.stringify(S.photos||{})),r.child('stamp').set(JSON.stringify({t:Date.now(),by:devName()}))]),15000)}
+/* ---------- Sincronización ----------
+   · Lee la nube de una sola vez (foto exacta, nunca a medias).
+   · Escribe todo de una sola vez (update atómico): o se guarda todo o nada.
+   · Un "candado" evita que dos dispositivos sincronicen al mismo tiempo y se pisen.
+   · Antes de cambiar este dispositivo guarda una copia para poder deshacer.
+   · Los borrados (juegos, jugadores, fotos) y las ediciones viajan: lo borrado no reaparece
+     y gana la edición más reciente. */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const now=()=>Date.now()+(cloud.off||0);
+function needOnline(){if(cloud.online)return Promise.resolve();return new Promise((res,rej)=>{const r=cloud.db.ref('.info/connected');let t=null;const h=x=>{if(x.val()){clearTimeout(t);r.off('value',h);res()}};t=setTimeout(()=>{r.off('value',h);rej(new Error('offline'))},8000);r.on('value',h)})}
+function cloudRead(){return tmo(cloud.ref.once('value'),45000).then(x=>{const v=x.val()||{};return {live:v.live,meta:v.meta,base:v.base,photos:v.photos,stamp:v.stamp}})}
+function pj(raw,what){if(raw==null||raw==='')return null;if(typeof raw!=='string')return raw;try{return JSON.parse(raw)}catch(e){const er=new Error('bad');er.what=what;throw er}}
+function stampOf(raw){try{const o=pj(raw,'');return o&&typeof o==='object'?o:null}catch(e){return null}}
+function tombFix(t){t=t&&typeof t==='object'?t:{};['g','r','ph','pa'].forEach(k=>{if(!t[k]||typeof t[k]!=='object')t[k]={}});const old=Date.now()-400*864e5;['g','r'].forEach(k=>Object.keys(t[k]).forEach(i=>{if(!(t[k][i]>old))delete t[k][i]}));return t}
+function tombJoin(a,b){a=tombFix(a);b=tombFix(b);const o={g:{},r:{},ph:{},pa:{}};['g','r','ph','pa'].forEach(k=>[a[k],b[k]].forEach(m=>Object.keys(m).forEach(i=>{o[k][i]=Math.max(o[k][i]||0,+m[i]||0)})));return o}
+function cloudWrite(prev){const t=now(),u={live:JSON.stringify(liveOf()),meta:JSON.stringify(metaOf()),stamp:JSON.stringify({t,by:devName(),v:APP_VERSION}),lock:null};
+ const b=JSON.stringify(S.base||null),p=JSON.stringify(S.photos||{});
+ if(!prev||prev.base!==b)u.base=b;if(!prev||prev.photos!==p)u.photos=p;
+ if(prev&&prev.meta&&prev.meta!==u.meta)u.bak=JSON.stringify({t,by:devName(),meta:prev.meta});
+ return tmo(cloud.ref.update(u),45000).then(()=>{cloud.ref.child('lock').onDisconnect().cancel().catch(()=>{});lss(SSKEY,t);cloud.remote={t,by:devName()}})}
+/* Candado: dura como máximo 2 minutos y se suelta solo si el teléfono pierde la conexión. */
+const LOCKMS=120000,LOCKID=Math.random().toString(36).slice(2,8);
+const lockMe=()=>devName()+'·'+LOCKID;
+function lockGet(){const ref=cloud.ref.child('lock'),me=lockMe();let other=null;
+ return tmo(ref.transaction(c=>{if(c&&c.by!==me&&now()-(+c.t||0)<LOCKMS){other=c;return}other=null;return {by:me,t:now()}},undefined,false),20000)
+  .then(r=>{if(!r.committed){const e=new Error('locked');e.by=String(other&&other.by||'').split('·')[0];throw e}ref.onDisconnect().remove().catch(()=>{})})}
+function lockFree(){if(!cloud.ref)return;const ref=cloud.ref.child('lock'),me=lockMe();ref.onDisconnect().cancel().catch(()=>{});ref.transaction(c=>{if(c&&c.by===me)return null;return},undefined,false).catch(()=>{})}
+async function withLock(title,fn){for(let i=0;;i++){try{await lockGet();break}catch(e){if(e.message!=='locked'||i>=10)throw e;waitS(title+`<div style="font-size:13px;font-weight:400;color:var(--mu);margin-top:8px">Otro dispositivo (${esc(e.by||'?')}) está sincronizando. Esperando a que termine…</div>`);await sleep(4000)}}
+ try{return await fn()}catch(e){lockFree();throw e}}
+/* Copia de este dispositivo antes de sincronizar o descargar (sin fotos, para no llenar la memoria). */
+function bakSave(why){try{localStorage.setItem(BAKKEY,JSON.stringify({t:Date.now(),why,S:{...S,photos:null}}))}catch(e){try{localStorage.removeItem(BAKKEY)}catch(e2){}}}
+function bakGet(){try{return JSON.parse(localStorage.getItem(BAKKEY)||'null')}catch(e){return null}}
+function bakRestore(){const b=bakGet();if(!b||!b.S)return;ask('¿Deshacer la última sincronización? Este dispositivo vuelve a como estaba el '+fdt(b.t)+'. La nube no cambia hasta que vuelvas a sincronizar.',()=>{const ph=S.photos||{};S=b.S;S.photos=ph;S.tomb=tombFix(S.tomb);hist=[];try{localStorage.removeItem(BAKKEY)}catch(e){}save();render();info('Listo ✓ Se restauró la copia del '+fdt(b.t)+'.')},'Deshacer')}
 function waitS(m){document.getElementById('sheet').innerHTML=`<div class="sheet"><div><h3 style="margin:0">${m}</h3></div></div>`}
-function syncErr(e){cloud.busy=false;const m=String(e&&(e.message||e.code)||'');if(/permission/i.test(m))cloud.denied=true;updBtn();info(m==='timeout'?'Sin conexión o la nube no responde. No se cambió nada.':'No se pudo sincronizar: '+m)}
-function syncOk(msg){lss(SKEY,Date.now()+1);try{localStorage.setItem(LKEY,cloud.user.uid)}catch(e){}cloud.busy=false;updBtn();render();info(msg)}
+function syncErr(e){cloud.busy=false;const m=String(e&&(e.message||e.code)||'');if(/permission/i.test(m))cloud.denied=true;updBtn();
+ info(m==='offline'?'No hay conexión con la nube. Revisa el internet e inténtalo otra vez. No se cambió nada.'
+ :m==='timeout'?'La nube tardó demasiado en responder. Si algo alcanzó a salir, se termina de enviar solo cuando mejore la conexión. Vuelve a tocar Sincronizar para comprobar; no se duplica nada.'
+ :m==='locked'?'Otro dispositivo ('+(e.by||'?')+') está sincronizando ahora mismo. Espera un momento y vuelve a intentar.'
+ :m==='bad'?'Los datos de la nube ('+(e.what||'?')+') están dañados. Para protegerte no se cambió nada, ni aquí ni en la nube.'
+ :m==='empty'?'La nube está vacía: no hay nada que descargar. No se cambió nada.'
+ :/permission/i.test(m)?'Esta cuenta no tiene permiso para usar la nube. Pide acceso al administrador.'
+ :'No se pudo sincronizar: '+m)}
+function syncOk(msg){lss(SKEY,Date.now()+1);try{localStorage.setItem(LKEY,cloud.user.uid)}catch(e){}cloud.busy=false;updBtn();render();infoH(msg)}
 function remapIds(map){const m=id=>map[id]!==undefined?map[id]:id,fx=l=>(l||[]).forEach(p=>{p.id=m(p.id)});fx(S.players);fx(S.subs);if(S.base)fx(S.base.players);S.games.forEach(g=>fx(g.players));S.bases=S.bases.map(b=>b==null?b:m(b));
  if(S.photos)Object.keys(map).forEach(o=>{if(S.photos[o]){const n=map[o];if(!S.photos[n])S.photos[n]=S.photos[o];delete S.photos[o]}})}
 function cloudMerge(){if(cloud.busy)return;cloud.busy=true;waitS('Sincronizando…');
- cloudRead().then(r=>{let rm=null,rb=null,rp=null,rl=null;try{rm=r.meta&&JSON.parse(r.meta);rb=r.base&&JSON.parse(r.base);rp=r.photos&&JSON.parse(r.photos);rl=r.live&&JSON.parse(r.live)}catch(e){}
-  let nj=0,gd=0,gu=0;
-  if(rm){const key=p=>String(p.name||'').trim().toLowerCase()+'|'+String(p.num||'').trim(),out=[...(rm.roster||[])],byId=new Map(out.map(x=>[x.id,x])),byKey=new Map(out.map(x=>[key(x),x])),idmap={};
-   S.roster.forEach(l=>{const same=byId.get(l.id);if(same){same.name=l.name;same.num=l.num;same.pos=l.pos;if(l.off)same.off=true;else delete same.off;return}const k=byKey.get(key(l));if(k){idmap[l.id]=k.id;return}out.push(l);byId.set(l.id,l);byKey.set(key(l),l);nj++});
+ needOnline().then(()=>withLock('Sincronizando…',async()=>{
+  const raw=await cloudRead();
+  const rm=pj(raw.meta,'equipo y juegos'),rb=pj(raw.base,'acumulado'),rp=pj(raw.photos,'fotos'),rl=pj(raw.live,'juego en curso');
+  if(rm&&(typeof rm!=='object'||(rm.roster!=null&&!Array.isArray(rm.roster))||(rm.games!=null&&!Array.isArray(rm.games)))){const e=new Error('bad');e.what='equipo y juegos';throw e}
+  bakSave('sync');
+  const tomb=tombJoin(S.tomb,rm&&rm.tomb);S.tomb=tomb;
+  let nj=0,gd=0,gu=0,gx=0;
+  if(rm){const key=p=>String(p.name||'').trim().toLowerCase()+'|'+String(p.num||'').trim();
+   const out=(rm.roster||[]).filter(x=>x&&!tomb.r[x.id]).map(x=>({...x})),byId=new Map(out.map(x=>[x.id,x])),byKey=new Map(out.map(x=>[key(x),x])),idmap={};
+   S.roster.forEach(l=>{if(tomb.r[l.id])return;const same=byId.get(l.id);
+    if(same){if((+l.mt||0)>=(+same.mt||0)){['name','num','pos','mt'].forEach(k=>{if(l[k]!==undefined)same[k]=l[k];else delete same[k]});if(l.off)same.off=true;else delete same.off}return}
+    const k=byKey.get(key(l));if(k){idmap[l.id]=k.id;return}
+    out.push(l);byId.set(l.id,l);byKey.set(key(l),l);nj++});
    remapIds(idmap);S.roster=out;
-   const rg=new Set((rm.games||[]).map(g=>g.id)),lg=new Set(S.games.map(g=>g.id));gd=[...rg].filter(id=>!lg.has(id)).length;gu=[...lg].filter(id=>!rg.has(id)).length;
-   const gi=new Map((rm.games||[]).map(g=>[g.id,g]));S.games.forEach(g=>gi.set(g.id,g));S.games=[...gi.values()].sort((a,b)=>b.id-a.id);S.team=S.team||rm.team||''}
+   const rg=(rm.games||[]).filter(g=>g&&g.id!=null),rI=new Set(rg.map(g=>g.id)),lI=new Set(S.games.map(g=>g.id));
+   gd=[...rI].filter(id=>!lI.has(id)&&!tomb.g[id]).length;gu=[...lI].filter(id=>!rI.has(id)&&!tomb.g[id]).length;
+   const gi=new Map(rg.map(g=>[g.id,g]));S.games.forEach(g=>{const o=gi.get(g.id);if(!o||(+g.mt||0)>=(+o.mt||0))gi.set(g.id,g)});
+   gx=[...gi.keys()].filter(id=>tomb.g[id]).length;
+   S.games=[...gi.values()].filter(g=>!tomb.g[g.id]).sort((a,b)=>b.id-a.id);S.team=S.team||rm.team||''}
+  else{S.roster=S.roster.filter(r=>!tomb.r[r.id]);S.games=S.games.filter(g=>!tomb.g[g.id]);gu=S.games.length;nj=S.roster.length}
   if(rb&&!S.base)S.base=rb;
-  if(rp)S.photos={...rp,...(S.photos||{})};
+  if(rp&&typeof rp==='object')S.photos={...rp,...(S.photos||{})};
+  Object.keys(S.photos||{}).forEach(id=>{if(tomb.r[id]||(tomb.ph[id]||0)>(tomb.pa[id]||0))delete S.photos[id]});
   if(rl&&!S.started&&rl.started){['players','subs','idx','inning','outs','bases','us','them','rival','date','msg','home','rl','ml','pend','opp','side','started'].forEach(k=>{if(rl[k]!==undefined)S[k]=rl[k]});hist=[]}
   fixIds();dedupeRoster(false);persist();
-  return cloudWrite().then(()=>syncOk('Listo ✓ Sincronizado.<br><span style="font-size:13px;font-weight:400;color:var(--mu)">Juegos que bajaron: '+gd+' · Juegos que subieron: '+gu+' · Jugadores que subieron: '+nj+'</span>'))}).catch(syncErr)}
-function cloudUp(){ask('Subir hace que la nube quede igual que este dispositivo: lo que haya en la nube se reemplaza. ¿Continuar?',()=>{if(cloud.busy)return;cloud.busy=true;waitS('Subiendo…');tmo(cloud.ref.child('stamp').once('value'),10000).then(()=>cloudWrite()).then(()=>syncOk('Listo ✓ La nube quedó igual que este dispositivo.')).catch(syncErr)},'Subir')}
+  await cloudWrite(raw);
+  return 'Listo ✓ Sincronizado.<br><span style="font-size:13px;font-weight:400;color:var(--mu)">Juegos que bajaron: '+gd+' · Juegos que subieron: '+gu+' · Jugadores que subieron: '+nj+(gx?' · Juegos borrados: '+gx:'')+'</span>'}))
+ .then(syncOk).catch(syncErr)}
+function cloudUp(){ask('Subir hace que la nube quede igual que este dispositivo: lo que haya en la nube se reemplaza. ¿Continuar?',()=>{if(cloud.busy)return;cloud.busy=true;waitS('Subiendo…');
+ needOnline().then(()=>withLock('Subiendo…',async()=>{const raw=await cloudRead();await cloudWrite(raw)})).then(()=>syncOk('Listo ✓ La nube quedó igual que este dispositivo.')).catch(syncErr)},'Subir')}
 function cloudDown(){ask('Descargar hace que este dispositivo quede igual que la nube: lo que tengas aquí se reemplaza. ¿Continuar?',()=>{if(cloud.busy)return;cloud.busy=true;waitS('Descargando…');
- cloudRead().then(r=>{try{if(r.meta){const m=JSON.parse(r.meta);S.team=m.team||'';S.roster=m.roster||[];S.games=m.games||[]}if(r.base!=null)S.base=JSON.parse(r.base);if(r.photos!=null)S.photos=JSON.parse(r.photos)||{};if(r.live){const l=JSON.parse(r.live);['players','subs','idx','inning','outs','bases','us','them','rival','date','msg','home','rl','ml','pend','opp','side','started'].forEach(k=>{if(l[k]!==undefined)S[k]=l[k]});hist=[]}}catch(e){throw e}
+ needOnline().then(()=>cloudRead()).then(raw=>{const m=pj(raw.meta,'equipo y juegos'),b=pj(raw.base,'acumulado'),p=pj(raw.photos,'fotos'),l=pj(raw.live,'juego en curso');
+  if(!m&&!l)throw new Error('empty');
+  if(m&&(typeof m!=='object'||(m.roster!=null&&!Array.isArray(m.roster))||(m.games!=null&&!Array.isArray(m.games)))){const e=new Error('bad');e.what='equipo y juegos';throw e}
+  bakSave('down');
+  if(m){S.team=m.team||'';S.roster=m.roster||[];S.games=m.games||[];S.tomb=tombFix(m.tomb)}
+  if(raw.base!=null)S.base=b;if(raw.photos!=null)S.photos=p||{};
+  if(l){['players','subs','idx','inning','outs','bases','us','them','rival','date','msg','home','rl','ml','pend','opp','side','started'].forEach(k=>{if(l[k]!==undefined)S[k]=l[k]});hist=[]}
+  const st=stampOf(raw.stamp);if(st&&st.t){lss(SSKEY,st.t);cloud.remote=st}
   fixIds();persist();syncOk('Listo ✓ Este dispositivo quedó igual que la nube.')}).catch(syncErr)},'Descargar')}
-function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);updBtn();if(typeof txQueue==='function')txQueue()}
-function wipeLocal(){S={side:'us',started:false,opp:null,photos:{},home:false,rl:[],ml:[],pend:null,base:null,subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(LKEY);localStorage.removeItem(MKEY);localStorage.removeItem(SKEY)}catch(e){}}
-function cloudStop(){cloud.ref=null;cloud.user=null;updBtn()}
+const cloudNewer=()=>{const o=cloud.remote;return !!(o&&o.t&&+o.t!==lsn(SSKEY)&&o.by!==devName())};
+function cloudStart(u){let lk=null;try{lk=localStorage.getItem(LKEY)}catch(e){}if(lk&&lk!==u.uid){wipeLocal();render()}cloud.denied=false;cloud.user=u;cloud.ref=cloud.db.ref('softball/'+u.uid);cloud.ref.child('stamp').on('value',x=>{cloud.remote=stampOf(x.val());updBtn()},()=>{});updBtn();if(typeof txQueue==='function')txQueue()}
+function wipeLocal(){S={side:'us',started:false,opp:null,photos:{},home:false,rl:[],ml:[],pend:null,base:null,subs:[],players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),team:'',roster:[],games:[],tomb:{g:{},r:{},ph:{},pa:{}},msg:'Agrega jugadores en la pestaña Equipo'};hist=[];V=null;ST=0;T=0;try{localStorage.removeItem(KEY);localStorage.removeItem(BAKKEY);localStorage.removeItem(SSKEY);localStorage.removeItem(LKEY);localStorage.removeItem(MKEY);localStorage.removeItem(SKEY)}catch(e){}}
+function cloudStop(){if(cloud.ref)cloud.ref.child('stamp').off();cloud.remote=null;cloud.ref=null;cloud.user=null;updBtn()}
 const AERR={'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'No existe esa cuenta','auth/email-already-in-use':'Ese correo ya tiene cuenta, usa Entrar','auth/weak-password':'La contraseña debe tener al menos 6 caracteres','auth/invalid-email':'Correo no válido','auth/network-request-failed':'Sin conexión a internet'};
 function cloudLogin(create){const e=document.getElementById('cl_e').value.trim(),p=document.getElementById('cl_p').value,m=document.getElementById('cl_m');m.textContent='';
  if(!e||!p){m.textContent='Escribe correo y contraseña';return}
@@ -605,12 +672,13 @@ function cloudSheet(){let body;
  if(cfgSet()&&typeof firebase==='undefined')body=`<h3>No se pudo cargar Firebase</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">El teléfono no pudo descargar las librerías de Firebase (internet, bloqueador de contenido, VPN o una copia vieja guardada). Toca Reparar y la app se recargará. Tus datos del juego no se borran.</div><button class="btn" style="background:var(--ac);color:#fff" onclick="cloudRepair()">Reparar</button><button class="btn" onclick="closeS()">Cerrar</button>`;
  else if(!cfgSet())body=`<h3>Nube (Firebase)</h3><div style="font-size:14px;color:var(--mu);margin-bottom:12px">Aún no está conectada. Pega tu configuración de Firebase en FIREBASE_CONFIG (dentro del archivo, cerca del final) y sube el archivo a tu hosting. Mientras tanto, la app guarda solo en este teléfono.</div><button class="btn" onclick="closeS()">Cerrar</button>`;
  else if(!cloud.user)body=`<h3>Iniciar sesión</h3><div style="font-size:13px;color:var(--mu);margin-bottom:10px">Las cuentas las crea el administrador.</div><input id="cl_e" type="email" placeholder="Correo" autocomplete="username"><input id="cl_p" type="password" placeholder="Contraseña" autocomplete="current-password"><div id="cl_m" style="color:var(--rd);font-size:13px;min-height:18px;margin-bottom:6px"></div><button class="btn" onclick="cloudLogin(false)">Entrar</button><button class="btn" onclick="closeS()">Cerrar</button>`;
- else body=`<div style="max-height:90%;overflow:auto"><h3 style="margin:0 0 4px">Nube</h3><div style="font-size:13px;color:var(--mu);margin-bottom:8px">${esc(cloud.user.email||'')} · v${APP_VERSION}</div><div class="cinfo"><div id="cst">Consultando la nube…</div><div>Este dispositivo: modificado ${fdt(lsn(MKEY))} · última sincronización ${fdt(lsn(SKEY))}</div>${isPending()?'<div style="color:var(--ac2);font-weight:800">● Hay cambios sin sincronizar</div>':''}${cloud.denied?'<div style="color:var(--rd);font-weight:800">Esta cuenta no tiene permiso. Pide acceso al administrador.</div>':''}</div><button class="btn" style="background:var(--ac);color:#fff" onclick="cloudMerge()">🔄 Sincronizar</button><div class="chint">Junta lo de este dispositivo con lo de la nube sin duplicar jugadores. Si algo choca, gana este dispositivo.</div><button class="btn" onclick="cloudUp()">⬆ Subir: la nube queda igual que este dispositivo</button><button class="btn" onclick="cloudDown()">⬇ Descargar: este dispositivo queda igual que la nube</button><button class="btn" style="color:var(--rd)" onclick="cloudLogout()">Cerrar sesión</button><button class="btn" onclick="closeS()">Cerrar</button></div>`;
+ else body=`<div style="max-height:90%;overflow:auto"><h3 style="margin:0 0 4px">Nube</h3><div style="font-size:13px;color:var(--mu);margin-bottom:8px">${esc(cloud.user.email||'')} · v${APP_VERSION}</div><div class="cinfo"><div id="cst">Consultando la nube…</div><div>Este dispositivo: modificado ${fdt(lsn(MKEY))} · última sincronización ${fdt(lsn(SKEY))}</div>${isPending()?'<div style="color:var(--ac2);font-weight:800">● Hay cambios sin sincronizar</div>':''}${cloudNewer()?'<div style="color:var(--ac2);font-weight:800">↓ Hay cambios nuevos en la nube de otro dispositivo</div>':''}${cloud.online===false?'<div style="color:var(--rd);font-weight:800">Sin conexión con la nube en este momento</div>':''}${cloud.denied?'<div style="color:var(--rd);font-weight:800">Esta cuenta no tiene permiso. Pide acceso al administrador.</div>':''}</div><button class="btn" style="background:var(--ac);color:#fff" onclick="cloudMerge()">🔄 Sincronizar</button><div class="chint">Junta lo de este dispositivo con lo de la nube sin duplicar jugadores. Lo borrado no reaparece y, si algo se editó en dos lugares, gana lo más reciente.</div><button class="btn" onclick="cloudUp()">⬆ Subir: la nube queda igual que este dispositivo</button><button class="btn" onclick="cloudDown()">⬇ Descargar: este dispositivo queda igual que la nube</button>${bakGet()?`<button class="btn" onclick="bakRestore()">↺ Deshacer la última sincronización (${fdt(bakGet().t)})</button>`:''}<button class="btn" style="color:var(--rd)" onclick="cloudLogout()">Cerrar sesión</button><button class="btn" onclick="closeS()">Cerrar</button></div>`;
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div>${body}</div></div>`;
- if(cfgOk()&&cloud.user)tmo(cloud.ref.child('stamp').once('value'),8000).then(x=>{const el=document.getElementById('cst');if(!el)return;let o=null;try{o=x.val()&&JSON.parse(x.val())}catch(e){}el.innerHTML='Nube: '+(o?'actualizada '+fdt(o.t)+' por '+esc(o.by||'?'):'sin datos todavía')}).catch(()=>{const el=document.getElementById('cst');if(el)el.textContent='Nube: sin conexión'})}
+ if(cfgOk()&&cloud.user)tmo(cloud.ref.child('stamp').once('value'),8000).then(x=>{const el=document.getElementById('cst');if(!el)return;const o=stampOf(x.val());el.innerHTML='Nube: '+(o?'actualizada '+fdt(o.t)+' por '+esc(o.by||'?'):'sin datos todavía')}).catch(()=>{const el=document.getElementById('cst');if(el)el.textContent='Nube: sin conexión'})}
 function cloudRepair(){const go=()=>location.reload();try{(window.caches?caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))):Promise.resolve()).then(()=>navigator.serviceWorker?navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister()))):0).then(go,go)}catch(e){go()}}
 function loadSdk(cb){const urls=['app','auth','database'].map(n=>'https://www.gstatic.com/firebasejs/10.12.2/firebase-'+n+'-compat.js?r='+Date.now());let i=0;const nx=()=>{if(i>=urls.length)return cb();const sc=document.createElement('script');sc.src=urls[i++];sc.onload=nx;sc.onerror=()=>cb(new Error('sdk'));document.head.appendChild(sc)};nx()}
 function startFb(){try{firebase.initializeApp(FIREBASE_CONFIG);cloud.db=firebase.database();
+ cloud.db.ref('.info/connected').on('value',x=>{cloud.online=!!x.val();updBtn()});cloud.db.ref('.info/serverTimeOffset').on('value',x=>{cloud.off=+x.val()||0});
  firebase.auth().onAuthStateChanged(u=>{if(u)cloudStart(u);else cloudStop()})}catch(e){console.error(e)}updBtn()}
 function cloudInit(){updBtn();if(!cfgSet())return;if(typeof firebase==='undefined'){loadSdk(er=>{if(!er&&typeof firebase!=='undefined')startFb();else updBtn()});return}startFb()}
 addEventListener('online',()=>{if(cfgSet()&&!cloud.db)cloudInit()});
@@ -687,5 +755,25 @@ function fitScreen(){const w=innerWidth,h=innerHeight,land=w>h*1.15,r=document.d
  r.style.setProperty('--dh',dh+'px');r.style.setProperty('--bh',bh+'px')}
 addEventListener('resize',fitScreen);addEventListener('orientationchange',()=>setTimeout(fitScreen,250));fitScreen();
 </script>
-<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+<script>
+/* ===================== ACTUALIZACIONES =====================
+   La versión nueva se descarga sola en segundo plano. Cuando está lista aparece
+   "Nueva versión disponible · Actualizar". Tus datos no se tocan: viven en este dispositivo y en la nube. */
+let UPD=null,UPDV='';
+const vnum=v=>String(v||'').split('.').map(n=>parseInt(n,10)||0);
+function vnewer(a,b){const x=vnum(a),y=vnum(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false}
+function updShow(v){if(v)UPDV=v;let b=document.getElementById('updb');if(!b){b=document.createElement('div');b.id='updb';b.className='updb';document.body.appendChild(b)}
+ b.innerHTML=`<span>🚀 Nueva versión${UPDV?' '+esc(UPDV):''} disponible</span><button onclick="updGo()">Actualizar</button>`}
+function updAsk(w){if(!w||!navigator.serviceWorker.controller)return;try{const ch=new MessageChannel();let ok=false;ch.port1.onmessage=e=>{ok=true;const v=String(e.data||'').replace(/^softball-/,'');updShow(vnewer(v,APP_VERSION)||!UPDV?v:'')};w.postMessage({type:'ver'},[ch.port2]);setTimeout(()=>{if(!ok)updShow('')},1500)}catch(e){updShow('')}}
+function updWatch(w){if(!w)return;const f=()=>{if(w.state==='installed')updAsk(w)};w.addEventListener('statechange',f);f()}
+function updCheck(){if(!navigator.onLine)return Promise.resolve(null);if(UPD)UPD.update().catch(()=>{});
+ return fetch('index.html?upd='+Date.now(),{cache:'reload'}).then(r=>r.ok?r.text():'').then(t=>{const m=/APP_VERSION\s*=\s*'([0-9]+(?:\.[0-9]+)*)'/.exec(t||'');if(m&&vnewer(m[1],APP_VERSION)){updShow(m[1]);return m[1]}return (UPD&&UPD.waiting)?(UPDV||'nueva'):''}).catch(()=>null)}
+function updGo(){const b=document.getElementById('updb');if(b)b.innerHTML='<span>Actualizando…</span>';const w=UPD&&UPD.waiting;
+ if(w){let done=false;const go=()=>{if(!done){done=true;location.reload()}};navigator.serviceWorker.addEventListener('controllerchange',go);w.postMessage('skip');setTimeout(go,5000);return}
+ cloudRepair()}
+function updManual(){waitS('Buscando actualización…');updCheck().then(v=>{if(v){closeS();updGo()}else if(v===null)info('Sin internet: no se pudo buscar la actualización.');else document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3 style="margin:0 0 8px">Ya tienes la versión más reciente (${APP_VERSION}).</h3><div style="font-size:13px;color:var(--mu);margin-bottom:10px">Si la app se ve rara o no carga bien, puedes forzar una recarga completa. Tus datos no se borran.</div><button class="btn" onclick="cloudRepair()">Forzar recarga</button><button class="btn" onclick="closeS()">OK</button></div></div>`})}
+if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').then(reg=>{UPD=reg;if(reg.waiting)updAsk(reg.waiting);reg.addEventListener('updatefound',()=>updWatch(reg.installing));updCheck()}).catch(()=>{})})}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')updCheck()});
+addEventListener('online',()=>updCheck());setInterval(updCheck,30*60000);
+</script>
 </body></html>
