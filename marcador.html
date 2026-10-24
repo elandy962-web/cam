@@ -22,6 +22,7 @@ html,body{margin:0;height:100%;background:transparent!important;overflow:hidden;
 .dots{display:inline-flex;gap:calc(var(--u)*.5)}
 .dots i{display:block;width:calc(var(--u)*1.35);height:calc(var(--u)*1.35);border-radius:50%;border:calc(var(--u)*.22) solid var(--a2);box-sizing:border-box}
 .dots i.on{background:var(--a2)}
+.info .ct{margin-left:auto;color:var(--tx);font-variant-numeric:tabular-nums;letter-spacing:.04em}
 .info .o{font-size:calc(var(--u)*1.3);color:var(--tx);opacity:.7;margin-left:calc(var(--u)*-.6)}
 .dia{flex:0 0 calc(var(--u)*11);display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid rgba(var(--ln),.1)}
 .dia svg{width:calc(var(--u)*9);height:calc(var(--u)*9)}
@@ -165,7 +166,7 @@ function draw(d){if(!d||d.off){hideAll();return}
  else if(bt)bar=`<span class="lb">AL BATE</span><span class="nm">${esc(bt.n)}</span><span class="av">${bt.h?`<small>HOY</small>${esc(bt.h)}`:''}${bt.a?`<small>AVE</small>${esc(bt.a)}`:''}${bt.r!=null?`<small>HR</small>${esc(bt.r)}`:''}</span>`;
  else bar='';
  const names=showN?[['1ª',bs[0]],['2ª',bs[1]],['3ª',bs[2]]].filter(x=>x[1]).map(x=>x[0]+' '+esc(x[1])).join(' · '):'';
- bug.innerHTML=`<div class="main"><div class="teams">${rows.map(r=>`<div class="row${r.b&&d.st?' bat':''}"><span class="nm">${esc(r.n)}</span><span class="sc">${r.s}</span></div>`).join('')}<div class="info"><span>${d.top?'▲':'▼'} ${d.inn|0}</span><span class="dots">${dots}</span><span class="o">OUTS</span></div></div><div class="dia">${diamond([!!bs[0],!!bs[1],!!bs[2]])}</div></div>${showL?lineScore(d,rows):''}${names?`<div class="runners">${names}</div>`:''}${bar?`<div class="bar">${bar}</div>`:''}`;
+ bug.innerHTML=`<div class="main"><div class="teams">${rows.map(r=>`<div class="row${r.b&&d.st?' bat':''}"><span class="nm">${esc(r.n)}</span><span class="sc">${r.s}</span></div>`).join('')}<div class="info"><span>${d.top?'▲':'▼'} ${d.inn|0}</span><span class="dots">${dots}</span><span class="o">OUTS</span>${d.cnt?`<span class="ct">${d.cnt[0]|0}-${d.cnt[1]|0}</span>`:''}</div></div><div class="dia">${diamond([!!bs[0],!!bs[1],!!bs[2]])}</div></div>${showL?lineScore(d,rows):''}${names?`<div class="runners">${names}</div>`:''}${bar?`<div class="bar">${bar}</div>`:''}`;
  bug.style.display='block'}
 /* Vista previa dentro de la app: recibe los datos directamente de la app (no usa la nube). */
 const PV=q.get('pv')==='1';
