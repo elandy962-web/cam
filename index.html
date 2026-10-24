@@ -176,13 +176,13 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
-const APP_VERSION='2.9.1',APP_BUILD='22/10/2026';
+const APP_VERSION='3.0.0',APP_BUILD='22/10/2026';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-S.games=S.games||[];S.photos=S.photos||{};if(S.opp===undefined)S.opp=null;if(S.side===undefined)S.side='us';if(S.started===undefined)S.started=(S.inning>1||S.outs>0||S.us>0||S.them>0||(S.players||[]).some(p=>p.AB+p.BB+p.SAC+p.R>0));S.home=!!S.home;S.rl=S.rl||[];S.ml=S.ml||[];if(S.pend===undefined)S.pend=null;S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();S.tomb=S.tomb&&typeof S.tomb==='object'?S.tomb:{};['g','r','ph','pa'].forEach(k=>{S.tomb[k]=S.tomb[k]||{}});let V=null,HF='',ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
+S.games=S.games||[];S.photos=S.photos||{};if(S.opp===undefined)S.opp=null;if(S.side===undefined)S.side='us';if(S.started===undefined)S.started=(S.inning>1||S.outs>0||S.us>0||S.them>0||(S.players||[]).some(p=>p.AB+p.BB+p.SAC+p.R>0));S.home=!!S.home;S.rl=S.rl||[];S.ml=S.ml||[];if(S.pend===undefined)S.pend=null;S.base=S.base||null;S.subs=S.subs||[];S.team=S.team||"";S.roster=S.roster||S.players.map(p=>({id:p.id,name:p.name}));S.rival=S.rival||"";S.date=S.date||today();if(S.pit===undefined)S.pit=null;if(!S.pl||typeof S.pl!=='object')S.pl={};S.tomb=S.tomb&&typeof S.tomb==='object'?S.tomb:{};['g','r','ph','pa'].forEach(k=>{S.tomb[k]=S.tomb[k]||{}});let V=null,HF='',ST=0,IBLOB=null,IBLOB_NAME='resultados.png';
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof cloudPush==='function')cloudPush();if(typeof txQueue==='function')txQueue()};
 const P=id=>S.players.find(p=>p.id===id)||(S.opp&&S.opp.players.find(p=>p.id===id));
 const AP=()=>S.side==='op'&&S.opp?S.opp.players:S.players,AI=()=>S.side==='op'&&S.opp?S.opp.idx:S.idx,cur=()=>{const a=AP();return a[AI()%a.length]},ourCur=()=>S.players[S.idx%S.players.length];
@@ -191,10 +191,17 @@ const nm=p=>((p.num!==undefined&&p.num!==null&&p.num!=='')?'#'+p.num+' ':'')+p.n
 const gamePlayers=()=>[...S.players,...(S.subs||[])];
 let LU=0;const uid=()=>{let v=Date.now()*1000;if(v<=LU)v=LU+1;LU=v;return v};
 const mk=(n,num)=>({id:uid(),name:n,num:num||'',log:[],AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});
-function run(rid,bid){const r=P(rid);r.R++;if(S.side==='op'){S.them++;S.rl=S.rl||[];S.rl[S.inning-1]=(S.rl[S.inning-1]||0)+1}else{S.us++;S.ml=S.ml||[];S.ml[S.inning-1]=(S.ml[S.inning-1]||0)+1}(r.log=r.log||[]).push({i:S.inning,a:"◇",run:1});if(bid!=null)P(bid).RBI++;ev.push(nm(r)+' anotó')}
-function out(){S.outs++;if(S.outs>=3)endHalf()}
+function run(rid,bid){const r=P(rid);r.R++;if(S.side==='op'){S.them++;{const l=PT();if(l)l.R++}S.rl=S.rl||[];S.rl[S.inning-1]=(S.rl[S.inning-1]||0)+1}else{S.us++;S.ml=S.ml||[];S.ml[S.inning-1]=(S.ml[S.inning-1]||0)+1}(r.log=r.log||[]).push({i:S.inning,a:"◇",run:1});if(bid!=null)P(bid).RBI++;ev.push(nm(r)+' anotó')}
+/* ===== Pitcheo: todo lo que hace el rival al bate se le acredita a nuestro lanzador ===== */
+function PT(){if(S.side!=='op'||S.pit==null||!S.started)return null;S.pl=S.pl||{};let l=S.pl[S.pit];
+ if(!l){const p=S.players.find(x=>x.id===S.pit)||(S.subs||[]).find(x=>x.id===S.pit)||S.roster.find(x=>x.id===S.pit);if(!p)return null;l=S.pl[S.pit]={id:p.id,name:p.name,num:p.num||'',outs:0,BF:0,H:0,R:0,BB:0,K:0,HR:0}}
+ return l}
+const pitName=()=>{const l=S.pit!=null&&((S.pl||{})[S.pit]||S.players.find(x=>x.id===S.pit)||(S.subs||[]).find(x=>x.id===S.pit)||S.roster.find(x=>x.id===S.pit));return l?l.name:''};
+function out(){S.outs++;const l=PT();if(l)l.outs++;if(S.outs>=3)endHalf()}
 function endHalf(){const sd=S.side||'us',second=(sd==='us')===!!S.home;S.outs=0;S.bases=[null,null,null];ev.push('Cambio de entrada');if(second)S.inning++;S.side=sd==='us'?'op':'us';S.pend=null}
-function act(fn){if(!AP().length){tab(2);return}hist.push(JSON.stringify(S));if(hist.length>60)hist.shift();ev=[];NS=S.side||'us';const b=cur(),inn=S.inning,r0=b.RBI,L0=(b.log=b.log||[]).length;const d=fn(b);const ab=AB_[d.slice(d.indexOf(': ')+2).toLowerCase()];if(ab)b.log.splice(L0,0,{i:inn,a:ab,rbi:b.RBI-r0});S.msg=d+(ev.length?' · '+ev.join(', '):'');save();render()}
+function act(fn){if(!AP().length){tab(2);return}hist.push(JSON.stringify(S));if(hist.length>60)hist.shift();ev=[];NS=S.side||'us';const b=cur(),inn=S.inning,r0=b.RBI,L0=(b.log=b.log||[]).length;const pl=NS==='op'?PT():null,b0={H:b.H,hr:b.hr,BB:b.BB,K:b.K},sc0=S.us+S.them;const d=fn(b);const ab=AB_[d.slice(d.indexOf(': ')+2).toLowerCase()];if(ab)b.log.splice(L0,0,{i:inn,a:ab,rbi:b.RBI-r0});
+ if(pl){pl.BF++;pl.H+=b.H-b0.H;pl.HR+=b.hr-b0.hr;pl.BB+=b.BB-b0.BB;pl.K+=b.K-b0.K}
+ if(typeof txPlay==='function')txPlay(ab,b,NS,S.us+S.them-sc0,b.RBI-r0,pl);S.msg=d+(ev.length?' · '+ev.join(', '):'');save();render()}
 function hit(n){if(n<4&&S.bases.some(x=>x!=null)){openHit(n);return}hitDo(n,null)}
 function hitDo(n,dest){const names=['','Sencillo','Doble','Triple','Jonrón'];act(b=>{b.AB++;b.H++;b[n==4?'hr':'s'+n]++;const nb=[null,null,null];let outs=0;
  for(let i=2;i>=0;i--){const r=S.bases[i];if(r==null)continue;let t=dest?dest[i]:(i+n>=3?'H':i+n+1);if(t==='s')t=i+1;
@@ -226,11 +233,12 @@ function rn(i,a){closeS();hist.push(JSON.stringify(S));ev=[];const id=S.bases[i]
 if(a=='adv'){if(i==2){S.bases[2]=null;run(id,null);d=n+' avanza'}else if(S.bases[i+1]==null){S.bases[i+1]=id;S.bases[i]=null;d=n+' avanza a '+(i+2)+'ª'}else{hist.pop();return}}
 else if(a=='run'){S.bases[i]=null;run(id,null);d=n+' anotó'}
 else{S.bases[i]=null;(P(id).log=P(id).log||[]).push({i:S.inning,a:'*'});out();d=n+' out en las bases'}
+if(typeof txPlay==='function'&&(a=='run'||(a=='adv'&&i==2)))txPlay('RUN',P(id),S.side,1,0,null);
 S.msg=d+(a=='adv'||a=='run'?'':(ev.length?' · '+ev.join(', '):''));save();render()}
 function addP(){const el=document.getElementById('np'),v=el.value.trim();if(!v)return;S.players.push(mk(v));save();render()}
 function delP(id){if(!confirm('¿Quitar jugador?'))return;S.players=S.players.filter(p=>p.id!==id);S.bases=S.bases.map(b=>b===id?null:b);S.idx=0;save();render()}
 function newGame(){ask('¿Nuevo juego? Se borran las estadísticas y el marcador (los jugadores se quedan).',doNew,'Reiniciar')}
-function doNew(){S.players=[];Object.assign(S,{side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Nuevo juego · Lineup vacío'});hist=[];save();render()}
+function doNew(){S.players=[];Object.assign(S,{pit:null,pl:{},side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Nuevo juego · Lineup vacío'});hist=[];save();render()}
 function opp(d){S.them=Math.max(0,S.them+d);save();render()}
 function endGame(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Terminar juego</h3><div style="color:var(--mu);font-size:13px;margin-bottom:10px">${S.us} - ${S.them} vs ${esc(S.rival||'Rival')}. ¿Cómo terminó?</div>
 <button class="btn" onclick="fin('Final normal')">Final normal</button>
@@ -243,12 +251,12 @@ function endGame(){document.getElementById('sheet').innerHTML=`<div class="sheet
 /* Cancelar juego: descarta el juego en curso sin guardarlo en el Historial ni sumarlo a la temporada.
    Conserva los dos lineups (con sus estadísticas en cero), el rival y la fecha, para poder empezar de nuevo. */
 function cancelGame(clr){ask(clr?'¿Cancelar este juego y quitar los lineups? Se borran el marcador y las estadísticas de este juego y no se guarda en el Historial. Tu lineup y el del rival quedan vacíos (tu plantel no se toca). Esto no se puede deshacer.':'¿Cancelar este juego? Se borran el marcador y las estadísticas de este juego y no se guarda en el Historial. Los lineups se quedan para volver a empezar. Esto no se puede deshacer.',()=>{
- if(clr){S.players=[];Object.assign(S,{side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego cancelado · no se guardó nada · Lineup vacío'});hist=[];T=0;save();render();return}
+ if(clr){S.players=[];Object.assign(S,{pit:null,pl:{},side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego cancelado · no se guardó nada · Lineup vacío'});hist=[];T=0;save();render();return}
  const z=p=>({...p,log:[],AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});
- S.players=S.players.map(z);if(S.opp)S.opp={idx:0,players:S.opp.players.map(z)};
+ S.players=S.players.map(z);if(S.opp)S.opp={idx:0,players:S.opp.players.map(z)};S.pl={};
  Object.assign(S,{side:S.home?'op':'us',started:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Juego cancelado · no se guardó nada'});
  hist=[];T=0;save();render()},clr?'Sí, cancelar y quitar lineups':'Sí, cancelar juego')}
-function fin(r){closeS();const g={id:Date.now(),team:S.team,rival:S.rival.trim()||'Rival',date:S.date||today(),us:S.us,them:S.them,inning:S.inning,home:S.home,rl:S.rl,ml:S.ml,opp:(S.opp&&S.opp.players.some(p=>p.AB+p.BB+p.SAC+p.R>0))?JSON.parse(JSON.stringify(S.opp)):null,reason:r,players:JSON.parse(JSON.stringify(gamePlayers()))};S.games.unshift(g);S.players=[];Object.assign(S,{side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego guardado en Historial · Lineup vacío'});hist=[];V=g.id;save();T=3;render();if(typeof cloud!=='undefined'&&cloud.user&&!cloud.denied)setTimeout(()=>ask('Juego guardado en el Historial ✓ ¿Sincronizar ahora con la nube para tenerlo respaldado?',cloudMerge,'🔄 Sincronizar ahora'),250)}
+function fin(r){closeS();const g={id:Date.now(),team:S.team,rival:S.rival.trim()||'Rival',date:S.date||today(),us:S.us,them:S.them,inning:S.inning,home:S.home,rl:S.rl,ml:S.ml,opp:(S.opp&&S.opp.players.some(p=>p.AB+p.BB+p.SAC+p.R>0))?JSON.parse(JSON.stringify(S.opp)):null,reason:r,players:JSON.parse(JSON.stringify(gamePlayers())),pit:JSON.parse(JSON.stringify(Object.values(S.pl||{}).filter(x=>x.BF||x.outs)))};S.games.unshift(g);S.pit=null;S.pl={};S.players=[];Object.assign(S,{side:'us',started:false,opp:null,home:false,rl:[],ml:[],pend:null,subs:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,rival:'',date:today(),msg:'Juego guardado en Historial · Lineup vacío'});hist=[];V=g.id;if(typeof txAuto==='function')txAuto('fin');save();T=3;render();if(typeof cloud!=='undefined'&&cloud.user&&!cloud.denied)setTimeout(()=>ask('Juego guardado en el Historial ✓ ¿Sincronizar ahora con la nube para tenerlo respaldado?',cloudMerge,'🔄 Sincronizar ahora'),250)}
 let CB=null;
 function ask(msg,fn,lbl){CB=fn;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>${esc(msg)}</h3><button class="btn" style="color:var(--rd)" onclick="closeS();CB&&CB()">${lbl||'Sí, continuar'}</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
 function delG(id){ask('¿Borrar este juego guardado?',()=>{S.games=S.games.filter(g=>g.id!==id);S.tomb.g[id]=Date.now();V=null;save();render()},'Borrar juego')}
@@ -274,7 +282,7 @@ function leaderMap(ps,gp){
 const tbl=(ps,gp)=>{const cols=statCols(),leaders=leaderMap(ps,gp);return `<div class="card tw"><table><tr><th>Jugador</th>${cols.map(h=>`<th>${h}</th>`).join('')}</tr>${ps.map((p,i)=>{const v=statVals(p,gp);return `<tr><td>${p.sub?'↳ ':''}${esc(nm(p))}${posOf(p)?`<small class="pp">${posOf(p)}</small>`:''}${p.sub?' <small>(sust.)</small>':''}</td>${v.map((z,j)=>{const lead=j>0&&leaders[j]&&leaders[j].has(i);return `<td class="${lead?'leader-stat':''}">${j===12?`<b>${z}</b>`:z}</td>`}).join('')}</tr>`}).join('')}</table></div>`}
 
 function histHTML(){const g=S.games.find(x=>x.id===V);
-if(g)return `<button class="btn" style="width:100%;margin-bottom:10px" onclick="V=null;render()">← Volver</button><div class="card"><b>${fd(g.date)} · vs ${esc(g.rival)}</b><div style="font-size:30px;font-weight:800;margin:4px 0">${g.us} - ${g.them} ${res(g)}</div><div style="color:var(--mu);font-size:13px">${g.reason} · ${g.inning} entradas</div></div>${(g.rl&&g.rl.length)||(g.ml&&g.ml.length)?`<div class="card tw">${lineTbl(g,false)}</div>`:''}${g.opp&&g.opp.players?`<div style="font-weight:800;margin:4px 2px">Lineup de ${esc(g.rival)}</div><div class="card" style="padding:8px 6px">${oppTblC(g.opp.players)}</div>${sumCard(g.opp.players,0,true)}`:''}${mvpCard(g)}<button class="btn" style="width:100%;margin-bottom:10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="mkImg(${g.id})">🖼 Crear imagen del día</button>${tbl(g.players)}${sumCard(g.players)}<button class="btn" style="width:100%;margin-bottom:8px" onclick="geOpen(${g.id})">✎ Editar juego</button><button class="btn" style="width:100%;color:var(--rd)" onclick="delG(${g.id})">Borrar juego</button>`;
+if(g)return `<button class="btn" style="width:100%;margin-bottom:10px" onclick="V=null;render()">← Volver</button><div class="card"><b>${fd(g.date)} · vs ${esc(g.rival)}</b><div style="font-size:30px;font-weight:800;margin:4px 0">${g.us} - ${g.them} ${res(g)}</div><div style="color:var(--mu);font-size:13px">${g.reason} · ${g.inning} entradas</div></div>${(g.rl&&g.rl.length)||(g.ml&&g.ml.length)?`<div class="card tw">${lineTbl(g,false)}</div>`:''}${g.opp&&g.opp.players?`<div style="font-weight:800;margin:4px 2px">Lineup de ${esc(g.rival)}</div><div class="card" style="padding:8px 6px">${oppTblC(g.opp.players)}</div>${sumCard(g.opp.players,0,true)}`:''}${mvpCard(g)}<button class="btn" style="width:100%;margin-bottom:10px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="mkImg(${g.id})">🖼 Crear imagen del día</button>${tbl(g.players)}${g.pit&&g.pit.length?pitTbl(g.pit):''}${sumCard(g.players)}<button class="btn" style="width:100%;margin-bottom:8px" onclick="geOpen(${g.id})">✎ Editar juego</button><button class="btn" style="width:100%;color:var(--rd)" onclick="delG(${g.id})">Borrar juego</button>`;
 if(!S.games.length)return '<div class="card" style="color:var(--mu)">Aún no hay juegos guardados. Usa "Terminar juego" para guardar uno.</div>';
 const flt=HF?S.games.filter(g=>g.date===HF):S.games;
 const bar=`<div class="card"><div style="display:flex;gap:8px;align-items:center"><input type="date" value="${HF}" onchange="HF=this.value;render()" style="flex:1;min-width:0"><button class="btn" style="flex:0 0 auto;padding:12px 14px" onclick="HF='';render()">Todas</button></div>${HF?(flt.length?`<button class="btn" style="width:100%;margin-top:8px;background:var(--ac);color:#fff;border-color:var(--ac)" onclick="mkImg(${flt[0].id})">🖼 Crear imagen del ${fd(HF)}</button>`:`<div style="color:var(--mu);font-size:13px;margin-top:8px">No hay juegos guardados el ${fd(HF)}.</div>`):'<div style="color:var(--mu);font-size:12px;margin-top:6px">Elige una fecha para ver sus juegos y crear su imagen.</div>'}</div>`;
@@ -291,6 +299,13 @@ function actR(id){const r=S.roster.find(x=>x.id===id);if(!r)return;r.off=false;r
 function delRPerm(id){const r=S.roster.find(x=>x.id===id);if(!r)return;ask('¿Eliminar definitivamente a '+(r.name||'este jugador')+'? Se pierde su archivo de la temporada (los juegos ya guardados conservan lo que hizo).',()=>{S.roster=S.roster.filter(x=>x.id!==id);S.tomb.r[id]=Date.now();if(S.photos)delete S.photos[id];save();render()},'Eliminar')}
 let RNG={from:'',to:''};
 const inRng=d=>(!RNG.from||d>=RNG.from)&&(!RNG.to||d<=RNG.to);
+/* ===== Estadísticas de pitcheo ===== */
+const ipF=o=>Math.floor((o||0)/3)+'.'+((o||0)%3);
+const efe=p=>p.outs?(p.R*21/p.outs).toFixed(2):'—';
+function seasonPit(rg){const m={};S.games.forEach(g=>{if(rg&&!inRng(g.date))return;(g.pit||[]).forEach(p=>{const k=p.id!=null?p.id:p.name,t=m[k]||(m[k]={id:p.id,name:p.name,num:p.num||'',GP:0,outs:0,BF:0,H:0,R:0,BB:0,K:0,HR:0});t.GP++;['outs','BF','H','R','BB','K','HR'].forEach(x=>t[x]+=p[x]||0)})});
+ return Object.values(m).sort((a,b)=>b.outs-a.outs)}
+function pitTbl(ps,gp){const c=['JJ','EL','BE','H','C','BB','K','HR','EFE'];if(!gp)c.shift();
+ return `<div style="font-weight:800;margin:4px 2px 6px">⚾ Pitcheo</div><div class="card tw"><table><tr><th>Lanzador</th>${c.map(h=>`<th>${h}</th>`).join('')}</tr>${ps.map(p=>`<tr><td>${esc(nm(p))}</td>${(gp?[p.GP||0]:[]).concat([ipF(p.outs),p.BF||0,p.H||0,p.R||0,p.BB||0,p.K||0,p.HR||0,efe(p)]).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</table></div>`}
 function seasonStats(all,rg){const m={};if(!rg)(S.base&&S.base.players||[]).forEach(p=>{m[p.id]={id:p.id,name:p.name,num:p.num||'',GP:p.GP||0,AB:p.AB||0,H:p.H||0,s1:p.s1||0,s2:p.s2||0,s3:p.s3||0,hr:p.hr||0,BB:p.BB||0,K:p.K||0,R:p.R||0,RBI:p.RBI||0,SAC:p.SAC||0}});S.games.forEach(g=>{if(rg&&!inRng(g.date))return;g.players.forEach(p=>{const k=p.id!=null?p.id:p.name,t=m[k]||(m[k]={id:p.id,name:p.name,num:p.num||'',GP:0,AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});if(p.AB+p.BB+p.SAC+p.R>0)t.GP++;['AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'].forEach(k=>t[k]+=p[k]||0)})});return Object.values(m).filter(p=>all||!S.roster.length||(r=>r&&!r.off)(S.roster.find(r=>r.id===p.id))).sort((a,b)=>b.H-a.H||b.AB-a.AB)}
 function rec(rg){const b=rg?null:S.base;let w=b?b.w||0:0,l=b?b.l||0:0,e=b?b.e||0:0;S.games.forEach(g=>{if(rg&&!inRng(g.date))return;g.us>g.them?w++:g.us<g.them?l++:e++});return 'Récord '+w+'G - '+l+'P'+(e?' - '+e+'E':'')}
 const AB_={'doble play':'DP','triple play':'TP','jugada de selección':'FC',sencillo:'H1',doble:'H2',triple:'H3','jonrón':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SF'};
@@ -384,8 +399,12 @@ function fcb(){if(!AP().length){tab(2);return}const bs=S.bases;let ch=0;while(ch
  act(b=>{b.AB++;const nb=[null,null,null];for(let i=0;i<3;i++){const id=bs[i];if(id==null)continue;if(i<ch-1)nb[i+1]=id;else if(i===ch-1){(P(id).log=P(id).log||[]).push({i:S.inning,a:'*'});ev.push(nm(P(id))+' out')}else nb[i]=id}
   nb[0]=b.id;S.bases=nb;out();nxt();return nm(b)+': jugada de selección'})}
 function editP(id){const r=S.roster.find(x=>x.id===id);if(!r)return;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3>Editar jugador</h3><div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><div id="pva">${av(r,84,1)}</div><div style="flex:1"><label class="btn" style="display:block;text-align:center;margin:0 0 8px;padding:12px">📷 Foto<input type="file" accept="image/*" style="display:none" onchange="photoPick(${id},this.files[0])"></label><button class="btn" style="margin:0;color:var(--rd)" onclick="photoDel(${id})">Quitar foto</button></div></div><input id="en" value="${esc(r.name)}" placeholder="Nombre"><input id="em" value="${esc(r.num||'')}" placeholder="Número" inputmode="numeric"><select id="ep">${posOpts(r.pos||'')}</select><button class="btn" style="background:var(--ac);color:#fff" onclick="saveP(${id})">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
-function saveP(id){const n=document.getElementById('en').value.trim(),m=document.getElementById('em').value.trim();if(!n)return;closeS();const r0=S.roster.find(x=>x.id===id);if(r0){r0.pos=document.getElementById('ep').value;r0.mt=Date.now()}const up=p=>{if(p&&p.id===id){p.name=n;p.num=m}};S.roster.forEach(up);S.players.forEach(up);(S.subs||[]).forEach(up);(S.base&&S.base.players||[]).forEach(up);S.games.forEach(g=>g.players.forEach(up));save();render()}
+function saveP(id){const n=document.getElementById('en').value.trim(),m=document.getElementById('em').value.trim();if(!n)return;closeS();const r0=S.roster.find(x=>x.id===id);if(r0){r0.pos=document.getElementById('ep').value;r0.mt=Date.now()}const up=p=>{if(p&&p.id===id){p.name=n;p.num=m}};S.roster.forEach(up);S.players.forEach(up);(S.subs||[]).forEach(up);(S.base&&S.base.players||[]).forEach(up);S.games.forEach(g=>{g.players.forEach(up);(g.pit||[]).forEach(up)});Object.values(S.pl||{}).forEach(up);save();render()}
 let SUBOUT=null;
+function pitSheet(){const ids=new Set(),list=[];const add=p=>{if(p&&!ids.has(p.id)){ids.add(p.id);list.push(p)}};
+ S.players.filter(p=>posOf(p)==='P').forEach(add);S.players.forEach(add);(S.subs||[]).forEach(add);abc(S.roster.filter(r=>!r.off)).forEach(add);
+ document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3 style="margin:0 0 4px">⚾ ¿Quién lanza?</h3><div style="font-size:12px;color:var(--mu);margin-bottom:8px">Desde ahora, lo que haga ${esc(S.rival||'el rival')} al bate se le cuenta a este lanzador. Lo que ya pasó se queda con el anterior.</div>${list.map(p=>`<button class="btn" style="text-align:left;${p.id===S.pit?'border-color:var(--ac);color:var(--ac)':''}" onclick="pitSet(${p.id})">${p.id===S.pit?'✓ ':''}${esc(nm(p))}${posOf(p)?' · '+posOf(p):''}${(S.pl||{})[p.id]?' · '+ipF((S.pl[p.id]).outs)+' EL':''}</button>`).join('')||'<div style="color:var(--mu);margin-bottom:8px">Agrega jugadores en la pestaña Equipo.</div>'}<button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
+function pitSet(id){closeS();hist.push(JSON.stringify(S));S.pit=id;S.msg='Ahora lanza '+pitName();save();render()}
 function subSheet(){if(!S.players.length){tab(2);return}SUBOUT=null;drawSub()}
 function drawSub(){let h;
  if(SUBOUT==null){h='<h3>Sustitución · ¿quién sale?</h3>'+S.players.map((p,i)=>{const bi=S.bases.indexOf(p.id),tag=(i===S.idx%S.players.length?' · al bate':'')+(bi>=0?' · en '+(bi+1)+'ª':'');return `<button class="btn" onclick="SUBOUT=${p.id};drawSub()">${i+1}. ${esc(nm(p))}<small style="color:var(--mu)">${tag}</small></button>`}).join('')+'<button class="btn" onclick="closeS()">Cancelar</button>'}
@@ -410,7 +429,7 @@ function teamSheet(){document.getElementById('sheet').innerHTML=`<div class="she
 function teamEdit(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>Nuevo nombre</h3><input id="tn" value="${esc(S.team)}" placeholder="Nombre del equipo"><button class="btn" style="background:var(--ac);color:#fff" onclick="teamSave()">Guardar</button><button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
 function teamSave(){const v=document.getElementById('tn').value.trim();closeS();if(!v)return;S.team=v;save();render()}
 function toggleHome(){if(S.started){info('No se puede cambiar entre local y visitante después de comenzar el juego');return}S.home=!S.home;S.side=S.home?'op':'us';save();render()}
-function startGame(){ensureOpp();if(S.players.length<9||S.opp.players.length<9)return;S.started=true;S.side=S.home?'op':'us';S.msg=S.home?'¡Comienza el juego! '+(S.rival||'El rival')+' batea primero':'¡Comienza el juego!';save();render()}
+function startGame(){ensureOpp();if(S.players.length<9||S.opp.players.length<9)return;S.started=true;S.pl={};{const pp=S.players.find(p=>posOf(p)==='P');S.pit=pp?pp.id:null}if(typeof txAuto==='function')txAuto('start');S.side=S.home?'op':'us';S.msg=S.home?'¡Comienza el juego! '+(S.rival||'El rival')+' batea primero':'¡Comienza el juego!';save();render()}
 let RI=0;
 function mkOP(n,i){return {id:'o'+i,name:n,num:'',AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0,log:[]}}
 function ensureOpp(){if(!S.opp)S.opp={idx:0,players:Array.from({length:10},(_,i)=>mkOP('Jugador '+(i+1),i+1))}}
@@ -523,13 +542,13 @@ a.innerHTML=`<div class="card row rv"><input placeholder="Equipo rival" value="$
 <div class="t rvb ${S.pend!=null?'pend':''}" onclick="rivalTap()"><div class="n">${esc(S.rival||'Rival').toUpperCase()}</div><div class="s">${S.them}</div><div class="rvh">${S.started&&S.side==='op'?'● AL BATE':'Toca: lineup y carreras'}</div><button class="hv" onclick="event.stopPropagation();lineSheet()">📋 Entradas</button></div></div>
 <div class="msg">${S.msg||'Toca un corredor para avanzarlo, anotarlo o sacarlo out'}</div></div>
 ${S.started?`<div class="card"><div class="bat"><div class="bl">${has?av(b,56):''}<div class="bi"><div class="sm">AL BATE${S.side==='op'?' · '+esc(S.rival||'Rival').toUpperCase():''}${has&&posOf(b)?' · <b style="color:var(--ac2)">'+posOf(b)+'</b>':''}</div><div class="nm">${has?esc(nm(b)):'—'}</div><div class="sm">${has?`${b.H}-${b.AB} · ${avg(b)} · ${b.RBI} CI · ${b.R} C`:''}</div></div></div>
-<div class="br"><div class="bt"><div class="sm">EN DECK</div><b style="font-size:15px;color:var(--tx)">${has&&posOf(nx)?'<i class="pb">'+posOf(nx)+'</i>':''}${has?esc(nm(nx)):'—'}</b>${S.side==='op'?'':'<br><button class="subb" onclick="subSheet()">⇄ Sustituir</button>'}</div>${has?av(nx,42):''}</div></div>
+<div class="br"><div class="bt"><div class="sm">EN DECK</div><b style="font-size:15px;color:var(--tx)">${has&&posOf(nx)?'<i class="pb">'+posOf(nx)+'</i>':''}${has?esc(nm(nx)):'—'}</b>${S.side==='op'?`<br><button class="subb" onclick="pitSheet()"${S.pit==null?' style="color:var(--ac2);border-color:var(--ac2)"':''}>⚾ ${S.pit==null?'Elegir lanzador':esc(pitName().split(' ')[0])+' ⇄'}</button>`:'<br><button class="subb" onclick="subSheet()">⇄ Sustituir</button>'}</div>${has?av(nx,42):''}</div></div>
 <div class="grid"><button onclick="hit(1)">H1</button><button onclick="hit(2)">H2</button><button onclick="hit(3)">H3</button><button onclick="hit(4)">HR</button>
 <button class="w" style="grid-column:span 4" onclick="walk(false)">BB</button><button class="w" style="grid-column:span 4" onclick="walk(true)">Error</button><button class="o" style="grid-column:span 4" onclick="ko()">K</button><button class="o" style="grid-column:span 4" onclick="fo()">Out</button><button class="o" style="grid-column:span 4" onclick="dpl()">DP</button>
 <button class="g" style="font-size:12px;line-height:1.1" onclick="fcb()">Out, se<br>embasó</button><button class="g" onclick="sac()">SF</button><button class="g" onclick="undo()">↶ Deshacer</button><button class="e" onclick="endGame()">Terminar</button></div></div>`:setup}`;
 }else if(T==1){
 const sea=ST==1,rg=ST==2,ps=rg?seasonStats(false,true):sea?seasonStats():gamePlayers(),ng=S.games.filter(g=>inRng(g.date)).length;
-a.innerHTML=`<div class="tabs"><button class="${ST==0?'on':''}" onclick="ST=0;render()">Este juego</button><button class="${sea?'on':''}" onclick="ST=1;render()">Temporada</button><button class="${rg?'on':''}" onclick="ST=2;render()">Fechas</button></div>${rg?`<div class="card"><div class="rg2"><label>Desde<input type="date" value="${RNG.from}" onchange="RNG.from=this.value;render()"></label><label>Hasta<input type="date" value="${RNG.to}" onchange="RNG.to=this.value;render()"></label></div><div class="sg" style="margin:8px 0 6px"><button onclick="rngSet('all')">Todo</button><button onclick="rngSet(7)">7 días</button><button onclick="rngSet(30)">30 días</button><button onclick="rngSet('mes')">Este mes</button></div><div style="text-align:center"><b>${ng} ${ng==1?'juego':'juegos'} · ${rec(true)}</b><div style="color:var(--mu);font-size:12px">${rngLabel()} · solo juegos guardados con fecha</div></div></div>`:''}${sea?`<div class="card" style="text-align:center"><b>${rec()}</b><div style="color:var(--mu);font-size:12px">${S.base?'Acumulado anterior + juegos guardados':'Suma de los juegos guardados'}</div></div>`:''}${ps.length?tbl(ps,sea||rg):`<div class="card" style="color:var(--mu)">${rg?'No hay juegos guardados en esas fechas.':'Sin datos todavía.'}</div>`}${ST==0&&ps.length?sumCard(ps,S.inning):''}${ps.length?`<button class="btn share-stats" onclick="mkStatsImg(${ST})">🖼 Crear imagen de estadísticas</button>`:''}<div style="color:var(--mu);font-size:12px;text-align:center">JJ juegos · AB turnos · CA carreras anotadas · CE carreras empujadas · H total de hits · H1 sencillo · H2 doble · H3 triple · SF sacrificio · AVE promedio</div>`;
+a.innerHTML=`<div class="tabs"><button class="${ST==0?'on':''}" onclick="ST=0;render()">Este juego</button><button class="${sea?'on':''}" onclick="ST=1;render()">Temporada</button><button class="${rg?'on':''}" onclick="ST=2;render()">Fechas</button></div>${rg?`<div class="card"><div class="rg2"><label>Desde<input type="date" value="${RNG.from}" onchange="RNG.from=this.value;render()"></label><label>Hasta<input type="date" value="${RNG.to}" onchange="RNG.to=this.value;render()"></label></div><div class="sg" style="margin:8px 0 6px"><button onclick="rngSet('all')">Todo</button><button onclick="rngSet(7)">7 días</button><button onclick="rngSet(30)">30 días</button><button onclick="rngSet('mes')">Este mes</button></div><div style="text-align:center"><b>${ng} ${ng==1?'juego':'juegos'} · ${rec(true)}</b><div style="color:var(--mu);font-size:12px">${rngLabel()} · solo juegos guardados con fecha</div></div></div>`:''}${sea?`<div class="card" style="text-align:center"><b>${rec()}</b><div style="color:var(--mu);font-size:12px">${S.base?'Acumulado anterior + juegos guardados':'Suma de los juegos guardados'}</div></div>`:''}${ps.length?tbl(ps,sea||rg):`<div class="card" style="color:var(--mu)">${rg?'No hay juegos guardados en esas fechas.':'Sin datos todavía.'}</div>`}${ST==0&&ps.length?sumCard(ps,S.inning):''}${(()=>{const pp=rg?seasonPit(true):sea?seasonPit():Object.values(S.pl||{}).filter(x=>x.BF||x.outs);return pp.length?pitTbl(pp,sea||rg):''})()}${ps.length?`<button class="btn share-stats" onclick="mkStatsImg(${ST})">🖼 Crear imagen de estadísticas</button>`:''}<div style="color:var(--mu);font-size:12px;text-align:center">JJ juegos · AB turnos · CA carreras anotadas · CE carreras empujadas · H total de hits · H1 sencillo · H2 doble · H3 triple · SF sacrificio · AVE promedio<br>Pitcheo: EL entradas lanzadas (3.1 = 3 entradas y 1 out) · BE bateadores enfrentados · C carreras permitidas · EFE carreras por cada 7 entradas</div>`;
 }else if(T==3){a.innerHTML=histHTML()}else{
 const inL=id=>S.players.some(p=>p.id===id);
 const slots=Math.max(10,S.players.length+1),rows=Math.ceil(slots/2);
@@ -558,7 +577,7 @@ const cloud={denied:false,user:null,ref:null,db:null,busy:false,online:null,off:
 const SSKEY='softball_syncstamp',BAKKEY='softball_bak';
 const cfgSet=()=>!!FIREBASE_CONFIG.apiKey&&!/^PEGA/.test(FIREBASE_CONFIG.apiKey);
 const cfgOk=()=>typeof firebase!=='undefined'&&cfgSet();
-const liveOf=()=>({players:S.players,subs:S.subs,idx:S.idx,inning:S.inning,outs:S.outs,bases:S.bases,us:S.us,them:S.them,rival:S.rival,date:S.date,msg:S.msg,home:S.home,rl:S.rl,ml:S.ml,pend:S.pend,opp:S.opp||null,side:S.side,started:S.started});
+const liveOf=()=>({players:S.players,subs:S.subs,idx:S.idx,inning:S.inning,outs:S.outs,bases:S.bases,us:S.us,them:S.them,rival:S.rival,date:S.date,msg:S.msg,home:S.home,rl:S.rl,ml:S.ml,pend:S.pend,opp:S.opp||null,side:S.side,started:S.started,pit:S.pit,pl:S.pl||{}});
 const metaOf=()=>({team:S.team,roster:S.roster,games:S.games,tomb:S.tomb});
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const lsn=k=>{try{return +localStorage.getItem(k)||0}catch(e){return 0}},lss=(k,v)=>{try{localStorage.setItem(k,String(v))}catch(e){}};
@@ -641,7 +660,7 @@ function cloudMerge(){if(cloud.busy)return;cloud.busy=true;waitS('Sincronizando�
   if(rb&&!S.base)S.base=rb;
   if(rp&&typeof rp==='object')S.photos={...rp,...(S.photos||{})};
   Object.keys(S.photos||{}).forEach(id=>{if(tomb.r[id]||(tomb.ph[id]||0)>(tomb.pa[id]||0))delete S.photos[id]});
-  if(rl&&!S.started&&rl.started){['players','subs','idx','inning','outs','bases','us','them','rival','date','msg','home','rl','ml','pend','opp','side','started'].forEach(k=>{if(rl[k]!==undefined)S[k]=rl[k]});hist=[]}
+  if(rl&&!S.started&&rl.started){['players','subs','idx','inning','outs','bases','us','them','rival','date','msg','home','rl','ml','pend','opp','side','started','pit','pl'].forEach(k=>{if(rl[k]!==undefined)S[k]=rl[k]});hist=[]}
   fixIds();dedupeRoster(false);persist();
   await cloudWrite(raw);
   return 'Listo ✓ Sincronizado.<br><span style="font-size:13px;font-weight:400;color:var(--mu)">Juegos que bajaron: '+gd+' · Juegos que subieron: '+gu+' · Jugadores que subieron: '+nj+(gx?' · Juegos borrados: '+gx:'')+'</span>'}))
@@ -655,7 +674,7 @@ function cloudDown(){ask('Descargar hace que este dispositivo quede igual que la
   bakSave('down');
   if(m){S.team=m.team||'';S.roster=m.roster||[];S.games=m.games||[];S.tomb=tombFix(m.tomb)}
   if(raw.base!=null)S.base=b;if(raw.photos!=null)S.photos=p||{};
-  if(l){['players','subs','idx','inning','outs','bases','us','them','rival','date','msg','home','rl','ml','pend','opp','side','started'].forEach(k=>{if(l[k]!==undefined)S[k]=l[k]});hist=[]}
+  if(l){['players','subs','idx','inning','outs','bases','us','them','rival','date','msg','home','rl','ml','pend','opp','side','started','pit','pl'].forEach(k=>{if(l[k]!==undefined)S[k]=l[k]});hist=[]}
   const st=stampOf(raw.stamp);if(st&&st.t){lss(SSKEY,st.t);cloud.remote=st}
   fixIds();persist();syncOk('Listo ✓ Este dispositivo quedó igual que la nube.')}).catch(syncErr)},'Descargar')}
 const cloudNewer=()=>{const o=cloud.remote;return !!(o&&o.t&&+o.t!==lsn(SSKEY)&&o.by!==devName())};
@@ -691,21 +710,42 @@ cloudInit();
    Publica el marcador en scoreboard/CODIGO/d. marcador.html?c=CODIGO lo muestra como superposición web en CameraFi Live.
    Se envía solo cuando cambia algo (cada jugada pasa por save()). Requiere sesión iniciada en ☁. */
 const TXKEY='softball_tx';
-let TX=(()=>{let o=null;try{o=JSON.parse(localStorage.getItem(TXKEY)||'null')}catch(e){}o=o||{};return {code:o.code||'',on:!!o.on,p:o.p||'tl',s:+o.s||1,n:!!o.n,l:!!o.l}})();
-let txT=null,txLast='',txErr='',txAt=0;
+let TX=(()=>{let o=null;try{o=JSON.parse(localStorage.getItem(TXKEY)||'null')}catch(e){}o=o||{};return {code:o.code||'',on:!!o.on,p:o.p||'tl',s:+o.s||1,n:!!o.n,l:!!o.l,m:['sb','lu','fin'].includes(o.m)?o.m:'sb',a:o.a!==false,k:o.k!==false}})();
+let txT=null,txLast='',txErr='',txAt=0,TXEV=null;
+/* ===== Avisos de jugadas en la transmisión ===== */
+function txPlay(ab,b,side,runs,rbi,pl){if(!b)return;const us=side!=='op',tn=us?(S.team||'Nosotros'):(S.rival||'Rival'),n=String(b.name||'');let t='',x=[],k=ab;
+ const imp=r=>r+(r>1?' impulsadas':' impulsada');
+ if(ab==='HR'){t=runs>=4?'¡GRAND SLAM!':'¡JONRÓN!';x=[n,us?txHR(b)+'º de la temporada':tn,runs>1&&runs<4?runs+' carreras':''];k='HR'}
+ else if(ab==='H3'||ab==='H2'||ab==='H1'){t={H3:'¡TRIPLE!',H2:'¡DOBLE!',H1:'¡HIT!'}[ab];x=[n,us?'':tn,b.H+'-'+b.AB+' hoy',rbi?imp(rbi):'']}
+ else if(ab==='K'&&!us){t='¡PONCHE!';x=[n,pl?pl.name+' suma '+pl.K+' K':'']}
+ else if((ab==='DP'||ab==='TP')&&!us){t=ab==='TP'?'¡TRIPLE PLAY!':'¡DOBLE PLAY!';x=['Defensa de '+(S.team||'Nosotros')]}
+ if(!t&&runs>0){t=runs>1?'¡CARRERAS!':'¡CARRERA!';k='RUN';x=ab==='RUN'?[n+' anota',us?'':tn]:[n,{BB:'base por bolas',SF:'sacrificio',E:'llega por error',FC:'jugada de selección',OUT:'out',DP:'doble play'}[ab]||'',us?'':tn,rbi?imp(rbi):'']}
+ if(!t)return;
+ TXEV={id:Date.now(),k,t,s:x.filter(Boolean).join(' · '),m:runs>0?`${S.team||'Nosotros'} ${S.us} - ${S.them} ${S.rival||'Rival'}`:'',us:us?1:0};txQueue()}
+/* Al comenzar el juego se pasa solo al marcador; al terminarlo, al resultado final. */
+function txAuto(w){if(w==='start'&&TX.m!=='sb'){TX.m='sb';txSave()}if(w==='fin'&&TX.on){TX.m='fin';txSave()}txQueue()}
+function txExtra(p){const o=[];[[p.s2,'H2'],[p.s3,'H3'],[p.hr,'HR']].forEach(([v,l])=>{if(v>0)o.push((v>1?v+' ':'')+l)});if(p.RBI>0)o.push(p.RBI+' CE');return o.join(' · ')}
 const txSave=()=>lss(TXKEY,JSON.stringify(TX));
 function txNewCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint32Array(6);crypto.getRandomValues(r);return Array.from(r,v=>a[v%a.length]).join('')}
 if(!TX.code){TX.code=txNewCode();txSave()}
 const txReady=()=>!!(cloud.db&&cloud.user&&TX.code);
 function txColors(){const cs=getComputedStyle(document.documentElement),g=n=>(cs.getPropertyValue(n)||'').trim();return {ac:g('--ac'),a2:g('--ac2'),bg:g('--bg')}}
 /* Promedio de temporada (juegos guardados + acumulado + lo de hoy) para nuestros bateadores */
+/* Jonrones de la temporada (juegos guardados + acumulado + lo de hoy) */
+function txHR(p){let n=p.hr||0;try{const s=seasonStats(true).find(q=>q.id===p.id);if(s)n+=s.hr||0}catch(e){}return n}
 function txSeason(p){let AB=p.AB||0,H=p.H||0;try{const s=seasonStats(true).find(q=>q.id===p.id);if(s){AB+=s.AB||0;H+=s.H||0}}catch(e){}return AB?f3(H/AB):'.000'}
 function txData(){const st=!!S.started,sd=S.side||'us',op=sd==='op',ap=AP(),b=st&&ap.length?cur():null;
  const d={off:0,st:st?1:0,tm:S.team||'Nosotros',rv:S.rival||'Rival',us:S.us|0,th:S.them|0,inn:S.inning|0,top:((sd==='us')===!S.home)?1:0,outs:S.outs|0,sd,home:S.home?1:0,
   b:(S.bases||[null,null,null]).map(id=>{if(id==null)return '';const p=P(id);return p?String(p.name||'?'):'?'}),
   ml:(S.ml||[]).map(x=>x==null?-1:x|0),rl:(S.rl||[]).map(x=>x==null?-1:x|0),
-  c:txColors(),v:{p:TX.p,s:TX.s,n:TX.n?1:0,l:TX.l?1:0}};
- if(b)d.bat={n:String(b.name||''),u:String(b.num||''),p:String(posOf(b)||''),h:(b.H|0)+'-'+(b.AB|0),a:op?(b.AB?f3(b.H/b.AB):'.000'):txSeason(b)};
+  c:txColors(),v:{p:TX.p,s:TX.s,n:TX.n?1:0,l:TX.l?1:0,m:TX.m,a:TX.a?1:0,k:TX.k?1:0}};
+ if(b)d.bat={n:String(b.name||''),u:String(b.num||''),p:String(posOf(b)||''),h:(b.H|0)+'-'+(b.AB|0),a:op?(b.AB?f3(b.H/b.AB):'.000'):txSeason(b),r:op?(b.hr|0):txHR(b)};
+ if(TX.a&&TXEV&&Date.now()-TXEV.id<60000)d.ev=TXEV;
+ if(TX.k&&st){d.tk=[];const add=(ps,t)=>ps.forEach(p=>{if((p.H|0)>0)d.tk.push({t,n:String(p.name||''),h:(p.H|0)+'-'+(p.AB|0),x:txExtra(p)})});add(gamePlayers(),1);if(S.opp)add(S.opp.players,0)}
+ if(TX.m==='lu'){const mine={n:S.team||'Nosotros',us:1,p:S.players.map(p=>({n:String(p.name||''),p:String(posOf(p)||'')}))},riv={n:S.rival||'Rival',us:0,p:(S.opp?S.opp.players:[]).map(p=>({n:String(p.name||''),p:String(p.pos||'')}))};d.lu=S.home?[riv,mine]:[mine,riv]}
+ if(TX.m==='fin'){const g=S.games[0];if(g){const ps=g.players||[],m=mvp(ps),top=[...ps].filter(p=>p.H>0&&(!m||p.id!==m.id)).sort((a,b)=>sc(b)-sc(a)).slice(0,3),pt=[...(g.pit||[])].sort((a,b)=>b.outs-a.outs)[0];
+  d.fn={tm:g.team||S.team||'Nosotros',rv:g.rival||'Rival',us:g.us|0,th:g.them|0,home:g.home?1:0,inn:g.inning|0,r:g.reason||'',ml:(g.ml||[]).map(x=>x==null?-1:x|0),rl:(g.rl||[]).map(x=>x==null?-1:x|0),
+   mvp:m?{n:String(m.name||''),l:line(m)}:null,top:top.map(p=>({n:String(p.name||''),l:line(p)})),pt:pt?{n:String(pt.name||''),l:ipF(pt.outs)+' EL · '+(pt.K|0)+' K · '+(pt.R|0)+' C'}:null}}}
  return d}
 function txQueue(){clearTimeout(txT);txT=setTimeout(()=>{txSend();txPvPost()},250)}
 function txSend(){txBtn();if(!txReady())return;
@@ -728,7 +768,8 @@ function txSheet(){const ready=txReady(),o=(l,on,fn)=>`<button class="${on?'on':
 <button class="btn" style="${TX.on?'color:var(--rd)':'background:var(--ac);color:#fff'}${ready||TX.on?'':';opacity:.45'}" ${ready||TX.on?'':'disabled'} onclick="txToggle()">${TX.on?'■ Ocultar marcador':'▶ Mostrar marcador en vivo'}</button>
 ${lb('Posición')}<div class="sg">${[['tl','↖ Arriba izq.'],['tr','↗ Arriba der.'],['bl','↙ Abajo izq.'],['br','↘ Abajo der.']].map(x=>o(x[1],TX.p===x[0],`txSet('p','${x[0]}')`)).join('')}</div>
 ${lb('Tamaño')}<div class="sg">${[[.8,'Pequeño'],[1,'Normal'],[1.25,'Grande'],[1.5,'Muy grande']].map(x=>o(x[1],TX.s==x[0],`txSet('s',${x[0]})`)).join('')}</div>
-${lb('Mostrar también')}<div class="sg">${o('Nombres de corredores',TX.n,"txSet('n',!TX.n)")}${o('Carreras por entrada',TX.l,"txSet('l',!TX.l)")}</div>
+${lb('Qué se ve en la transmisión')}<div class="sg">${o('📊 Marcador',TX.m==='sb',"txSet('m','sb')")}${o('📋 Lineups',TX.m==='lu',"txSet('m','lu')")}${o('🏁 Final',TX.m==='fin',"txSet('m','fin')")}</div><div class="chint" style="margin-top:-4px">${TX.m==='fin'&&!S.games.length?'<b style="color:var(--ac2)">Aún no hay juegos guardados para mostrar el final.</b> ':''}Al comenzar el juego cambia solo a Marcador y al terminarlo a Final.</div>
+${lb('Mostrar también')}<div class="sg">${o('🔔 Avisos de jugadas',TX.a,"txSet('a',!TX.a)")}${o('📰 Cinta de hits',TX.k,"txSet('k',!TX.k)")}</div><div class="sg">${o('Nombres de corredores',TX.n,"txSet('n',!TX.n)")}${o('Carreras por entrada',TX.l,"txSet('l',!TX.l)")}</div>
 ${lb('Enlace para CameraFi Live (Widget → WEB → URL #1)')}<input id="txu" readonly value="${esc(txUrl())}" onclick="this.select()">
 <button class="btn" id="txc" onclick="txCopy()">📋 Copiar enlace</button><button class="btn" onclick="txPrev()">👁 Vista previa</button>
 <div class="chint">En CameraFi pon la superposición en Pantalla completa. La posición, el tamaño y las opciones se cambian en vivo desde aquí, sin tocar el celular de la cámara.</div>

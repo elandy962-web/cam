@@ -2,7 +2,7 @@
    Cada vez que cambies archivos, sube V aquí y APP_VERSION en index.html (el mismo número).
    La versión nueva se descarga en segundo plano y queda esperando; la app muestra
    "Nueva versión disponible · Actualizar" y al tocarlo se cambia sin reinstalar nada. */
-const V = 'softball-2.9.1';
+const V = 'softball-3.0.0';
 const MAIN = ['./', 'index.html'];
 const EXTRA = ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 const SDK = ['app', 'auth', 'database'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');

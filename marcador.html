@@ -9,8 +9,8 @@ html,body{margin:0;height:100%;background:transparent!important;overflow:hidden;
 #bug{position:absolute;display:none;width:calc(var(--u)*38);border-radius:calc(var(--u)*1.2);overflow:hidden;box-shadow:0 calc(var(--u)*.3) calc(var(--u)*1.4) rgba(0,0,0,.5);color:var(--tx);background:var(--bgc)}
 #bug.tl{left:calc(var(--u)*1.5);top:calc(var(--u)*1.5)}
 #bug.tr{right:calc(var(--u)*1.5);top:calc(var(--u)*1.5)}
-#bug.bl{left:calc(var(--u)*1.5);bottom:calc(var(--u)*1.5)}
-#bug.br{right:calc(var(--u)*1.5);bottom:calc(var(--u)*1.5)}
+#bug.bl{left:calc(var(--u)*1.5);bottom:calc(var(--u)*1.5 + var(--tkh,0px))}
+#bug.br{right:calc(var(--u)*1.5);bottom:calc(var(--u)*1.5 + var(--tkh,0px))}
 .main{display:flex}
 .teams{flex:1;min-width:0}
 .row{display:flex;align-items:center;height:calc(var(--u)*4.4);padding:0 calc(var(--u)*1.2) 0 calc(var(--u)*.8);gap:calc(var(--u)*.8);font-weight:800;font-size:calc(var(--u)*2);text-transform:uppercase;border-left:calc(var(--u)*.45) solid transparent;letter-spacing:.02em}
@@ -33,9 +33,62 @@ html,body{margin:0;height:100%;background:transparent!important;overflow:hidden;
 .ls{display:grid;font-size:calc(var(--u)*1.35);font-weight:800;padding:calc(var(--u)*.5) calc(var(--u)*1.2) calc(var(--u)*.7);border-top:1px solid rgba(var(--ln),.1);font-variant-numeric:tabular-nums;row-gap:calc(var(--u)*.25)}
 .ls span{text-align:center}.ls .h{opacity:.55;font-size:.85em}.ls .t{text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:calc(var(--u)*.6)}.ls .now{color:var(--a2)}
 .runners{font-size:calc(var(--u)*1.35);opacity:.9;padding:0 calc(var(--u)*1.4) calc(var(--u)*.8);color:var(--tx)}
+
+/* ---- Cinta de hits ---- */
+#tk{position:absolute;left:0;right:0;bottom:0;height:calc(var(--U)*3.6);display:none;background:var(--bgc);color:var(--tx);font-weight:700;font-size:calc(var(--U)*1.7);overflow:hidden;box-shadow:0 calc(var(--U)*-.2) calc(var(--U)*1) rgba(0,0,0,.35);border-top:calc(var(--U)*.25) solid var(--a1)}
+#tk .lb{position:absolute;left:0;top:0;bottom:0;z-index:2;display:flex;align-items:center;gap:calc(var(--U)*.6);padding:0 calc(var(--U)*1.3);background:var(--a1);color:var(--on);font-weight:900;font-size:.82em;letter-spacing:.08em;box-shadow:calc(var(--U)*.6) 0 calc(var(--U)*.9) rgba(0,0,0,.35)}
+#tk .vw{position:absolute;top:0;bottom:0;right:0;overflow:hidden}
+#tk .rl{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;white-space:nowrap;will-change:transform;animation:tkm 30s linear infinite}
+#tk .rl>div{display:flex;align-items:center;padding-right:calc(var(--U)*4)}
+#tk .tm{color:var(--a2);font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin:0 calc(var(--U)*.9) 0 calc(var(--U)*2.2)}
+#tk .it{margin-right:calc(var(--U)*2)}#tk .it b{font-weight:900}#tk .it i{font-style:normal;opacity:.75;font-size:.85em;margin-left:calc(var(--U)*.4)}
+#tk .em{opacity:.7;margin-left:calc(var(--U)*2)}
+@keyframes tkm{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* ---- Aviso de jugada ---- */
+#al{position:absolute;left:50%;bottom:calc(var(--U)*2.5 + var(--tkh,0px));display:none;transform:translateX(-50%);max-width:calc(var(--U)*78);min-width:calc(var(--U)*34);text-align:center;border-radius:calc(var(--U)*1.4);overflow:hidden;color:var(--on);background:linear-gradient(135deg,var(--a1),color-mix(in srgb,var(--a1) 70%,#000));box-shadow:0 calc(var(--U)*.5) calc(var(--U)*2.5) rgba(0,0,0,.55);padding:calc(var(--U)*1.1) calc(var(--U)*3) calc(var(--U)*1.3)}
+#al.op{background:var(--bgc);color:var(--tx);border:calc(var(--U)*.3) solid var(--a2)}
+#al .t{font-size:calc(var(--U)*4.2);font-weight:950;font-style:italic;letter-spacing:.01em;line-height:1.05;text-transform:uppercase}
+#al.HR .t{font-size:calc(var(--U)*6.2);text-shadow:0 calc(var(--U)*.3) 0 rgba(0,0,0,.25)}
+#al .s{font-size:calc(var(--U)*2.1);font-weight:800;margin-top:calc(var(--U)*.4)}
+#al .m{display:inline-block;font-size:calc(var(--U)*1.6);font-weight:800;margin-top:calc(var(--U)*.7);padding:calc(var(--U)*.3) calc(var(--U)*1.2);border-radius:calc(var(--U)*.8);background:rgba(0,0,0,.22)}
+#al.op .m{background:rgba(var(--ln),.1)}
+#al.HR::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-100%);animation:shn 1.6s .5s ease-in-out 2}
+#al.in{animation:alIn .55s cubic-bezier(.2,1.4,.4,1) both}#al.HR.in{animation:alIn .55s cubic-bezier(.2,1.4,.4,1) both,pul 1s .6s ease-in-out 3}
+#al.out{animation:alOut .4s ease-in both}
+@keyframes alIn{from{opacity:0;transform:translate(-50%,60%) scale(.8)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes alOut{to{opacity:0;transform:translate(-50%,40%) scale(.92)}}
+@keyframes pul{50%{transform:translate(-50%,0) scale(1.05)}}
+@keyframes shn{to{transform:translateX(100%)}}
+/* ---- Lineups y Final (tarjetas centradas) ---- */
+.big{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:none;color:var(--tx);background:var(--bgc);border-radius:calc(var(--U)*1.6);overflow:hidden;box-shadow:0 calc(var(--U)*.6) calc(var(--U)*3) rgba(0,0,0,.55);animation:bgIn .5s ease-out both}
+@keyframes bgIn{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}
+.big .hd{background:var(--a1);color:var(--on);font-weight:950;font-style:italic;letter-spacing:.06em;text-align:center;font-size:calc(var(--U)*2.6);padding:calc(var(--U)*.8)}
+#lu{width:calc(var(--U)*86)}
+#lu .cols{display:grid;grid-template-columns:1fr 1fr}
+#lu .col+.col{border-left:1px solid rgba(var(--ln),.12)}
+#lu .tn{font-weight:900;text-transform:uppercase;text-align:center;font-size:calc(var(--U)*2.2);padding:calc(var(--U)*.9) calc(var(--U)*1);border-bottom:1px solid rgba(var(--ln),.12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lu .col.us .tn{color:var(--a2)}
+#lu .r{display:flex;align-items:center;gap:calc(var(--U)*1);padding:0 calc(var(--U)*1.6);height:var(--rh);font-size:calc(var(--rh)*.5);font-weight:700}
+#lu .r:nth-child(odd){background:rgba(var(--ln),.04)}
+#lu .r .o{flex:0 0 calc(var(--rh)*.75);height:calc(var(--rh)*.75);border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(var(--ln),.12);font-weight:900;font-size:.8em}
+#lu .col.us .r .o{background:var(--a1);color:var(--on)}
+#lu .r .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lu .r .p{font-weight:900;color:var(--a2);font-size:.85em}
+#lu .em{padding:calc(var(--U)*2);text-align:center;opacity:.7;font-size:calc(var(--U)*1.8)}
+#fn{width:calc(var(--U)*62)}
+#fn .tr{display:flex;align-items:center;padding:calc(var(--U)*.9) calc(var(--U)*2);font-weight:900;font-size:calc(var(--U)*3);text-transform:uppercase;border-bottom:1px solid rgba(var(--ln),.1)}
+#fn .tr .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#fn .tr .s{font-size:1.4em;font-variant-numeric:tabular-nums}
+#fn .tr.w{background:rgba(var(--ln),.07)}#fn .tr.w .n::after{content:" ◀";color:var(--a2);font-size:.6em}#fn .tr.l{opacity:.7}
+#fn .ls{font-size:calc(var(--U)*1.6);padding:calc(var(--U)*.8) calc(var(--U)*2)}
+#fn .mv{background:color-mix(in srgb,var(--a2) 16%,transparent);padding:calc(var(--U)*1.1) calc(var(--U)*2);border-top:1px solid rgba(var(--ln),.1)}
+#fn .k{font-size:calc(var(--U)*1.35);font-weight:900;letter-spacing:.08em;color:var(--a2)}
+#fn .mv .nm{font-size:calc(var(--U)*2.8);font-weight:950;margin-top:calc(var(--U)*.2)}#fn .ln{font-size:calc(var(--U)*1.6);font-weight:700;opacity:.85}
+#fn .ds{padding:calc(var(--U)*1) calc(var(--U)*2) calc(var(--U)*1.3)}
+#fn .ds .r{display:flex;gap:calc(var(--U)*1);align-items:baseline;font-size:calc(var(--U)*1.8);margin-top:calc(var(--U)*.5)}#fn .ds .r b{white-space:nowrap}#fn .ds .r span{opacity:.8;font-size:.85em}
+#fn .why{font-size:.5em;opacity:.85;margin-left:calc(var(--U)*1);letter-spacing:.04em}
 </style>
 </head><body>
-<div id="bug" class="tl"></div>
+<div id="bug" class="tl"></div><div id="tk"></div><div id="al"></div><div id="lu" class="big"></div><div id="fn" class="big"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
@@ -54,7 +107,7 @@ const q=new URLSearchParams(location.search),c0=(q.get('c')||'').trim(),code=c0.
 const U={p:(q.get('p')||'tl').toLowerCase(),s:parseFloat(q.get('s'))||1,n:q.get('n')==='1',l:q.get('l')==='1'};
 let pos=U.p,sc=U.s,showN=U.n,showL=U.l;
 const bug=document.getElementById('bug');
-function sizeIt(){document.documentElement.style.setProperty('--u',(Math.min(innerWidth/100,innerHeight/56)*sc)+'px')}
+function sizeIt(){const b=Math.min(innerWidth/100,innerHeight/56),r=document.documentElement.style;r.setProperty('--u',(b*sc)+'px');r.setProperty('--U',b+'px')}
 function opts(v){v=v||{};pos=['tl','tr','bl','br'].includes(v.p)?v.p:(['tl','tr','bl','br'].includes(U.p)?U.p:'tl');
  sc=Math.max(.5,Math.min(3,parseFloat(v.s)||U.s));showN=v.n!=null?!!v.n:U.n;showL=v.l!=null?!!v.l:U.l;bug.className=pos;sizeIt()}
 opts();
@@ -73,17 +126,48 @@ function diamond(b){const on=i=>b[i]?'var(--a2)':'rgba(var(--ln),.18)',st=i=>b[i
 function lineScore(d,rows){const ml=d.ml||[],rl=d.rl||[],cur=d.inn|0;let N=Math.max(ml.length,rl.length,cur,1);const s0=Math.max(0,N-9),cols=[];for(let i=s0;i<N;i++)cols.push(i);
  /* Media entrada ya jugada o en curso sin carreras = 0; las que faltan por jugar quedan vacías. */
  const top=!!d.top,began=(vis,i)=>!!d.st&&(vis?i+1<=cur:(i+1<cur||(i+1===cur&&!top)));
- const val=(a,i,vis)=>{const v=a[i];return v!=null&&v>=0?String(v):began(vis,i)?'0':''};
+ /* En el final: el local que ya ganaba no batea la última entrada → X */
+ const val=(a,i,vis)=>{const v=a[i];if(v!=null&&v>=0)return String(v);if(d.fin)return vis||i<cur-1?(i<cur?'0':''):(d.hw?'X':'0');return began(vis,i)?'0':''};
  const g=`grid-template-columns:minmax(0,1fr) repeat(${cols.length},calc(var(--u)*2.6))`;
  return `<div class="ls" style="${g}"><span></span>${cols.map(i=>`<span class="h${i+1===cur&&d.st?' now':''}">${i+1}</span>`).join('')}${rows.map((r,k)=>`<span class="t">${esc(r.n)}</span>${cols.map(i=>`<span>${val(r.us?ml:rl,i,k===0)}</span>`).join('')}`).join('')}</div>`}
-function draw(d){if(!d||d.off){bug.style.display='none';return}
- opts(d.v);colors(d.c);const home=!!d.home,tm=d.tm||'Nosotros',rv=d.rv||'Rival',batUs=d.sd!=='op';
+const tk=document.getElementById('tk'),al=document.getElementById('al'),lu=document.getElementById('lu'),fn=document.getElementById('fn');
+let tkHTML='',seen=undefined,alT=null,luK='',fnK='';
+function tkSet(on){tk.style.display=on?'block':'none';document.documentElement.style.setProperty('--tkh',on?'calc(var(--U)*3.6)':'0px')}
+function drawTk(d){const on=!!(d.v&&d.v.k&&d.st&&Array.isArray(d.tk));tkSet(on);if(!on){tkHTML='';return}
+ const grp=t=>d.tk.filter(x=>!!x.t===!!t),part=(t,name)=>{const g=grp(t);return g.length?`<span class="tm">${esc(name)}</span>${g.map(x=>`<span class="it"><b>${esc(x.n)}</b> ${esc(x.h)}${x.x?`<i>${esc(x.x)}</i>`:''}</span>`).join('')}`:''};
+ const order=d.home?[[0,d.rv],[1,d.tm]]:[[1,d.tm],[0,d.rv]];
+ let body=order.map(([t,n])=>part(t,n)).join('');if(!body)body='<span class="em">Todavía no hay hits en este juego</span>';
+ const h=`<div class="lb">⚾ HITS DEL JUEGO</div><div class="vw"><div class="rl"><div>${body}</div><div>${body}</div></div></div>`;
+ if(h===tkHTML)return;tkHTML=h;tk.innerHTML=h;
+ requestAnimationFrame(()=>{const lb=tk.querySelector('.lb'),vw=tk.querySelector('.vw'),rl=tk.querySelector('.rl');if(!lb||!rl)return;vw.style.left=lb.offsetWidth+'px';
+  const w=rl.scrollWidth/2,U=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--U'))||12;rl.style.animationDuration=Math.max(12,w/(U*7))+'s'})}
+function alertCheck(d){const e=d.ev,id=e&&e.id||0;if(seen===undefined){seen=id;return}if(!e||id<=seen||!(d.v&&d.v.a))return;seen=id;
+ clearTimeout(alT);al.className='';al.innerHTML=`<div class="t">${esc(e.t)}</div>${e.s?`<div class="s">${esc(e.s)}</div>`:''}${e.m?`<div class="m">${esc(e.m)}</div>`:''}`;
+ al.style.display='block';void al.offsetWidth;al.className=(e.k==='HR'?'HR ':'')+(e.us?'':'op ')+'in';
+ alT=setTimeout(()=>{al.className=al.className.replace(' in','').replace('in','')+' out';alT=setTimeout(()=>{al.style.display='none';al.className=''},420)},e.k==='HR'?7500:4500)}
+function drawLU(d){const L=d.lu||[],N=Math.max(1,...L.map(t=>(t.p||[]).length)),U=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--U'))||12;
+ const rh=Math.min(3.6,Math.max(2.2,40/N));lu.style.setProperty('--rh',(rh*U)+'px');
+ const k=JSON.stringify(L);if(k!==luK){luK=k;lu.innerHTML=`<div class="hd">LINEUPS</div><div class="cols">${L.map(t=>`<div class="col${t.us?' us':''}"><div class="tn">${esc(t.n)}</div>${(t.p||[]).length?t.p.map((p,i)=>`<div class="r"><span class="o">${i+1}</span><span class="n">${esc(p.n)}</span>${p.p?`<span class="p">${esc(p.p)}</span>`:''}</div>`).join(''):'<div class="em">Lineup por definir</div>'}</div>`).join('')}</div>`}
+ lu.style.display='block'}
+function drawFin(d){const f=d.fn;if(!f){fn.style.display='none';return}const k=JSON.stringify(f);if(k!==fnK){fnK=k;
+ const T={n:f.tm,s:f.us,us:1},R={n:f.rv,s:f.th,us:0},rows=f.home?[R,T]:[T,R],w=f.us===f.th?null:(f.us>f.th?1:0);
+ const n=Math.max(f.ml.length,f.rl.length,(f.inn|0)-1,1),hw=f.home?f.us>f.th:f.th>f.us;const ls=lineScore({ml:f.ml,rl:f.rl,inn:n,st:0,top:1,fin:1,hw},rows);
+ fn.innerHTML=`<div class="hd">FINAL${f.r&&f.r!=='Final normal'?`<span class="why">· ${esc(f.r).toUpperCase()}</span>`:''}</div>${rows.map(r=>`<div class="tr${w==null?'':(r.us===w?' w':' l')}"><span class="n">${esc(r.n)}</span><span class="s">${r.s}</span></div>`).join('')}${ls}
+ ${f.mvp?`<div class="mv"><div class="k">⭐ JUGADOR MÁS VALIOSO</div><div class="nm">${esc(f.mvp.n)}</div><div class="ln">${esc(f.mvp.l)}</div></div>`:''}
+ ${(f.top&&f.top.length)||f.pt?`<div class="ds">${f.top&&f.top.length?`<div class="k">DESTACADOS</div>${f.top.map(p=>`<div class="r"><b>${esc(p.n)}</b><span>${esc(p.l)}</span></div>`).join('')}`:''}${f.pt?`<div class="r" style="margin-top:calc(var(--U)*.9)"><b>⚾ ${esc(f.pt.n)}</b><span>${esc(f.pt.l)}</span></div>`:''}</div>`:''}`}
+ fn.style.display='block'}
+function hideAll(){bug.style.display='none';tkSet(false);al.style.display='none';lu.style.display='none';fn.style.display='none'}
+function draw(d){if(!d||d.off){hideAll();return}
+ opts(d.v);colors(d.c);const md=(d.v&&d.v.m)||'sb';
+ if(md==='lu'){bug.style.display='none';tkSet(false);al.style.display='none';fn.style.display='none';drawLU(d);if(seen===undefined)seen=d.ev&&d.ev.id||0;return}
+ if(md==='fin'){bug.style.display='none';tkSet(false);al.style.display='none';lu.style.display='none';drawFin(d);if(seen===undefined)seen=d.ev&&d.ev.id||0;return}
+ lu.style.display='none';fn.style.display='none';drawTk(d);alertCheck(d);const home=!!d.home,tm=d.tm||'Nosotros',rv=d.rv||'Rival',batUs=d.sd!=='op';
  const T={n:tm,s:d.us|0,b:batUs,us:1},R={n:rv,s:d.th|0,b:!batUs,us:0},rows=home?[R,T]:[T,R];
  const bs=d.b||['','',''],outs=Math.max(0,Math.min(3,d.outs|0));
  const dots=[0,1,2].map(i=>`<i class="${i<outs?'on':''}"></i>`).join('');
  const bt=d.bat;let bar;
  if(!d.st)bar=`<span class="nm">Por comenzar</span>`;
- else if(bt)bar=`<span class="lb">AL BATE</span><span class="nm">${esc(bt.n)}</span><span class="av">${bt.h?`<small>HOY</small>${esc(bt.h)}`:''}${bt.a?`<small>AVE</small>${esc(bt.a)}`:''}</span>`;
+ else if(bt)bar=`<span class="lb">AL BATE</span><span class="nm">${esc(bt.n)}</span><span class="av">${bt.h?`<small>HOY</small>${esc(bt.h)}`:''}${bt.a?`<small>AVE</small>${esc(bt.a)}`:''}${bt.r!=null?`<small>HR</small>${esc(bt.r)}`:''}</span>`;
  else bar='';
  const names=showN?[['1ª',bs[0]],['2ª',bs[1]],['3ª',bs[2]]].filter(x=>x[1]).map(x=>x[0]+' '+esc(x[1])).join(' · '):'';
  bug.innerHTML=`<div class="main"><div class="teams">${rows.map(r=>`<div class="row${r.b&&d.st?' bat':''}"><span class="nm">${esc(r.n)}</span><span class="sc">${r.s}</span></div>`).join('')}<div class="info"><span>${d.top?'▲':'▼'} ${d.inn|0}</span><span class="dots">${dots}</span><span class="o">OUTS</span></div></div><div class="dia">${diamond([!!bs[0],!!bs[1],!!bs[2]])}</div></div>${showL?lineScore(d,rows):''}${names?`<div class="runners">${names}</div>`:''}${bar?`<div class="bar">${bar}</div>`:''}`;
@@ -91,7 +175,11 @@ function draw(d){if(!d||d.off){bug.style.display='none';return}
 /* Vista previa dentro de la app: recibe los datos directamente de la app (no usa la nube). */
 const PV=q.get('pv')==='1';
 if(PV){addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.type==='pv')draw(e.data.d)});if(parent!==window)parent.postMessage({type:'pvready'},location.origin)}
-else if(code==='demo'){draw({tm:'Team Perversos',rv:'Tigres',us:4,th:2,inn:3,top:1,outs:2,st:1,sd:'us',home:0,b:['Ricoche','','Noel'],bat:{n:'Robert',u:'20',p:'C',a:'.333',h:'2-3'},ml:[1,0,3],rl:[0,2],v:{n:1,l:1},c:{ac:'#ff5a00',a2:'#ffb000',bg:'#071523'}})}
+else if(code==='demo'){const md=q.get('m')||'sb',DM={tm:'Team Perversos',rv:'Tigres',us:4,th:2,inn:3,top:1,outs:2,st:1,sd:'us',home:0,b:['Ricoche','','Noel'],bat:{n:'Robert',u:'20',p:'C',a:'.333',h:'2-3',r:4},ml:[1,0,3],rl:[0,2],v:{n:1,l:1,m:md,a:1,k:1},c:{ac:'#ff5a00',a2:'#ffb000',bg:'#071523'},
+ tk:[{t:1,n:'Robert',h:'2-3',x:'HR · 3 CE'},{t:1,n:'Noel',h:'1-2',x:'H2'},{t:1,n:'Ricoche',h:'1-1',x:''},{t:0,n:'Pedro',h:'2-2',x:'H3 · 1 CE'}],
+ lu:[{n:'Team Perversos',us:1,p:['Ricoche','Noel','Robert','Estiven Medina','Luis','Carlos','José','Miguel','Ángel','Juan'].map((n,i)=>({n,p:['SS','2B','C','1B','3B','LF','CF','RF','P','DH'][i]}))},{n:'Tigres',us:0,p:['Pedro','Mario','Kevin','Rafael','Jesús','Andrés','Pablo','Víctor','Diego','Óscar'].map(n=>({n,p:''}))}],
+ fn:{tm:'Team Perversos',rv:'Tigres',us:9,th:4,home:0,inn:7,r:'Final normal',ml:[1,0,3,0,2,3,0],rl:[0,2,0,1,0,0,1],mvp:{n:'Robert',l:'3 de 4 · H2 · HR · 2 CA · 4 CE'},top:[{n:'Noel',l:'2 de 3 · H2 · 1 CE'},{n:'Ricoche',l:'2 de 4 · 2 CA'}],pt:{n:'Ángel',l:'7.0 EL · 6 K · 4 C'}}};
+ draw(DM);if(md==='sb')setTimeout(()=>draw(Object.assign({},DM,{ev:{id:Date.now(),k:q.get('k')||'HR',t:q.get('k')==='H2'?'¡DOBLE!':'¡JONRÓN!',s:'Robert · 5º de la temporada · 3 carreras',m:'Team Perversos 7 - 2 Tigres',us:q.get('o')?0:1}})),300)}
 else if(code&&typeof firebase!=='undefined'){try{firebase.initializeApp(FIREBASE_CONFIG);firebase.database().ref('scoreboard/'+code+'/d').on('value',s=>draw(s.val()))}catch(e){console.error(e)}}
 </script>
 </body></html>
