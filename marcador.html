@@ -44,21 +44,15 @@ html,body{margin:0;height:100%;background:transparent!important;overflow:hidden;
 #tk .it{margin-right:calc(var(--U)*2)}#tk .it b{font-weight:900}#tk .it i{font-style:normal;opacity:.75;font-size:.85em;margin-left:calc(var(--U)*.4)}
 #tk .em{opacity:.7;margin-left:calc(var(--U)*2)}
 @keyframes tkm{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-/* ---- Aviso de jugada ---- */
-#al{position:absolute;left:50%;bottom:calc(var(--U)*2.5 + var(--tkh,0px));display:none;transform:translateX(-50%);max-width:calc(var(--U)*78);min-width:calc(var(--U)*34);text-align:center;border-radius:calc(var(--U)*1.4);overflow:hidden;color:var(--on);background:linear-gradient(135deg,var(--a1),color-mix(in srgb,var(--a1) 70%,#000));box-shadow:0 calc(var(--U)*.5) calc(var(--U)*2.5) rgba(0,0,0,.55);padding:calc(var(--U)*1.1) calc(var(--U)*3) calc(var(--U)*1.3)}
-#al.op{background:var(--bgc);color:var(--tx);border:calc(var(--U)*.3) solid var(--a2)}
-#al .t{font-size:calc(var(--U)*4.2);font-weight:950;font-style:italic;letter-spacing:.01em;line-height:1.05;text-transform:uppercase}
-#al.HR .t{font-size:calc(var(--U)*6.2);text-shadow:0 calc(var(--U)*.3) 0 rgba(0,0,0,.25)}
-#al .s{font-size:calc(var(--U)*2.1);font-weight:800;margin-top:calc(var(--U)*.4)}
-#al .m{display:inline-block;font-size:calc(var(--U)*1.6);font-weight:800;margin-top:calc(var(--U)*.7);padding:calc(var(--U)*.3) calc(var(--U)*1.2);border-radius:calc(var(--U)*.8);background:rgba(0,0,0,.22)}
-#al.op .m{background:rgba(var(--ln),.1)}
-#al.HR::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-100%);animation:shn 1.6s .5s ease-in-out 2}
-#al.in{animation:alIn .55s cubic-bezier(.2,1.4,.4,1) both}#al.HR.in{animation:alIn .55s cubic-bezier(.2,1.4,.4,1) both,pul 1s .6s ease-in-out 3}
-#al.out{animation:alOut .4s ease-in both}
-@keyframes alIn{from{opacity:0;transform:translate(-50%,60%) scale(.8)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
-@keyframes alOut{to{opacity:0;transform:translate(-50%,40%) scale(.92)}}
-@keyframes pul{50%{transform:translate(-50%,0) scale(1.05)}}
-@keyframes shn{to{transform:translateX(100%)}}
+/* ---- Aviso de jugada (compacto) ---- */
+#al{position:absolute;left:50%;bottom:calc(var(--U)*1.4 + var(--tkh,0px));display:none;transform:translateX(-50%);max-width:calc(var(--U)*64);height:calc(var(--U)*3.4);align-items:stretch;border-radius:calc(var(--U)*.7);overflow:hidden;background:var(--bgc);color:var(--tx);box-shadow:0 calc(var(--U)*.3) calc(var(--U)*1.2) rgba(0,0,0,.45);font-size:calc(var(--U)*1.6);white-space:nowrap}
+#al .t{display:flex;align-items:center;padding:0 calc(var(--U)*1.1);background:var(--a1);color:var(--on);font-weight:900;letter-spacing:.06em;font-size:.9em}
+#al.op .t{background:rgba(var(--ln),.14);color:var(--a2)}
+#al .s{display:flex;align-items:center;padding:0 calc(var(--U)*1.2);font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#al .s b{font-weight:900;margin-right:calc(var(--U)*.5)}
+#al.in{animation:alIn .35s ease-out both}#al.out{animation:alOut .3s ease-in both}
+@keyframes alIn{from{opacity:0;transform:translate(-50%,40%)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes alOut{to{opacity:0;transform:translate(-50%,40%)}}
 /* ---- Lineups y Final (tarjetas centradas) ---- */
 .big{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:none;color:var(--tx);background:var(--bgc);border-radius:calc(var(--U)*1.6);overflow:hidden;box-shadow:0 calc(var(--U)*.6) calc(var(--U)*3) rgba(0,0,0,.55);animation:bgIn .5s ease-out both}
 @keyframes bgIn{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}
@@ -142,9 +136,10 @@ function drawTk(d){const on=!!(d.v&&d.v.k&&d.st&&Array.isArray(d.tk));tkSet(on);
  requestAnimationFrame(()=>{const lb=tk.querySelector('.lb'),vw=tk.querySelector('.vw'),rl=tk.querySelector('.rl');if(!lb||!rl)return;vw.style.left=lb.offsetWidth+'px';
   const w=rl.scrollWidth/2,U=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--U'))||12;rl.style.animationDuration=Math.max(12,w/(U*7))+'s'})}
 function alertCheck(d){const e=d.ev,id=e&&e.id||0;if(seen===undefined){seen=id;return}if(!e||id<=seen||!(d.v&&d.v.a))return;seen=id;
- clearTimeout(alT);al.className='';al.innerHTML=`<div class="t">${esc(e.t)}</div>${e.s?`<div class="s">${esc(e.s)}</div>`:''}${e.m?`<div class="m">${esc(e.m)}</div>`:''}`;
- al.style.display='block';void al.offsetWidth;al.className=(e.k==='HR'?'HR ':'')+(e.us?'':'op ')+'in';
- alT=setTimeout(()=>{al.className=al.className.replace(' in','').replace('in','')+' out';alT=setTimeout(()=>{al.style.display='none';al.className=''},420)},e.k==='HR'?7500:4500)}
+ clearTimeout(alT);al.className='';const sp=String(e.s||'').split(' · '),t=String(e.t||'').replace(/[¡!]/g,'');
+ al.innerHTML=`<div class="t">${esc(t)}</div>${e.s?`<div class="s"><b>${esc(sp[0])}</b>${sp.length>1?esc(sp.slice(1).join(' · ')):''}</div>`:''}`;
+ al.style.display='flex';void al.offsetWidth;al.className=(e.us?'':'op ')+'in';
+ alT=setTimeout(()=>{al.className=al.className.replace(' in','').replace('in','')+' out';alT=setTimeout(()=>{al.style.display='none';al.className=''},420)},e.k==='HR'?6000:4000)}
 function drawLU(d){const L=d.lu||[],N=Math.max(1,...L.map(t=>(t.p||[]).length)),U=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--U'))||12;
  const rh=Math.min(3.6,Math.max(2.2,40/N));lu.style.setProperty('--rh',(rh*U)+'px');
  const k=JSON.stringify(L);if(k!==luK){luK=k;lu.innerHTML=`<div class="hd">LINEUPS</div><div class="cols">${L.map(t=>`<div class="col${t.us?' us':''}"><div class="tn">${esc(t.n)}</div>${(t.p||[]).length?t.p.map((p,i)=>`<div class="r"><span class="o">${i+1}</span><span class="n">${esc(p.n)}</span>${p.p?`<span class="p">${esc(p.p)}</span>`:''}</div>`).join(''):'<div class="em">Lineup por definir</div>'}</div>`).join('')}</div>`}
