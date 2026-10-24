@@ -187,7 +187,7 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
-const APP_VERSION='3.4.0',APP_BUILD='24/10/2026';
+const APP_VERSION='3.4.1',APP_BUILD='24/10/2026';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
@@ -215,7 +215,7 @@ function brkCard(){const k=S.brk,nx=S.side==='op'?(S.rival||'Rival'):(S.team||'N
  return `<div class="card brk"><div class="bk1">✅ 3 OUTS</div><div class="bk2">Termina la parte ${k.top?'alta':'baja'} de la ${k.inn}ª · ${esc(k.tm)} ${k.r?'anotó '+k.r+(k.r>1?' carreras':' carrera'):'no anotó'}</div><div class="bk3">${esc(S.team||'Nosotros')} ${S.us} - ${S.them} ${esc(S.rival||'Rival')}</div>
  <button class="btn startb" onclick="nextInn()">▶ Pasar a la ${half==='alta'?'alta':'baja'} de la ${S.inning}ª · batea ${esc(nx).toUpperCase()}</button>
  <div class="grid" style="grid-template-columns:1fr 1fr!important"><button class="g" onclick="undo()">↶ Deshacer el último out</button><button class="e" onclick="endGame()">Terminar juego</button></div></div>`}
-function nextInn(){S.brk=null;S.msg='Batea '+(S.side==='op'?(S.rival||'Rival'):(S.team||'Nosotros'))+' · entrada '+S.inning;if(typeof vozSay==='function')vozSay(((S.side==='us')===!S.home?'Parte alta':'Parte baja')+' de la entrada '+S.inning+'. Batea '+(S.side==='op'?(S.rival||'el rival'):(S.team||'nuestro equipo'))+'. '+vozBat());save();render()}
+function nextInn(){S.brk=null;S.msg='Batea '+(S.side==='op'?(S.rival||'Rival'):(S.team||'Nosotros'))+' · entrada '+S.inning;save();render()}
 function pitch(k){if(!S.started||!AP().length)return;S.cnt=S.cnt||{b:0,s:0};
  if(k==='b'&&S.cnt.b>=3){S.cntOn=true;walk(false);return}
  if(k==='s'&&S.cnt.s>=2){S.cntOn=true;ko();return}
@@ -228,8 +228,7 @@ function endHalf(){const sd=S.side||'us',second=(sd==='us')===!!S.home;if(S.star
 function act(fn){if(!AP().length){tab(2);return}hist.push(JSON.stringify(S));if(hist.length>60)hist.shift();ev=[];NS=S.side||'us';const b=cur(),inn=S.inning,r0=b.RBI,L0=(b.log=b.log||[]).length;const pl=NS==='op'?PT():null,b0={H:b.H,hr:b.hr,BB:b.BB,K:b.K},sc0=S.us+S.them;const d=fn(b);const ab=AB_[d.slice(d.indexOf(': ')+2).toLowerCase()];if(ab)b.log.splice(L0,0,{i:inn,a:ab,rbi:b.RBI-r0});
  S.cnt={b:0,s:0};if(pl&&S.cntOn)pl.P=(pl.P||0)+1;
  if(pl){pl.BF++;pl.H+=b.H-b0.H;pl.HR+=b.hr-b0.hr;pl.BB+=b.BB-b0.BB;pl.K+=b.K-b0.K}
- if(typeof txPlay==='function')txPlay(ab,b,NS,S.us+S.them-sc0,b.RBI-r0,pl);
- if(typeof vozPlay==='function')vozPlay(ab,b,NS,S.us+S.them-sc0,b.RBI-r0,pl);S.msg=d+(ev.length?' · '+ev.join(', '):'');save();render()}
+ if(typeof txPlay==='function')txPlay(ab,b,NS,S.us+S.them-sc0,b.RBI-r0,pl);S.msg=d+(ev.length?' · '+ev.join(', '):'');save();render()}
 function hit(n){if(n<4&&S.bases.some(x=>x!=null)){openHit(n);return}hitDo(n,null)}
 function hitDo(n,dest){const names=['','Sencillo','Doble','Triple','Jonrón'];act(b=>{b.AB++;b.H++;b[n==4?'hr':'s'+n]++;const nb=[null,null,null];let outs=0;
  for(let i=2;i>=0;i--){const r=S.bases[i];if(r==null)continue;let t=dest?dest[i]:(i+n>=3?'H':i+n+1);if(t==='s')t=i+1;
@@ -250,19 +249,18 @@ function walk(err){act(b=>{if(err)b.AB++;else b.BB++;const bs=S.bases;if(bs[0]!=
 function ko(){act(b=>{b.AB++;b.K++;out();nxt();return nm(b)+': ponchado'})}
 function fo(){act(b=>{b.AB++;out();nxt();return nm(b)+': out'})}
 function sac(){act(b=>{b.SAC++;if(S.bases[2]!=null&&S.outs<2){run(S.bases[2],b.id);S.bases[2]=null}out();nxt();return nm(b)+': sacrificio'})}
-function undo(){if(!hist.length)return;try{speechSynthesis.cancel()}catch(e){}S=JSON.parse(hist.pop());save();render()}
+function undo(){if(!hist.length)return;S=JSON.parse(hist.pop());save();render()}
 function runner(i){const r=P(S.bases[i]);if(!r)return;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div><h3>${esc(nm(r))} en ${i+1}ª base</h3>
 <button class="btn" onclick="rn(${i},'adv')">Avanza una base${i==2?' (anota)':''}</button>
 <button class="btn" onclick="rn(${i},'run')">Anotó</button>
 <button class="btn" onclick="rn(${i},'out')">Out en las bases</button>
 <button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
 const closeS=()=>{document.getElementById('sheet').innerHTML=''};
-function rn(i,a){closeS();hist.push(JSON.stringify(S));ev=[];const sd0=S.side;const id=S.bases[i],n=nm(P(id));let d;
+function rn(i,a){closeS();hist.push(JSON.stringify(S));ev=[];const id=S.bases[i],n=nm(P(id));let d;
 if(a=='adv'){if(i==2){S.bases[2]=null;run(id,null);d=n+' avanza'}else if(S.bases[i+1]==null){S.bases[i+1]=id;S.bases[i]=null;d=n+' avanza a '+(i+2)+'ª'}else{hist.pop();return}}
 else if(a=='run'){S.bases[i]=null;run(id,null);d=n+' anotó'}
 else{S.bases[i]=null;(P(id).log=P(id).log||[]).push({i:S.inning,a:'*'});out();d=n+' out en las bases'}
 if(typeof txPlay==='function'&&(a=='run'||(a=='adv'&&i==2)))txPlay('RUN',P(id),S.side,1,0,null);
-if(typeof vozPlay==='function'&&(a=='run'||a=='out'||(a=='adv'&&i==2)))vozPlay(a=='out'?'ROUT':'RUN',P(id),sd0,a=='out'?0:1,0,null);
 S.msg=d+(a=='adv'||a=='run'?'':(ev.length?' · '+ev.join(', '):''));save();render()}
 function addP(){const el=document.getElementById('np'),v=el.value.trim();if(!v)return;S.players.push(mk(v));save();render()}
 function delP(id){if(!confirm('¿Quitar jugador?'))return;S.players=S.players.filter(p=>p.id!==id);S.bases=S.bases.map(b=>b===id?null:b);S.idx=0;save();render()}
@@ -435,7 +433,7 @@ function pitSheet(){const ids=new Set(),list=[];const add=p=>{if(p&&!ids.has(p.i
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3 style="margin:0 0 4px">⚾ ¿Quién lanza?</h3><div style="font-size:12px;color:var(--mu);margin-bottom:8px">Desde ahora, lo que haga ${esc(S.rival||'el rival')} al bate se le cuenta a este lanzador. Lo que ya pasó se queda con el anterior.</div>${list.map(p=>`<button class="btn" style="text-align:left;${p.id===S.pit?'border-color:var(--ac);color:var(--ac)':''}" onclick="pitSet(${p.id})">${p.id===S.pit?'✓ ':''}${esc(nm(p))}${posOf(p)?' · '+posOf(p):''}${(S.pl||{})[p.id]?' · '+ipF((S.pl[p.id]).outs)+' EL':''}</button>`).join('')||'<div style="color:var(--mu);margin-bottom:8px">Agrega jugadores en la pestaña Equipo.</div>'}<button class="btn" onclick="closeS()">Cancelar</button></div></div>`}
 function pitEfe(id){const a=seasonPit().find(x=>x.id===id),t=(S.pl||{})[id],o=(a?a.outs:0)+(t?t.outs:0),r=(a?a.R:0)+(t?t.R:0);return o?efe({outs:o,R:r}):''}
 function pitSet(id){closeS();const prev=S.pit;hist.push(JSON.stringify(S));S.pit=id;S.msg='Ahora lanza '+pitName();
- if(S.started&&prev!=null&&prev!==id&&typeof txNote==='function'){const e=pitEfe(id);txNote('CAMBIO DE LANZADOR',pitName()+' · '+(e?'EFE '+e+' en la temporada':'entra a lanzar'));if(typeof vozSay==='function')vozSay('Cambio de lanzador en '+(S.team||'nuestro equipo')+'. Entra a lanzar '+pitName()+(e?', con efectividad de '+e+' en la temporada.':'.'))}
+ if(S.started&&prev!=null&&prev!==id&&typeof txNote==='function'){const e=pitEfe(id);txNote('CAMBIO DE LANZADOR',pitName()+' · '+(e?'EFE '+e+' en la temporada':'entra a lanzar'))}
  save();render()}
 function subSheet(){if(!S.players.length){tab(2);return}SUBOUT=null;drawSub()}
 function drawSub(){let h;
@@ -444,7 +442,7 @@ function drawSub(){let h;
   h=`<h3>Entra por ${esc(nm(o))}</h3>`+(bench.map(r=>`<button class="btn" onclick="doSub(${r.id})">${esc(nm(r))}</button>`).join('')||'<div style="color:var(--mu);font-size:13px;margin-bottom:8px">No hay jugadores en la banca. Agrega uno nuevo:</div>')+'<div class="row" style="margin:6px 0 8px"><input id="sn" placeholder="Nuevo jugador"><input id="sm" placeholder="#" inputmode="numeric" style="flex:0 0 60px;text-align:center"><button class="btn" style="flex:0 0 auto;width:auto;margin:0;padding:12px 18px" onclick="subNew()">Entra</button></div><button class="btn" onclick="SUBOUT=null;drawSub()">← Atrás</button>'}
  document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto">${h}</div></div>`}
 function subNew(){const n=document.getElementById('sn').value.trim(),m=document.getElementById('sm').value.trim();if(!n)return;const r={id:uid(),name:n,num:m};S.roster.push(r);doSub(r.id)}
-function doSub(newId){const old=P(SUBOUT),r=S.roster.find(x=>x.id===newId);if(!old||!r)return;closeS();hist.push(JSON.stringify(S));const i=S.players.indexOf(old);S.subs=S.subs||[];S.subs.push({...old,sub:true});S.players[i]={...mk(r.name,r.num),id:newId,pos:old.pos||r.pos||''};S.bases=S.bases.map(b=>b===old.id?newId:b);S.msg='Sustitución: entra '+nm(r)+' por '+nm(old);if(S.started&&typeof txNote==='function')txNote('CAMBIO',String(r.name||'')+' · entra por '+String(old.name||''));if(S.started&&typeof vozSay==='function')vozSay('Cambio en '+(S.team||'nuestro equipo')+'. Entra '+String(r.name||'')+' por '+String(old.name||'')+'.');SUBOUT=null;save();render()}
+function doSub(newId){const old=P(SUBOUT),r=S.roster.find(x=>x.id===newId);if(!old||!r)return;closeS();hist.push(JSON.stringify(S));const i=S.players.indexOf(old);S.subs=S.subs||[];S.subs.push({...old,sub:true});S.players[i]={...mk(r.name,r.num),id:newId,pos:old.pos||r.pos||''};S.bases=S.bases.map(b=>b===old.id?newId:b);S.msg='Sustitución: entra '+nm(r)+' por '+nm(old);if(S.started&&typeof txNote==='function')txNote('CAMBIO',String(r.name||'')+' · entra por '+String(old.name||''));SUBOUT=null;save();render()}
 function baseSheet(){const b=S.base;document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3>Acumulado anterior</h3><div style="font-size:13px;color:var(--mu);margin-bottom:10px">${b?`Cargado: ${b.players.length} jugadores · récord ${b.w}-${b.l}. Si importas otro archivo, reemplaza este.`:'Carga el archivo .json con los totales anteriores (jugadores, juegos y récord). Se suma a las estadísticas de temporada.'}</div><input type="file" id="bf" accept=".json,application/json"><textarea id="bt" placeholder="…o pega aquí el contenido del archivo" style="width:100%;height:90px;margin:8px 0;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);padding:8px;font-size:16px"></textarea><div id="bm" style="color:var(--rd);font-size:13px;min-height:18px;margin-bottom:6px"></div><button class="btn" style="background:var(--ac);color:#fff" onclick="baseGo()">Importar</button>${b?'<button class="btn" style="color:var(--rd)" onclick="baseDel()">Quitar acumulado</button>':''}<button class="btn" onclick="closeS()">Cerrar</button></div></div>`}
 function baseGo(){const f=document.getElementById('bf').files[0],t=document.getElementById('bt').value.trim(),m=document.getElementById('bm');const run=txt=>{const r=importBase(txt);if(r)m.textContent=r;else closeS()};
  if(f){const rd=new FileReader();rd.onload=()=>run(rd.result);rd.readAsText(f)}else if(t)run(t);else m.textContent='Elige el archivo o pega el contenido'}
@@ -756,7 +754,7 @@ cloudInit();
    Publica el marcador en scoreboard/CODIGO/d. marcador.html?c=CODIGO lo muestra como superposición web en CameraFi Live.
    Se envía solo cuando cambia algo (cada jugada pasa por save()). Requiere sesión iniciada en ☁. */
 const TXKEY='softball_tx';
-let TX=(()=>{let o=null;try{o=JSON.parse(localStorage.getItem(TXKEY)||'null')}catch(e){}o=o||{};return {code:o.code||'',on:!!o.on,p:o.p||'tl',s:+o.s||1,n:!!o.n,l:!!o.l,m:['sb','lu','fin'].includes(o.m)?o.m:'sb',a:o.a!==false,k:o.k!==false,c:o.c!==false,pal:typeof o.pal==='string'?o.pal:'',vz:['off','tab','tx','both'].includes(o.vz)?o.vz:'tab',vr:+o.vr||1.05,rs:o.rs!==false,rd:+o.rd||12}})();
+let TX=(()=>{let o=null;try{o=JSON.parse(localStorage.getItem(TXKEY)||'null')}catch(e){}o=o||{};return {code:o.code||'',on:!!o.on,p:o.p||'tl',s:+o.s||1,n:!!o.n,l:!!o.l,m:['sb','lu','fin'].includes(o.m)?o.m:'sb',a:o.a!==false,k:o.k!==false,c:o.c!==false,pal:typeof o.pal==='string'?o.pal:'',rs:o.rs!==false,rd:+o.rd||12}})();
 let txT=null,txLast='',txErr='',txAt=0,TXEV=null;
 /* ===== Avisos de jugadas en la transmisión ===== */
 function txPlay(ab,b,side,runs,rbi,pl){if(!b)return;const us=side!=='op',tn=us?(S.team||'Nosotros'):(S.rival||'Rival'),n=String(b.name||'');let t='',x=[],k=ab;
@@ -768,41 +766,6 @@ function txPlay(ab,b,side,runs,rbi,pl){if(!b)return;const us=side!=='op',tn=us?(
  if(!t&&runs>0){t=runs>1?'¡CARRERAS!':'¡CARRERA!';k='RUN';x=ab==='RUN'?[n+' anota',us?'':tn]:[n,{BB:'base por bolas',SF:'sacrificio',E:'llega por error',FC:'jugada de selección',OUT:'out',DP:'doble play'}[ab]||'',us?'':tn,rbi?imp(rbi):'']}
  if(!t)return;
  TXEV={id:Date.now(),k,t,s:x.filter(Boolean).join(' · '),m:runs>0?`${S.team||'Nosotros'} ${S.us} - ${S.them} ${S.rival||'Rival'}`:'',us:us?1:0};txQueue()}
-/* ===================== NARRADOR (voz automática) =====================
-   Usa la voz del propio dispositivo (no necesita internet). Puede sonar en la tablet,
-   dentro del marcador de la transmisión (CameraFi), o en ambos. */
-let VZ=null;
-const vzLocal=()=>TX.vz==='tab'||TX.vz==='both',vzTx=()=>TX.vz==='tx'||TX.vz==='both';
-function vzVoice(){try{const vs=speechSynthesis.getVoices()||[],L=v=>String(v.lang||'').replace('_','-');for(const p of ['es-US','es-MX','es-419','es-DO','es-ES']){const v=vs.find(v=>L(v)===p);if(v)return v}return vs.find(v=>/^es/i.test(L(v)))||null}catch(e){return null}}
-function speakLocal(t){try{if(!('speechSynthesis' in window))return;const u=new SpeechSynthesisUtterance(t),v=vzVoice();u.lang=v?v.lang:'es-US';if(v)u.voice=v;u.rate=TX.vr||1.05;speechSynthesis.speak(u)}catch(e){}}
-function vozSay(t){t=String(t||'').replace(/\s+/g,' ').trim();if(!t||TX.vz==='off')return;if(vzLocal())speakLocal(t);if(vzTx()){VZ={id:Date.now(),t};txQueue()}}
-const vzAvg=x=>{x=String(x||'');return x==='1.000'?'mil':x.startsWith('.')?String(parseInt(x.slice(1),10)):x};
-const vzN=(n,a,b)=>n+' '+(n===1?a:b);
-function vozBat(){if(!S.started||S.brk||!AP().length)return '';const b=cur(),n=String(b.name||''),us=S.side!=='op';
- let t=us?'Al bate, '+n+'.':'Al bate por '+(S.rival||'el rival')+', '+n+'.';
- if(b.AB)t+=' Lleva '+b.H+' de '+b.AB+' en el partido.';
- if(us){let AB=b.AB||0,H=b.H||0;try{const x=seasonStats(true).find(q=>q.id===b.id);if(x){AB+=x.AB||0}}catch(e){}const hr=txHR(b);
-  if(AB)t+=' Batea para '+vzAvg(txSeason(b))+(hr?' con '+vzN(hr,'jonrón','jonrones'):'')+' en la temporada.';else if(hr)t+=' Tiene '+vzN(hr,'jonrón','jonrones')+'.'}
- return t}
-const vzScore=()=>(S.team||'Nosotros')+' '+S.us+', '+(S.rival||'el rival')+' '+S.them+'.';
-function vozPlay(ab,b,side,runs,rbi,pl){if(TX.vz==='off'||!b)return;const us=side!=='op',n=String(b.name||'');let t='';
- if(ab==='HR'){const h=us?txHR(b):0;t=(runs>=4?'¡Grand slam de '+n+'!':runs>1?'¡Jonrón de '+n+', de '+runs+' carreras!':'¡Jonrón solitario de '+n+'!')+(us?(h===1?' Su primer jonrón de la temporada.':' Su jonrón número '+h+' de la temporada.'):'')}
- else if(ab==='H3')t='¡Triple de '+n+'!';else if(ab==='H2')t='¡Doble de '+n+'!';else if(ab==='H1')t='¡'+n+' pega hit!';
- else if(ab==='K')t=us?n+' se poncha.':'¡Ponche! '+(pl?pl.name+' poncha a '+n+'.':n+' ponchado.');
- else if(ab==='BB')t='Base por bolas para '+n+'.';else if(ab==='E')t=n+' se embasa por error.';
- else if(ab==='SF')t='Sacrificio de '+n+'.';else if(ab==='DP')t='¡Doble play!';else if(ab==='TP')t='¡Triple play!';
- else if(ab==='FC')t='Jugada de selección.';else if(ab==='OUT')t='Out de '+n+'.';
- else if(ab==='RUN')t='¡Anota '+n+'!';else if(ab==='ROUT')t='Out en las bases.';
- if(ab!=='HR'&&ab!=='RUN'&&rbi>0)t+=' '+(rbi>1?'Impulsa '+rbi+' carreras.':'Impulsa una carrera.');
- if(runs>0)t+=' '+vzScore();
- if(S.brk)t+=' Tres outs. Termina la parte '+(S.brk.top?'alta':'baja')+' de la entrada '+S.brk.inn+'.'+(runs>0?'':' '+vzScore());
- else if(['K','OUT','SF','DP','FC','ROUT','TP'].includes(ab)&&S.outs)t+=' '+(S.outs===1?'Un out.':'Dos outs.');
- if(!S.brk&&ab!=='RUN'&&ab!=='ROUT')t+=' '+vozBat();
- vozSay(t)}
-function vozFin(){const g=S.games[0];if(!g)return;const m=mvp(g.players||[]),w=g.us>g.them?'¡Gana '+(g.team||'nuestro equipo')+'!':g.us<g.them?'Gana '+(g.rival||'el rival')+'.':'Empate.';
- vozSay('Final del juego. '+(g.team||'Nosotros')+' '+g.us+', '+(g.rival||'el rival')+' '+g.them+'. '+w+(m?' Jugador más valioso: '+m.name+'.':''))}
-function vozTest(){const was=TX.vz;if(was==='off')TX.vz='tab';vozSay('Probando el narrador. '+(S.started&&!S.brk&&AP().length?vozBat():'Al bate, Alex. Lleva 2 de 3 en el partido. Batea para 423 con 10 jonrones en la temporada.'));TX.vz=was}
-try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
 /* Resumen entre entradas: carreras por entrada + lineups con lo que lleva cada jugador */
 function txLine(p){const AB=p.AB|0,H=p.H|0,x=[];x.push(AB||p.BB||p.SAC||p.R?H+'-'+AB:'—');
  [[p.s2,'H2'],[p.s3,'H3'],[p.hr,'HR'],[p.BB,'BB']].forEach(([v,l])=>{if(v>0)x.push((v>1?v+' ':'')+l)});if(p.RBI>0)x.push(p.RBI+' CE');if(p.R>0)x.push(p.R+' CA');return x.join(' · ')}
@@ -813,8 +776,7 @@ function txBreak(){const used=p=>(p.AB|0)+(p.BB|0)+(p.SAC|0)+(p.R|0)>0,row=(p,su
  return {id:S.brk.at,dur:TX.rd||12,inn:S.brk.inn,top:S.brk.top,t:S.brk.tm,home:S.home?1:0,lu:S.home?[riv,mine]:[mine,riv],ml:(S.ml||[]).map(x=>x==null?-1:x|0),rl:(S.rl||[]).map(x=>x==null?-1:x|0)}}
 function txNote(t,s){TXEV={id:Date.now(),k:'CH',t,s,m:'',us:1};txQueue()}
 /* Al comenzar el juego se pasa solo al marcador; al terminarlo, al resultado final. */
-function txAuto(w){if(typeof vozSay==='function'){if(w==='start')vozSay('¡Comienza el juego! '+(S.home?(S.rival||'El rival')+' visita a '+(S.team||'nuestro equipo'):(S.team||'Nuestro equipo')+' visita a '+(S.rival||'el rival'))+'. '+vozBat());if(w==='fin')vozFin()}
-if(w==='start'&&TX.m!=='sb'){TX.m='sb';txSave()}if(w==='fin'&&TX.on){TX.m='fin';txSave()}txQueue()}
+function txAuto(w){if(w==='start'&&TX.m!=='sb'){TX.m='sb';txSave()}if(w==='fin'&&TX.on){TX.m='fin';txSave()}txQueue()}
 function txExtra(p){const o=[];[[p.s2,'H2'],[p.s3,'H3'],[p.hr,'HR']].forEach(([v,l])=>{if(v>0)o.push((v>1?v+' ':'')+l)});if(p.RBI>0)o.push(p.RBI+' CE');return o.join(' · ')}
 const txSave=()=>lss(TXKEY,JSON.stringify(TX));
 function txNewCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint32Array(6);crypto.getRandomValues(r);return Array.from(r,v=>a[v%a.length]).join('')}
@@ -834,7 +796,7 @@ function txData(){const st=!!S.started,sd=S.side||'us',op=sd==='op',ap=AP(),b=st
  if(TX.a&&TXEV&&Date.now()-TXEV.id<60000)d.ev=TXEV;
  if(st&&TX.c&&!S.brk)d.cnt=[(S.cnt||{}).b|0,(S.cnt||{}).s|0];
  d.ver=APP_VERSION;
- if(st&&TX.rs&&S.brk&&S.brk.at&&Date.now()-S.brk.at<120000)d.br=txBreak();d.v.vt=vzTx()?1:0;d.v.vr=TX.vr||1.05;if(vzTx()&&VZ&&Date.now()-VZ.id<60000)d.vz=VZ;
+ if(st&&TX.rs&&S.brk&&S.brk.at&&Date.now()-S.brk.at<120000)d.br=txBreak();
  if(TX.k&&st){d.tk=[];const add=(ps,t)=>ps.forEach(p=>{if((p.H|0)>0)d.tk.push({t,n:String(p.name||''),h:(p.H|0)+'-'+(p.AB|0),x:txExtra(p)})});add(gamePlayers(),1);if(S.opp)add(S.opp.players,0)}
  if(TX.m==='lu'){const mine={n:S.team||'Nosotros',us:1,p:S.players.map(p=>({n:String(p.name||''),p:String(posOf(p)||'')}))},riv={n:S.rival||'Rival',us:0,p:(S.opp?S.opp.players:[]).map(p=>({n:String(p.name||''),p:String(p.pos||'')}))};d.lu=S.home?[riv,mine]:[mine,riv]}
  if(TX.m==='fin'){const g=S.games[0];if(g){const ps=g.players||[],m=mvp(ps),top=[...ps].filter(p=>p.H>0&&(!m||p.id!==m.id)).sort((a,b)=>sc(b)-sc(a)).slice(0,3),pt=[...(g.pit||[])].sort((a,b)=>b.outs-a.outs)[0];
@@ -864,7 +826,6 @@ ${lb('Posición')}<div class="sg">${[['tl','↖ Arriba izq.'],['tr','↗ Arriba 
 ${lb('Tamaño')}<div class="sg">${[[.8,'Pequeño'],[1,'Normal'],[1.25,'Grande'],[1.5,'Muy grande']].map(x=>o(x[1],TX.s==x[0],`txSet('s',${x[0]})`)).join('')}</div>
 ${lb('Qué se ve en la transmisión')}<div class="sg">${o('📊 Marcador',TX.m==='sb',"txSet('m','sb')")}${o('📋 Lineups',TX.m==='lu',"txSet('m','lu')")}${o('🏁 Final',TX.m==='fin',"txSet('m','fin')")}</div><div class="chint" style="margin-top:-4px">${TX.m==='fin'&&!S.games.length?'<b style="color:var(--ac2)">Aún no hay juegos guardados para mostrar el final.</b> ':''}Al comenzar el juego cambia solo a Marcador y al terminarlo a Final.</div>
 ${lb('📋 Resumen al cambiar de entrada')}<div class="sg">${o('Apagado',!TX.rs,"txSet('rs',false)")}${[8,12,20].map(n=>o(n+' seg',TX.rs&&TX.rd==n,`TX.rs=true;txSet('rd',${n})`)).join('')}</div><div class="chint" style="margin-top:-4px">Con el 3er out, la transmisión muestra por unos segundos las carreras por entrada y los dos lineups con lo que lleva cada jugador. Luego vuelve sola al marcador.</div>
-${lb('🎙 Narrador (voz automática)')}<div class="sg">${o('Apagado',TX.vz==='off',"txSet('vz','off')")}${o('En la tablet',TX.vz==='tab',"txSet('vz','tab')")}${o('En el celular de la cámara',TX.vz==='tx',"txSet('vz','tx')")}${o('Ambos',TX.vz==='both',"txSet('vz','both')")}</div><div class="sg">${o('🐢 Lenta',TX.vr==0.9,"txSet('vr',0.9)")}${o('Normal',TX.vr==1.05,"txSet('vr',1.05)")}${o('🐇 Rápida',TX.vr==1.2,"txSet('vr',1.2)")}<button onclick="vozTest()">▶ Probar</button></div><div class="chint" style="margin-top:-4px">Anuncia hits, jonrones, carreras, ponches, outs, al bateador con sus números, los cambios de lanzador y de jugador, y el final. <b>Para que se escuche en la transmisión:</b> CameraFi solo graba lo que entra por el micrófono del celular, no el sonido de la página del marcador. Deja <b>En la tablet</b>, sube el volumen y pon la tablet (o una bocina Bluetooth conectada a ella) cerca del celular de la cámara.${'speechSynthesis' in window?'':' <b style="color:var(--rd)">Este dispositivo no tiene voz disponible.</b>'}</div>
 ${lb('Mostrar también')}<div class="sg">${o('🔔 Avisos de jugadas',TX.a,"txSet('a',!TX.a)")}${o('📰 Cinta de hits',TX.k,"txSet('k',!TX.k)")}${o('⚾ Bolas y strikes',TX.c,"txSet('c',!TX.c)")}</div><div class="sg">${o('Nombres de corredores',TX.n,"txSet('n',!TX.n)")}${o('Carreras por entrada',TX.l,"txSet('l',!TX.l)")}</div>
 ${lb('Enlace para CameraFi Live (Widget → WEB → URL #1)')}<input id="txu" readonly value="${esc(txUrl())}" onclick="this.select()">
 <button class="btn" id="txc" onclick="txCopy()">📋 Copiar enlace</button><button class="btn" onclick="txPrev()">👁 Vista previa</button>
