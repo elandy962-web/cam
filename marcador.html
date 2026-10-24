@@ -86,9 +86,26 @@ html,body{margin:0;height:100%;background:transparent!important;overflow:hidden;
 #fn .ds .r{display:flex;gap:calc(var(--U)*1);align-items:baseline;font-size:calc(var(--U)*1.8);margin-top:calc(var(--U)*.5)}#fn .ds .r b{white-space:nowrap}#fn .ds .r span{opacity:.8;font-size:.85em}
 #fn .why{font-size:.5em;opacity:.85;margin-left:calc(var(--U)*1);letter-spacing:.04em}
 #vzp{position:absolute;left:50%;top:calc(var(--U)*1.2);transform:translateX(-50%);display:none;padding:calc(var(--U)*.6) calc(var(--U)*1.4);border-radius:calc(var(--U)*.8);background:var(--bgc);color:var(--tx);font-weight:800;font-size:calc(var(--U)*1.5);box-shadow:0 calc(var(--U)*.3) calc(var(--U)*1) rgba(0,0,0,.4);cursor:pointer}
+/* ---- Resumen entre entradas ---- */
+#rs{width:calc(var(--U)*92);max-height:calc(100vh - var(--U)*2)}
+#rs .hd{font-size:calc(var(--U)*2.2);padding:calc(var(--U)*.6)}
+#rs .lt{display:grid;font-variant-numeric:tabular-nums;font-weight:800;font-size:calc(var(--U)*1.6);padding:calc(var(--U)*.6) calc(var(--U)*1.6);row-gap:calc(var(--U)*.2);border-bottom:1px solid rgba(var(--ln),.12)}
+#rs .lt span{text-align:center}#rs .lt .h{opacity:.55;font-size:.8em}#rs .lt .t{text-align:left;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:calc(var(--U)*.6)}
+#rs .lt .R{color:var(--a2);font-weight:950}#rs .lt .x{border-left:1px solid rgba(var(--ln),.18)}
+#rs .cols{display:grid;grid-template-columns:1fr 1fr}#rs .col+.col{border-left:1px solid rgba(var(--ln),.12)}
+#rs .tn{font-weight:900;text-transform:uppercase;text-align:center;font-size:calc(var(--U)*1.7);padding:calc(var(--U)*.5);border-bottom:1px solid rgba(var(--ln),.12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#rs .col.us .tn{color:var(--a2)}
+#rs .r{display:flex;align-items:center;gap:calc(var(--U)*.8);padding:0 calc(var(--U)*1.2);height:var(--rh);font-size:calc(var(--rh)*.46);font-weight:700}
+#rs .r:nth-child(odd){background:rgba(var(--ln),.04)}
+#rs .r .o{flex:0 0 calc(var(--rh)*.7);height:calc(var(--rh)*.7);border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(var(--ln),.12);font-weight:900;font-size:.8em}
+#rs .col.us .r .o{background:var(--a1);color:var(--on)}
+#rs .r .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#rs .r .l{white-space:nowrap;font-variant-numeric:tabular-nums;opacity:.7;font-size:.9em}#rs .r.hh .l{opacity:1;color:var(--a2);font-weight:900}
+#rs .bar2{height:calc(var(--U)*.45);background:rgba(var(--ln),.1)}#rs .bar2 i{display:block;height:100%;background:var(--a1);transform-origin:left;animation:rsT linear forwards}
+@keyframes rsT{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 </style>
 </head><body>
-<div id="bug" class="tl"></div><div id="tk"></div><div id="al"></div><div id="lu" class="big"></div><div id="vzp">🔊 Toca aquí una vez para activar la voz</div><div id="fn" class="big"></div>
+<div id="bug" class="tl"></div><div id="tk"></div><div id="al"></div><div id="lu" class="big"></div><div id="vzp">🔊 Toca aquí una vez para activar la voz</div><div id="fn" class="big"></div><div id="rs" class="big"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
@@ -158,7 +175,7 @@ function drawFin(d){const f=d.fn;if(!f){fn.style.display='none';return}const k=J
  ${(f.top&&f.top.length)||f.pt?`<div class="ds">${f.top&&f.top.length?`<div class="k">DESTACADOS</div>${f.top.map(p=>`<div class="r"><b>${esc(p.n)}</b><span>${esc(p.l)}</span></div>`).join('')}`:''}${f.pt?`<div class="r" style="margin-top:calc(var(--U)*.9)"><b>⚾ ${esc(f.pt.n)}</b><span>${esc(f.pt.l)}</span></div>`:''}</div>`:''}`}
  fn.style.display='block'}
 /* Si la app ya va en una versión más nueva que este marcador, se recarga una vez para traer el archivo nuevo. */
-const MV='3.3.0';
+const MV='3.4.0';
 const vn=v=>String(v||'').split('.').map(n=>parseInt(n,10)||0),vgt=(a,b)=>{const x=vn(a),y=vn(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false};
 function verCheck(v){if(!v||PV||!vgt(v,MV))return;const k='mv_try_'+v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){return}const u=new URL(location.href);u.searchParams.set('v',v);location.replace(u.href)}
 /* Narrador: la app manda el texto y este marcador lo dice con la voz del celular de la cámara. */
@@ -170,13 +187,27 @@ addEventListener('pointerdown',vzUnlock);addEventListener('touchstart',vzUnlock)
 try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
 function vzCheck(d){const on=!!(d&&d.v&&d.v.vt)&&!PV;vzp.style.display=on&&!vzOK&&Date.now()-vzT0<45000?'block':'none';
  const v=d&&d.vz,id=v&&v.id||0;if(vzSeen===undefined){vzSeen=id;return}if(!on||!v||id<=vzSeen)return;vzSeen=id;vzSpeak(v.t,d.v.vr)}
-function hideAll(){bug.style.display='none';tkSet(false);al.style.display='none';lu.style.display='none';fn.style.display='none'}
+const rs=document.getElementById('rs');let brSeen=undefined,brUntil=0,brT=null,lastD=null;
+function drawRS(b){const ml=b.ml||[],rl=b.rl||[],N=Math.max(ml.length,rl.length,b.inn|0,1),s0=Math.max(0,N-9),cols=[];for(let i=s0;i<N;i++)cols.push(i);
+ const vis=(i)=>i<(b.inn|0)||(i===(b.inn|0)-1),cell=(a,i,isVis)=>{const v=a[i];if(v!=null&&v>=0)return v;const inn=b.inn|0,done=isVis?i<inn:(i<inn-1||(i===inn-1&&!b.top));return done?0:''};
+ const L=b.lu||[],g=`grid-template-columns:minmax(0,1fr) repeat(${cols.length},calc(var(--U)*2.6)) calc(var(--U)*3.2) calc(var(--U)*3)`;
+ const lt=`<div class="lt" style="${g}"><span></span>${cols.map(i=>`<span class="h">${i+1}</span>`).join('')}<span class="h x">C</span><span class="h">H</span>${L.map((t,k)=>`<span class="t">${esc(t.n)}</span>${cols.map(i=>`<span>${cell(t.us?ml:rl,i,k===0)}</span>`).join('')}<span class="R x">${t.R|0}</span><span>${t.H|0}</span>`).join('')}</div>`;
+ const N2=Math.max(1,...L.map(t=>(t.p||[]).length)),U=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--U'))||12;
+ rs.style.setProperty('--rh',(Math.min(3.1,Math.max(1.9,34/N2))*U)+'px');
+ rs.innerHTML=`<div class="hd">FIN DE LA PARTE ${b.top?'ALTA':'BAJA'} · ${b.inn|0}ª ENTRADA</div>${lt}<div class="cols">${L.map(t=>`<div class="col${t.us?' us':''}"><div class="tn">${esc(t.n)}</div>${(t.p||[]).map((p,i)=>`<div class="r${p.h?' hh':''}"><span class="o">${p.n.startsWith('↳')?'↳':i+1}</span><span class="n">${esc(p.n.replace(/^↳ /,''))}</span><span class="l">${esc(p.l)}</span></div>`).join('')}</div>`).join('')}</div><div class="bar2"><i style="animation-duration:${b.dur|0}s"></i></div>`;
+ rs.style.display='block'}
+function brCheck(d){const b=d.br,id=b&&b.id||0;if(brSeen===undefined){brSeen=id;return false}
+ if(b&&id>brSeen){brSeen=id;const ms=Math.max(4,b.dur|0)*1000;brUntil=Date.now()+ms;clearTimeout(brT);drawRS(b);brT=setTimeout(()=>{brUntil=0;rs.style.display='none';if(lastD)draw(lastD)},ms);return true}
+ return Date.now()<brUntil}
+function hideAll(){rs.style.display='none';brUntil=0;bug.style.display='none';tkSet(false);al.style.display='none';lu.style.display='none';fn.style.display='none'}
 function draw(d){if(d&&d.ver)verCheck(d.ver);if(!d||d.off){hideAll();vzp.style.display='none';return}
  vzCheck(d);
  opts(d.v);colors(d.c);const md=(d.v&&d.v.m)||'sb';
- if(md==='lu'){bug.style.display='none';tkSet(false);al.style.display='none';fn.style.display='none';drawLU(d);if(seen===undefined)seen=d.ev&&d.ev.id||0;return}
- if(md==='fin'){bug.style.display='none';tkSet(false);al.style.display='none';lu.style.display='none';drawFin(d);if(seen===undefined)seen=d.ev&&d.ev.id||0;return}
- lu.style.display='none';fn.style.display='none';drawTk(d);alertCheck(d);const home=!!d.home,tm=d.tm||'Nosotros',rv=d.rv||'Rival',batUs=d.sd!=='op';
+ if(md==='lu'){rs.style.display='none';bug.style.display='none';tkSet(false);al.style.display='none';fn.style.display='none';drawLU(d);if(seen===undefined)seen=d.ev&&d.ev.id||0;return}
+ if(md==='fin'){rs.style.display='none';bug.style.display='none';tkSet(false);al.style.display='none';lu.style.display='none';drawFin(d);if(seen===undefined)seen=d.ev&&d.ev.id||0;return}
+ lu.style.display='none';fn.style.display='none';lastD=d;
+ if(brCheck(d)){bug.style.display='none';tkSet(false);alertCheck(d);return}
+ rs.style.display='none';drawTk(d);alertCheck(d);const home=!!d.home,tm=d.tm||'Nosotros',rv=d.rv||'Rival',batUs=d.sd!=='op';
  const T={n:tm,s:d.us|0,b:batUs,us:1},R={n:rv,s:d.th|0,b:!batUs,us:0},rows=home?[R,T]:[T,R];
  const bs=d.b||['','',''],outs=Math.max(0,Math.min(3,d.outs|0));
  const dots=[0,1,2].map(i=>`<i class="${i<outs?'on':''}"></i>`).join('');
@@ -193,7 +224,8 @@ else if(code==='demo'){const md=q.get('m')||'sb',DM={tm:'Team Perversos',rv:'Tig
  tk:[{t:1,n:'Robert',h:'2-3',x:'HR · 3 CE'},{t:1,n:'Noel',h:'1-2',x:'H2'},{t:1,n:'Ricoche',h:'1-1',x:''},{t:0,n:'Pedro',h:'2-2',x:'H3 · 1 CE'}],
  lu:[{n:'Team Perversos',us:1,p:['Ricoche','Noel','Robert','Estiven Medina','Luis','Carlos','José','Miguel','Ángel','Juan'].map((n,i)=>({n,p:['SS','2B','C','1B','3B','LF','CF','RF','P','DH'][i]}))},{n:'Tigres',us:0,p:['Pedro','Mario','Kevin','Rafael','Jesús','Andrés','Pablo','Víctor','Diego','Óscar'].map(n=>({n,p:''}))}],
  fn:{tm:'Team Perversos',rv:'Tigres',us:9,th:4,home:0,inn:7,r:'Final normal',ml:[1,0,3,0,2,3,0],rl:[0,2,0,1,0,0,1],mvp:{n:'Robert',l:'3 de 4 · H2 · HR · 2 CA · 4 CE'},top:[{n:'Noel',l:'2 de 3 · H2 · 1 CE'},{n:'Ricoche',l:'2 de 4 · 2 CA'}],pt:{n:'Ángel',l:'7.0 EL · 6 K · 4 C'}}};
- draw(DM);if(md==='sb')setTimeout(()=>draw(Object.assign({},DM,{ev:{id:Date.now(),k:q.get('k')||'HR',t:q.get('k')==='H2'?'¡DOBLE!':'¡JONRÓN!',s:'Robert · 5º de la temporada · 3 carreras',m:'Team Perversos 7 - 2 Tigres',us:q.get('o')?0:1}})),300)}
+ if(md==='rs'){DM.v.m='sb';draw(DM);const P=(n,l,h)=>({n,l,h});draw(Object.assign({},DM,{br:{id:Date.now(),dur:20,inn:3,top:1,home:0,ml:[1,0,3],rl:[0,2],lu:[{n:'Team Perversos',us:1,R:4,H:5,p:[P('Ricoche','1-2 · 1 CA',1),P('Noel','1-1 · H2 · BB',1),P('Robert','2-2 · HR · 3 CE · 1 CA',1),P('Estiven Medina','0-2'),P('Luis','1-1 · 1 CE',1),P('Carlos','0-1'),P('José','0-1'),P('Miguel','—'),P('Ángel','—'),P('Juan','—')]},{n:'Tigres',us:0,R:2,H:3,p:[P('Pedro','2-2 · H3 · 1 CE',1),P('Mario','0-1'),P('Kevin','1-1',1),P('Rafael','0-1'),P('Jesús','0-1 · BB'),P('Andrés','0-1'),P('Pablo','—'),P('Víctor','—'),P('Diego','—'),P('Óscar','—')]}]}}))}
+ else{draw(DM);if(md==='sb')setTimeout(()=>draw(Object.assign({},DM,{ev:{id:Date.now(),k:q.get('k')||'HR',t:q.get('k')==='H2'?'¡DOBLE!':'¡JONRÓN!',s:'Robert · 5º de la temporada · 3 carreras',m:'Team Perversos 7 - 2 Tigres',us:q.get('o')?0:1}})),300)}}
 else if(code&&typeof firebase!=='undefined'){try{firebase.initializeApp(FIREBASE_CONFIG);firebase.database().ref('scoreboard/'+code+'/d').on('value',s=>draw(s.val()))}catch(e){console.error(e)}}
 </script>
 </body></html>

@@ -187,7 +187,7 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
-const APP_VERSION='3.3.1',APP_BUILD='24/10/2026';
+const APP_VERSION='3.4.0',APP_BUILD='24/10/2026';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
@@ -224,7 +224,7 @@ function pitch(k){if(!S.started||!AP().length)return;S.cnt=S.cnt||{b:0,s:0};
  const l=PT();if(l)l.P=(l.P||0)+1;
  S.msg=nm(cur())+': '+({b:'bola',s:'strike',f:'foul'}[k])+' · cuenta '+S.cnt.b+'-'+S.cnt.s;save();render()}
 function out(){S.outs++;const l=PT();if(l)l.outs++;if(S.outs>=3)endHalf()}
-function endHalf(){const sd=S.side||'us',second=(sd==='us')===!!S.home;if(S.started){const inn=S.inning,r=((sd==='us'?S.ml:S.rl)||[])[inn-1]||0;S.brk={inn,top:second?0:1,tm:sd==='us'?(S.team||'Nosotros'):(S.rival||'Rival'),r}}S.outs=0;S.cnt={b:0,s:0};S.bases=[null,null,null];ev.push('Cambio de entrada');if(second)S.inning++;S.side=sd==='us'?'op':'us';S.pend=null}
+function endHalf(){const sd=S.side||'us',second=(sd==='us')===!!S.home;if(S.started){const inn=S.inning,r=((sd==='us'?S.ml:S.rl)||[])[inn-1]||0;S.brk={inn,top:second?0:1,tm:sd==='us'?(S.team||'Nosotros'):(S.rival||'Rival'),r,at:Date.now()}}S.outs=0;S.cnt={b:0,s:0};S.bases=[null,null,null];ev.push('Cambio de entrada');if(second)S.inning++;S.side=sd==='us'?'op':'us';S.pend=null}
 function act(fn){if(!AP().length){tab(2);return}hist.push(JSON.stringify(S));if(hist.length>60)hist.shift();ev=[];NS=S.side||'us';const b=cur(),inn=S.inning,r0=b.RBI,L0=(b.log=b.log||[]).length;const pl=NS==='op'?PT():null,b0={H:b.H,hr:b.hr,BB:b.BB,K:b.K},sc0=S.us+S.them;const d=fn(b);const ab=AB_[d.slice(d.indexOf(': ')+2).toLowerCase()];if(ab)b.log.splice(L0,0,{i:inn,a:ab,rbi:b.RBI-r0});
  S.cnt={b:0,s:0};if(pl&&S.cntOn)pl.P=(pl.P||0)+1;
  if(pl){pl.BF++;pl.H+=b.H-b0.H;pl.HR+=b.hr-b0.hr;pl.BB+=b.BB-b0.BB;pl.K+=b.K-b0.K}
@@ -488,7 +488,7 @@ function lineTbl(o,live){const mine=o.ml||[],riv=o.rl||[];const N=Math.max(mine.
 function lineSheet(){document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:90%;overflow:auto"><h3 style="margin:0 0 4px">Carreras por entrada</h3><div style="font-size:12px;color:var(--mu);margin-bottom:8px">${S.home?'Local: bateas en la parte baja.':'Visitante: bateas primero.'} Toca una carrera del rival para corregirla.</div><div style="overflow-x:auto">${lineTbl(S,true)}</div><button class="btn" style="margin-top:12px" onclick="closeS()">Cerrar</button></div></div>`}
 const THEMES=[['fuego','Fuego','#ff5a00','#071523','#ffb000'],['cancha','Cancha','#2fb457','#06170e','#ffd23f'],['oceano','Océano','#12b5cb','#05222b','#ffcf4a'],['morado','Morado','#9b5cff','#120a24','#ffc531'],['rojo','Rojo','#e8282b','#170707','#ffd23f'],['vino','Vino','#b8173f','#160a0e','#f2c14e'],['rosa','Rosa','#ff3d9a','#1a0714','#ffd23f'],['dorado','Negro y oro','#d4a017','#0b0b0b','#f5d76e'],['azul','Azul real','#2f6bff','#06102a','#ffc531'],['lima','Lima','#8bd320','#0c1306','#ffe14d'],['acero','Acero','#00b4d8','#111417','#ff7a1a'],['claroazul','Claro azul','#1f5fe0','#eef2f8','#e6a000'],['claro','Claro','#f05200','#eef1f4','#e6a000']];
 function applyTheme(t){if(!THEMES.some(x=>x[0]===t))t='fuego';document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('softball_theme',t)}catch(e){}if(typeof txQueue==='function')txQueue();const m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',THEMES.find(x=>x[0]===t)[3])}
-function themeSheet(){const cur=document.documentElement.getAttribute('data-theme')||'fuego';document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:92%;overflow:auto"><h3>Apariencia</h3><div style="font-size:12px;color:var(--mu);margin:-4px 0 10px">El color de la app. La transmisión usa el mismo, salvo que elijas otro en 📺.</div><div class="thg">${THEMES.map(t=>`<button class="${cur===t[0]?'on':''}" onclick="applyTheme('${t[0]}');themeSheet()"><span class="sw" style="background:${t[2]};border-color:${t[3]}"><i style="background:${t[4]}"></i></span><span style="flex:1">${t[1]}</span>${cur===t[0]?'✓':''}</button>`).join('')}</div><div class="ver" style="margin:8px 0 10px">Versión ${APP_VERSION} · ${APP_BUILD}</div><button class="btn" onclick="updManual()">↻ Buscar actualización</button><button class="btn" onclick="closeS()">Listo</button></div></div>`}
+function themeSheet(){const cur=document.documentElement.getAttribute('data-theme')||'fuego';document.getElementById('sheet').innerHTML=`<div class="sheet" onclick="if(event.target===this)closeS()"><div style="max-height:92%;overflow:auto"><h3>Apariencia</h3><div style="font-size:12px;color:var(--mu);margin:-4px 0 10px">El color de la app. La transmisión usa siempre este mismo color.</div><div class="thg">${THEMES.map(t=>`<button class="${cur===t[0]?'on':''}" onclick="applyTheme('${t[0]}');themeSheet()"><span class="sw" style="background:${t[2]};border-color:${t[3]}"><i style="background:${t[4]}"></i></span><span style="flex:1">${t[1]}</span>${cur===t[0]?'✓':''}</button>`).join('')}</div><div class="ver" style="margin:8px 0 10px">Versión ${APP_VERSION} · ${APP_BUILD}</div><button class="btn" onclick="updManual()">↻ Buscar actualización</button><button class="btn" onclick="closeS()">Listo</button></div></div>`}
 applyTheme(document.documentElement.getAttribute('data-theme')||'fuego');
 function av(p,sz,nc){if(!p)return '';const u=(S.photos||{})[p.id],t=p.num?String(p.num):((/^Jugador (\d+)/.exec(p.name||'')||[])[1]||String(p.name||'?').charAt(0).toUpperCase());return `<div class="av" style="width:${sz}px;height:${Math.round(sz*4/3)}px;font-size:${Math.round(sz*(t.length>2?.3:t.length>1?.4:.52))}px"${nc?'':` onclick="event.stopPropagation();photoView(${p.id})"`}>${u?`<img src="${u}" alt="">`:esc(t)}</div>`}
 function shrink(im,sx,sy,sw,sh,W,H){let src=im,cx=sx,cy=sy,cw=sw,ch=sh;while(cw/2>=W){const c=document.createElement('canvas');c.width=Math.round(cw/2);c.height=Math.round(ch/2);c.getContext('2d').drawImage(src,cx,cy,cw,ch,0,0,c.width,c.height);src=c;cx=0;cy=0;cw=c.width;ch=c.height}const f=document.createElement('canvas');f.width=W;f.height=H;const x=f.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(src,cx,cy,cw,ch,0,0,W,H);return f}
@@ -756,7 +756,7 @@ cloudInit();
    Publica el marcador en scoreboard/CODIGO/d. marcador.html?c=CODIGO lo muestra como superposición web en CameraFi Live.
    Se envía solo cuando cambia algo (cada jugada pasa por save()). Requiere sesión iniciada en ☁. */
 const TXKEY='softball_tx';
-let TX=(()=>{let o=null;try{o=JSON.parse(localStorage.getItem(TXKEY)||'null')}catch(e){}o=o||{};return {code:o.code||'',on:!!o.on,p:o.p||'tl',s:+o.s||1,n:!!o.n,l:!!o.l,m:['sb','lu','fin'].includes(o.m)?o.m:'sb',a:o.a!==false,k:o.k!==false,c:o.c!==false,pal:typeof o.pal==='string'?o.pal:'',vz:['off','tab','tx','both'].includes(o.vz)?o.vz:'tab',vr:+o.vr||1.05}})();
+let TX=(()=>{let o=null;try{o=JSON.parse(localStorage.getItem(TXKEY)||'null')}catch(e){}o=o||{};return {code:o.code||'',on:!!o.on,p:o.p||'tl',s:+o.s||1,n:!!o.n,l:!!o.l,m:['sb','lu','fin'].includes(o.m)?o.m:'sb',a:o.a!==false,k:o.k!==false,c:o.c!==false,pal:typeof o.pal==='string'?o.pal:'',vz:['off','tab','tx','both'].includes(o.vz)?o.vz:'tab',vr:+o.vr||1.05,rs:o.rs!==false,rd:+o.rd||12}})();
 let txT=null,txLast='',txErr='',txAt=0,TXEV=null;
 /* ===== Avisos de jugadas en la transmisión ===== */
 function txPlay(ab,b,side,runs,rbi,pl){if(!b)return;const us=side!=='op',tn=us?(S.team||'Nosotros'):(S.rival||'Rival'),n=String(b.name||'');let t='',x=[],k=ab;
@@ -803,6 +803,14 @@ function vozFin(){const g=S.games[0];if(!g)return;const m=mvp(g.players||[]),w=g
  vozSay('Final del juego. '+(g.team||'Nosotros')+' '+g.us+', '+(g.rival||'el rival')+' '+g.them+'. '+w+(m?' Jugador más valioso: '+m.name+'.':''))}
 function vozTest(){const was=TX.vz;if(was==='off')TX.vz='tab';vozSay('Probando el narrador. '+(S.started&&!S.brk&&AP().length?vozBat():'Al bate, Alex. Lleva 2 de 3 en el partido. Batea para 423 con 10 jonrones en la temporada.'));TX.vz=was}
 try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
+/* Resumen entre entradas: carreras por entrada + lineups con lo que lleva cada jugador */
+function txLine(p){const AB=p.AB|0,H=p.H|0,x=[];x.push(AB||p.BB||p.SAC||p.R?H+'-'+AB:'—');
+ [[p.s2,'H2'],[p.s3,'H3'],[p.hr,'HR'],[p.BB,'BB']].forEach(([v,l])=>{if(v>0)x.push((v>1?v+' ':'')+l)});if(p.RBI>0)x.push(p.RBI+' CE');if(p.R>0)x.push(p.R+' CA');return x.join(' · ')}
+function txBreak(){const used=p=>(p.AB|0)+(p.BB|0)+(p.SAC|0)+(p.R|0)>0,row=(p,sub)=>({n:(sub?'↳ ':'')+String(p.name||''),l:txLine(p),h:(p.H|0)>0?1:0});
+ const ours=[...S.players.map(p=>row(p)),...(S.subs||[]).filter(used).map(p=>row(p,1))],theirs=(S.opp?S.opp.players:[]).map(p=>row(p));
+ const hU=gamePlayers().reduce((a,p)=>a+(p.H|0),0),hO=(S.opp?S.opp.players:[]).reduce((a,p)=>a+(p.H|0),0);
+ const mine={n:S.team||'Nosotros',us:1,p:ours,R:S.us|0,H:hU},riv={n:S.rival||'Rival',us:0,p:theirs,R:S.them|0,H:hO};
+ return {id:S.brk.at,dur:TX.rd||12,inn:S.brk.inn,top:S.brk.top,t:S.brk.tm,home:S.home?1:0,lu:S.home?[riv,mine]:[mine,riv],ml:(S.ml||[]).map(x=>x==null?-1:x|0),rl:(S.rl||[]).map(x=>x==null?-1:x|0)}}
 function txNote(t,s){TXEV={id:Date.now(),k:'CH',t,s,m:'',us:1};txQueue()}
 /* Al comenzar el juego se pasa solo al marcador; al terminarlo, al resultado final. */
 function txAuto(w){if(typeof vozSay==='function'){if(w==='start')vozSay('¡Comienza el juego! '+(S.home?(S.rival||'El rival')+' visita a '+(S.team||'nuestro equipo'):(S.team||'Nuestro equipo')+' visita a '+(S.rival||'el rival'))+'. '+vozBat());if(w==='fin')vozFin()}
@@ -812,7 +820,7 @@ const txSave=()=>lss(TXKEY,JSON.stringify(TX));
 function txNewCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint32Array(6);crypto.getRandomValues(r);return Array.from(r,v=>a[v%a.length]).join('')}
 if(!TX.code){TX.code=txNewCode();txSave()}
 const txReady=()=>!!(cloud.db&&cloud.user&&TX.code);
-function txColors(){const t=TX.pal&&THEMES.find(x=>x[0]===TX.pal);if(t)return {ac:t[2],a2:t[4],bg:t[3]};const cs=getComputedStyle(document.documentElement),g=n=>(cs.getPropertyValue(n)||'').trim();return {ac:g('--ac'),a2:g('--ac2'),bg:g('--bg')}}
+function txColors(){const cs=getComputedStyle(document.documentElement),g=n=>(cs.getPropertyValue(n)||'').trim();return {ac:g('--ac'),a2:g('--ac2'),bg:g('--bg')}}
 /* Promedio de temporada (juegos guardados + acumulado + lo de hoy) para nuestros bateadores */
 /* Jonrones de la temporada (juegos guardados + acumulado + lo de hoy) */
 function txHR(p){let n=p.hr||0;try{const s=seasonStats(true).find(q=>q.id===p.id);if(s)n+=s.hr||0}catch(e){}return n}
@@ -825,7 +833,8 @@ function txData(){const st=!!S.started,sd=S.side||'us',op=sd==='op',ap=AP(),b=st
  if(b)d.bat={n:String(b.name||''),u:String(b.num||''),p:String(posOf(b)||''),h:(b.H|0)+'-'+(b.AB|0),a:op?(b.AB?f3(b.H/b.AB):'.000'):txSeason(b),r:op?(b.hr|0):txHR(b)};
  if(TX.a&&TXEV&&Date.now()-TXEV.id<60000)d.ev=TXEV;
  if(st&&TX.c&&!S.brk)d.cnt=[(S.cnt||{}).b|0,(S.cnt||{}).s|0];
- d.ver=APP_VERSION;d.v.vt=vzTx()?1:0;d.v.vr=TX.vr||1.05;if(vzTx()&&VZ&&Date.now()-VZ.id<60000)d.vz=VZ;
+ d.ver=APP_VERSION;
+ if(st&&TX.rs&&S.brk&&S.brk.at&&Date.now()-S.brk.at<120000)d.br=txBreak();d.v.vt=vzTx()?1:0;d.v.vr=TX.vr||1.05;if(vzTx()&&VZ&&Date.now()-VZ.id<60000)d.vz=VZ;
  if(TX.k&&st){d.tk=[];const add=(ps,t)=>ps.forEach(p=>{if((p.H|0)>0)d.tk.push({t,n:String(p.name||''),h:(p.H|0)+'-'+(p.AB|0),x:txExtra(p)})});add(gamePlayers(),1);if(S.opp)add(S.opp.players,0)}
  if(TX.m==='lu'){const mine={n:S.team||'Nosotros',us:1,p:S.players.map(p=>({n:String(p.name||''),p:String(posOf(p)||'')}))},riv={n:S.rival||'Rival',us:0,p:(S.opp?S.opp.players:[]).map(p=>({n:String(p.name||''),p:String(p.pos||'')}))};d.lu=S.home?[riv,mine]:[mine,riv]}
  if(TX.m==='fin'){const g=S.games[0];if(g){const ps=g.players||[],m=mvp(ps),top=[...ps].filter(p=>p.H>0&&(!m||p.id!==m.id)).sort((a,b)=>sc(b)-sc(a)).slice(0,3),pt=[...(g.pit||[])].sort((a,b)=>b.outs-a.outs)[0];
@@ -854,7 +863,7 @@ function txSheet(){const ready=txReady(),o=(l,on,fn)=>`<button class="${on?'on':
 ${lb('Posición')}<div class="sg">${[['tl','↖ Arriba izq.'],['tr','↗ Arriba der.'],['bl','↙ Abajo izq.'],['br','↘ Abajo der.']].map(x=>o(x[1],TX.p===x[0],`txSet('p','${x[0]}')`)).join('')}</div>
 ${lb('Tamaño')}<div class="sg">${[[.8,'Pequeño'],[1,'Normal'],[1.25,'Grande'],[1.5,'Muy grande']].map(x=>o(x[1],TX.s==x[0],`txSet('s',${x[0]})`)).join('')}</div>
 ${lb('Qué se ve en la transmisión')}<div class="sg">${o('📊 Marcador',TX.m==='sb',"txSet('m','sb')")}${o('📋 Lineups',TX.m==='lu',"txSet('m','lu')")}${o('🏁 Final',TX.m==='fin',"txSet('m','fin')")}</div><div class="chint" style="margin-top:-4px">${TX.m==='fin'&&!S.games.length?'<b style="color:var(--ac2)">Aún no hay juegos guardados para mostrar el final.</b> ':''}Al comenzar el juego cambia solo a Marcador y al terminarlo a Final.</div>
-${lb('Colores de la transmisión')}<div class="thg"><button class="${TX.pal?'':'on'}" onclick="txSet('pal','')"><span class="sw" style="background:var(--ac);border-color:var(--bg)"><i style="background:var(--ac2)"></i></span><span style="flex:1">Igual que la app</span></button>${THEMES.map(t=>`<button class="${TX.pal===t[0]?'on':''}" onclick="txSet('pal','${t[0]}')"><span class="sw" style="background:${t[2]};border-color:${t[3]}"><i style="background:${t[4]}"></i></span><span style="flex:1">${t[1]}</span></button>`).join('')}</div>
+${lb('📋 Resumen al cambiar de entrada')}<div class="sg">${o('Apagado',!TX.rs,"txSet('rs',false)")}${[8,12,20].map(n=>o(n+' seg',TX.rs&&TX.rd==n,`TX.rs=true;txSet('rd',${n})`)).join('')}</div><div class="chint" style="margin-top:-4px">Con el 3er out, la transmisión muestra por unos segundos las carreras por entrada y los dos lineups con lo que lleva cada jugador. Luego vuelve sola al marcador.</div>
 ${lb('🎙 Narrador (voz automática)')}<div class="sg">${o('Apagado',TX.vz==='off',"txSet('vz','off')")}${o('En la tablet',TX.vz==='tab',"txSet('vz','tab')")}${o('En el celular de la cámara',TX.vz==='tx',"txSet('vz','tx')")}${o('Ambos',TX.vz==='both',"txSet('vz','both')")}</div><div class="sg">${o('🐢 Lenta',TX.vr==0.9,"txSet('vr',0.9)")}${o('Normal',TX.vr==1.05,"txSet('vr',1.05)")}${o('🐇 Rápida',TX.vr==1.2,"txSet('vr',1.2)")}<button onclick="vozTest()">▶ Probar</button></div><div class="chint" style="margin-top:-4px">Anuncia hits, jonrones, carreras, ponches, outs, al bateador con sus números, los cambios de lanzador y de jugador, y el final. <b>Para que se escuche en la transmisión:</b> CameraFi solo graba lo que entra por el micrófono del celular, no el sonido de la página del marcador. Deja <b>En la tablet</b>, sube el volumen y pon la tablet (o una bocina Bluetooth conectada a ella) cerca del celular de la cámara.${'speechSynthesis' in window?'':' <b style="color:var(--rd)">Este dispositivo no tiene voz disponible.</b>'}</div>
 ${lb('Mostrar también')}<div class="sg">${o('🔔 Avisos de jugadas',TX.a,"txSet('a',!TX.a)")}${o('📰 Cinta de hits',TX.k,"txSet('k',!TX.k)")}${o('⚾ Bolas y strikes',TX.c,"txSet('c',!TX.c)")}</div><div class="sg">${o('Nombres de corredores',TX.n,"txSet('n',!TX.n)")}${o('Carreras por entrada',TX.l,"txSet('l',!TX.l)")}</div>
 ${lb('Enlace para CameraFi Live (Widget → WEB → URL #1)')}<input id="txu" readonly value="${esc(txUrl())}" onclick="this.select()">
