@@ -191,7 +191,7 @@ function drawFin(d){const f=d.fn;if(!f){fn.style.display='none';return}const FL=
  ${(f.top&&f.top.length)||f.pt?`<div class="ds">${f.top&&f.top.length?`<div class="k">DESTACADOS</div>${f.top.map(p=>`<div class="r"><b>${esc(p.n)}</b><span>${esc(p.l)}</span></div>`).join('')}`:''}${f.pt?`<div class="r" style="margin-top:calc(var(--U)*.9)"><b>⚾ ${esc(f.pt.n)}</b><span>${esc(f.pt.l)}</span></div>`:''}</div>`:''}`}
  fn.style.display='block'}
 /* Si la app ya va en una versión más nueva que este marcador, se recarga una vez para traer el archivo nuevo. */
-const MV='3.6.3';
+const MV='3.6.4';
 const vn=v=>String(v||'').split('.').map(n=>parseInt(n,10)||0),vgt=(a,b)=>{const x=vn(a),y=vn(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false};
 function verCheck(v){if(!v||PV||!vgt(v,MV))return;const k='mv_try_'+v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){return}const u=new URL(location.href);u.searchParams.set('v',v);location.replace(u.href)}
 const rs=document.getElementById('rs');let brSeen=undefined,brUntil=0,brT=null,lastD=null;

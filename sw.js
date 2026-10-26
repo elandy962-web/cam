@@ -2,7 +2,7 @@
    Cada vez que cambies archivos, sube V aquí y APP_VERSION en index.html (el mismo número).
    La versión nueva se descarga en segundo plano y queda esperando; la app muestra
    "Nueva versión disponible · Actualizar" y al tocarlo se cambia sin reinstalar nada. */
-const V = 'softball-3.6.3';
+const V = 'softball-3.6.4';
 const MAIN = ['./', 'index.html'];
 const EXTRA = ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 const SDK = ['app', 'auth', 'database'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
@@ -10,7 +10,13 @@ const SDK = ['app', 'auth', 'database'].map(n => 'https://www.gstatic.com/fireba
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(async c => {
     /* cache:'reload' = siempre la copia nueva del servidor, nunca una guardada por el navegador. */
-    await c.addAll(MAIN.map(u => new Request(u, { cache: 'reload' })));
+    /* Protección: solo se acepta la versión nueva si index.html es de verdad la app (no otro archivo subido por error). */
+    for (const u of MAIN) {
+      const r = await fetch(new Request(u, { cache: 'reload' }));
+      const t = r.ok ? await r.clone().text() : '';
+      if (!/APP_VERSION\s*=/.test(t)) throw new Error('index.html no es la app');
+      await c.put(u, r);
+    }
     /* Lo demás no es imprescindible: si un archivo falla, la actualización sigue. */
     await Promise.all(EXTRA.map(u => fetch(new Request(u, { cache: 'reload' })).then(r => { if (r.ok) return c.put(u, r); }).catch(() => {})));
     /* Las librerías de Firebase solo se guardan si la descarga fue buena (res.ok). */
