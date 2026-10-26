@@ -187,7 +187,7 @@ table.pst{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 10px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const KEY='softball_en_vivo_v1';
-const APP_VERSION='3.5.1',APP_BUILD='26/10/2026';
+const APP_VERSION='3.5.2',APP_BUILD='26/10/2026';
 let S={players:[],idx:0,inning:1,outs:0,bases:[null,null,null],us:0,them:0,msg:'Agrega jugadores en la pestaña Equipo'};
 let hist=[],T=0,ev=[];
 try{const d=localStorage.getItem(KEY);if(d)S=JSON.parse(d)}catch(e){}
@@ -230,7 +230,7 @@ function act(fn){if(!AP().length){tab(2);return}hist.push(JSON.stringify(S));if(
  if(pl){pl.BF++;pl.H+=b.H-b0.H;pl.HR+=b.hr-b0.hr;pl.BB+=b.BB-b0.BB;pl.K+=b.K-b0.K}
  if(typeof txPlay==='function')txPlay(ab,b,NS,S.us+S.them-sc0,b.RBI-r0,pl);S.msg=d+(ev.length?' · '+ev.join(', '):'');save();render()}
 function hit(n){if(n<4&&S.bases.some(x=>x!=null)){openHit(n);return}hitDo(n,null)}
-function hitDo(n,dest){const names=['','Sencillo','Doble','Triple','Jonrón'];act(b=>{b.AB++;b.H++;b[n==4?'hr':'s'+n]++;const nb=[null,null,null];let outs=0;
+function hitDo(n,dest){const names=['','Sencillo','Doble','Triple','Home run'];act(b=>{b.AB++;b.H++;b[n==4?'hr':'s'+n]++;const nb=[null,null,null];let outs=0;
  for(let i=2;i>=0;i--){const r=S.bases[i];if(r==null)continue;let t=dest?dest[i]:(i+n>=3?'H':i+n+1);if(t==='s')t=i+1;
   if(t==='H')run(r,b.id);else if(t==='O'){(P(r).log=P(r).log||[]).push({i:S.inning,a:'*'});outs++}else nb[t-1]=r}
  if(n==4)run(b.id,b.id);else nb[n-1]=b.id;S.bases=nb;const d=nm(b)+': '+names[n];for(let k=0;k<outs;k++)out();nxt();return d})}
@@ -335,7 +335,7 @@ function pitTbl(ps,gp){const lz=ps.some(p=>p.P>0),c=['JJ','EL','BE','H','C','BB'
  return `<div style="font-weight:800;margin:4px 2px 6px">⚾ Pitcheo</div><div class="card tw"><table><tr><th>Lanzador</th>${c.map(h=>`<th>${h}</th>`).join('')}</tr>${ps.map(p=>`<tr><td>${esc(nm(p))}</td>${(gp?[p.GP||0]:[]).concat([ipF(p.outs),p.BF||0,p.H||0,p.R||0,p.BB||0,p.K||0,p.HR||0,efe(p)]).concat(lz?[p.P||0]:[]).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</table></div>`}
 function seasonStats(all,rg){const m={};if(!rg)(S.base&&S.base.players||[]).forEach(p=>{m[p.id]={id:p.id,name:p.name,num:p.num||'',GP:p.GP||0,AB:p.AB||0,H:p.H||0,s1:p.s1||0,s2:p.s2||0,s3:p.s3||0,hr:p.hr||0,BB:p.BB||0,K:p.K||0,R:p.R||0,RBI:p.RBI||0,SAC:p.SAC||0}});S.games.forEach(g=>{if(rg&&!inRng(g.date))return;g.players.forEach(p=>{const k=p.id!=null?p.id:p.name,t=m[k]||(m[k]={id:p.id,name:p.name,num:p.num||'',GP:0,AB:0,H:0,s1:0,s2:0,s3:0,hr:0,BB:0,K:0,R:0,RBI:0,SAC:0});if(p.AB+p.BB+p.SAC+p.R>0)t.GP++;['AB','H','s1','s2','s3','hr','BB','K','R','RBI','SAC'].forEach(k=>t[k]+=p[k]||0)})});return Object.values(m).filter(p=>all||!S.roster.length||(r=>r&&!r.off)(S.roster.find(r=>r.id===p.id))).sort((a,b)=>b.H-a.H||b.AB-a.AB)}
 function rec(rg){const b=rg?null:S.base;let w=b?b.w||0:0,l=b?b.l||0:0,e=b?b.e||0:0;S.games.forEach(g=>{if(rg&&!inRng(g.date))return;g.us>g.them?w++:g.us<g.them?l++:e++});return 'Récord '+w+'G - '+l+'P'+(e?' - '+e+'E':'')}
-const AB_={'doble play':'DP','triple play':'TP','jugada de selección':'FC',sencillo:'H1',doble:'H2',triple:'H3','jonrón':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SF'};
+const AB_={'doble play':'DP','triple play':'TP','jugada de selección':'FC',sencillo:'H1',doble:'H2',triple:'H3','jonrón':'HR','home run':'HR','base por bolas':'BB','llega por error':'E',ponchado:'K',out:'OUT',sacrificio:'SF'};
 const sc=p=>p.s1+2*p.s2+3*p.s3+4*p.hr+p.R+p.RBI+0.5*p.BB+0.5*p.SAC-0.25*p.K;
 function mvp(ps){let b=null,v=0;ps.forEach(p=>{const x=sc(p);if(x>v||(b&&x===v&&x>0&&p.H>b.H)){b=p;v=x}});return b}
 function ex(p){return [[p.s1,'H1'],[p.s2,'H2'],[p.s3,'H3'],[p.hr,'HR'],[p.BB,'BB'],[p.K,'K'],[p.SAC,'SF'],[p.R,'CA'],[p.RBI,'CE']].filter(x=>x[0]>0).map(x=>(x[0]>1?x[0]+' ':'')+x[1])}
@@ -759,7 +759,7 @@ let txT=null,txLast='',txErr='',txAt=0,TXEV=null;
 /* ===== Avisos de jugadas en la transmisión ===== */
 function txPlay(ab,b,side,runs,rbi,pl){if(!b)return;const us=side!=='op',tn=us?(S.team||'Nosotros'):(S.rival||'Rival'),n=String(b.name||'');let t='',x=[],k=ab;
  const imp=r=>r+(r>1?' impulsadas':' impulsada');
- if(ab==='HR'){t=runs>=4?'¡GRAND SLAM!':'¡JONRÓN!';x=[n,us?txHR(b)+'º de la temporada':tn,runs>1&&runs<4?runs+' carreras':''];k='HR'}
+ if(ab==='HR'){t=runs>=4?'¡GRAND SLAM!':'¡HOME RUN!';x=[n,us?txHR(b)+'º de la temporada':tn,runs>1&&runs<4?runs+' carreras':''];k='HR'}
  else if(ab==='H3'||ab==='H2'||ab==='H1'){t={H3:'¡TRIPLE!',H2:'¡DOBLE!',H1:'¡HIT!'}[ab];x=[n,us?'':tn,b.H+'-'+b.AB+' hoy',rbi?imp(rbi):'']}
  else if(ab==='K'&&!us){t='¡PONCHE!';x=[n,pl?pl.name+' suma '+pl.K+' K':'']}
  else if((ab==='DP'||ab==='TP')&&!us){t=ab==='TP'?'¡TRIPLE PLAY!':'¡DOBLE PLAY!';x=['Defensa de '+(S.team||'Nosotros')]}
