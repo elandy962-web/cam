@@ -222,7 +222,7 @@ function drawFin(d){const f=d.fn;if(!f){fn.style.display='none';return}const FL=
  ${(f.top&&f.top.length)||f.pt?`<div class="ds">${f.top&&f.top.length?`<div class="k">DESTACADOS</div>${f.top.map(p=>`<div class="r"><b>${esc(p.n)}</b><span>${esc(p.l)}</span></div>`).join('')}`:''}${f.pt?`<div class="r" style="margin-top:calc(var(--U)*.9)"><b>⚾ ${esc(f.pt.n)}</b><span>${esc(f.pt.l)}</span></div>`:''}</div>`:''}`}
  fn.style.display='block'}
 /* Si la app ya va en una versión más nueva que este marcador, se recarga una vez para traer el archivo nuevo. */
-const MV='3.7.1';
+const MV='3.8.0';
 const vn=v=>String(v||'').split('.').map(n=>parseInt(n,10)||0),vgt=(a,b)=>{const x=vn(a),y=vn(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false};
 function verCheck(v){if(!v||PV||!vgt(v,MV))return;const k='mv_try_'+v;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){return}const u=new URL(location.href);u.searchParams.set('v',v);location.replace(u.href)}
 const rs=document.getElementById('rs');let brSeen=undefined,brUntil=0,brT=null,lastD=null;
@@ -248,7 +248,7 @@ function drawMLB(d){const home=!!d.home,lg=d.lg||{},ab=d.ab||{},batUs=d.sd!=='op
  const dia=`<div class="mdia"><i class="${bs[1]?'on':''}" style="left:35%;top:6%"></i><i class="${bs[2]?'on':''}" style="left:7%;top:35%"></i><i class="${bs[0]?'on':''}" style="left:63%;top:35%"></i></div>`;
  const st=d.st?`<div class="minn"><span>${d.top?'▲':'▼'}</span>${d.inn|0}</div><div class="mst">${dia}<div class="mou"><div>${[0,1,2].map(i=>`<i class="${i<outs?'on':''}"></i>`).join('')}</div><span>OUTS</span></div>${d.cnt?`<div class="mct">${d.cnt[0]|0}-${d.cnt[1]|0}</div>`:''}</div>`:`<div class="minn" style="font-size:calc(var(--u)*1.3);letter-spacing:.06em">POR<br>COMENZAR</div>`;
  const pt=d.st&&d.pt?`<div class="mpt"><span>LANZA</span><b>${esc(d.pt.n)}</b>${d.pt.p?`<span>${d.pt.p} lanz.</span>`:''}</div>`:'';
- const bt=d.bat,btr=d.st&&bt?`<div class="mbt">${img(bt.ph,'mph')}<small>AL BATE</small><b>${esc(bt.n)}</b>${bt.h?`<span>${esc(bt.h)} hoy</span>`:''}${bt.a?`<small>AVE</small><b>${esc(bt.a)}</b>`:''}${bt.r!=null?`<small>HR</small><b>${bt.r}</b>`:''}${bt.ce!=null?`<small>CE</small><b>${bt.ce}</b>`:''}</div>`:'';
+ const bt=d.bat,btr=d.st&&bt?`<div class="mbt">${img(bt.ph,'mph')}<b>${esc(bt.n)}</b>${bt.h?`<span>${esc(bt.h)} hoy</span>`:''}${bt.a?`<small>AVE</small><b>${esc(bt.a)}</b>`:''}${bt.r!=null?`<small>HR</small><b>${bt.r}</b>`:''}${bt.ce!=null?`<small>CE</small><b>${bt.ce}</b>`:''}</div>`:'';
  const pd=d.pl||d.dt?`<div class="mpd">${d.pl?'📍 '+esc(d.pl):''}${d.pl&&d.dt?' · ':''}${esc(d.dt||'')}</div>`:'';
  mb.className='mlb '+pos;mb.innerHTML=`${pd}${btr}<div class="mbug">${rows.map(team).join('')}${st}${pt}${d.sp&&d.sp.length?'<div class="spn" id="spn"></div>':''}</div>`;
  spSet(d.sp);mb.style.display='flex'}
@@ -267,7 +267,7 @@ function draw(d){if(d&&d.ver)verCheck(d.ver);LD=d;if(!d||d.off){hideAll();return
  const dots=[0,1,2].map(i=>`<i class="${i<outs?'on':''}"></i>`).join('');
  const bt=d.bat;let bar;
  if(!d.st)bar=`<span class="nm">Por comenzar</span>`;
- else if(bt)bar=`${img(bt.ph,'ph')}<span class="lb">AL BATE</span><span class="nm">${esc(bt.n)}</span><span class="av">${bt.h?`<small>HOY</small>${esc(bt.h)}`:''}${bt.a?`<small>AVE</small>${esc(bt.a)}`:''}${bt.r!=null?`<small>HR</small>${esc(bt.r)}`:''}</span>`;
+ else if(bt)bar=`${img(bt.ph,'ph')}<span class="nm">${esc(bt.n)}</span><span class="av">${bt.h?`<small>HOY</small>${esc(bt.h)}`:''}${bt.a?`<small>AVE</small>${esc(bt.a)}`:''}${bt.r!=null?`<small>HR</small>${esc(bt.r)}`:''}</span>`;
  else bar='';
  const names=showN?[['1ª',bs[0]],['2ª',bs[1]],['3ª',bs[2]]].filter(x=>x[1]).map(x=>x[0]+' '+esc(x[1])).join(' · '):'';
  const pd=d.pl||d.dt?`<div class="pd">${d.pl?`<span class="pi">📍</span><span class="pl">${esc(d.pl)}</span>`:''}${d.dt?`<span class="dt">${esc(d.dt)}</span>`:''}</div>`:'';
